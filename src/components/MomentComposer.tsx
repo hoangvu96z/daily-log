@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Modal, Pressable, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
 import { moodOptions } from '../data/mockData';
-import { createMomentSuggestion } from '../services/aiSuggestion';
+import { useTranslation } from '../i18n/translations';
 import { pickMomentImage } from '../services/imagePicker';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
@@ -20,17 +20,31 @@ export function MomentComposer({
   onClose: () => void;
   onSave: (entry: Entry) => void;
 }) {
+  const { t } = useTranslation();
   const [mood, setMood] = useState<Mood>('good');
   const [note, setNote] = useState('');
   const [suggestionVisible, setSuggestionVisible] = useState(true);
   const [pickedImageUri, setPickedImageUri] = useState<string | undefined>();
   const imageUri = pickedImageUri || draft.imageUri;
-  const suggestion = createMomentSuggestion({
-    mode: draft.mode,
-    mood,
-    locationName: draft.locationName,
-    calendarText: draft.calendarText,
-  });
+
+  const suggestion = useMemo(() => {
+    if (draft.calendarText) {
+      return `${draft.calendarText} ${t.ai.calendarSuffix}`;
+    }
+    if (draft.mode === 'photo') {
+      if (draft.locationName) {
+        const moodTextStr =
+          mood === 'very_bad' ? t.ai.moodTextVeryBad :
+          mood === 'bad' ? t.ai.moodTextBad :
+          mood === 'good' ? t.ai.moodTextGood :
+          mood === 'great' ? t.ai.moodTextGreat :
+          t.ai.moodTextNeutral;
+        return t.ai.photoWithLocation(draft.locationName, moodTextStr);
+      }
+      return t.ai.photoGeneric;
+    }
+    return t.ai.noteGeneric;
+  }, [draft, mood, t]);
 
   const addImage = async () => {
     const uri = await pickMomentImage();
@@ -67,27 +81,27 @@ export function MomentComposer({
           <Pressable style={styles.iconButton} onPress={onClose}>
             <Ionicons name="close" size={22} color={palette.green} />
           </Pressable>
-          <Text style={styles.composerTitle}>Khoảnh khắc mới</Text>
+          <Text style={styles.composerTitle}>{t.composer.title}</Text>
           <View style={styles.iconButtonSpacer} />
         </View>
         <ScrollView contentContainerStyle={styles.composerContent}>
           {imageUri ? (
             <Pressable onPress={addImage}>
-              <ImagePlaceholder label="ảnh mới" large uri={imageUri} />
+              <ImagePlaceholder label={t.composer.addPhoto} large uri={imageUri} />
             </Pressable>
           ) : (
             <Pressable style={styles.addPhotoBox} onPress={addImage}>
               <Ionicons name="image-outline" size={28} color={palette.green} />
-              <Text style={styles.addPhotoText}>Thêm ảnh</Text>
+              <Text style={styles.addPhotoText}>{t.composer.addPhoto}</Text>
             </Pressable>
           )}
           <Pressable style={styles.metaBox}>
             <Ionicons name="location-outline" size={18} color={palette.green} />
             <Text style={styles.metaText}>
-              Bây giờ • {draft.locationName || draft.calendarText || 'Không lưu vị trí'}
+              {t.composer.now} • {draft.locationName || draft.calendarText || t.composer.noLocation}
             </Text>
           </Pressable>
-          <Text style={styles.fieldLabel}>Mood</Text>
+          <Text style={styles.fieldLabel}>{t.composer.moodLabel}</Text>
           <View style={styles.moodRow}>
             {moodOptions.map((option) => (
               <Pressable
@@ -97,16 +111,16 @@ export function MomentComposer({
               >
                 <Text style={styles.moodEmoji}>{option.emoji}</Text>
                 <Text style={[styles.moodOptionText, mood === option.value && styles.moodOptionTextSelected]}>
-                  {option.label}
+                  {t.mood[option.value]}
                 </Text>
               </Pressable>
             ))}
           </View>
-          <Text style={styles.fieldLabel}>Ghi chú</Text>
+          <Text style={styles.fieldLabel}>{t.composer.noteLabel}</Text>
           <TextInput
             style={styles.noteInput}
             multiline
-            placeholder="Hôm nay có gì muốn ghi lại? (không bắt buộc)"
+            placeholder={t.composer.notePlaceholder}
             placeholderTextColor="#9aa29c"
             value={note}
             onChangeText={setNote}
@@ -115,15 +129,15 @@ export function MomentComposer({
             <View style={styles.aiCard}>
               <View style={styles.aiHeader}>
                 <Ionicons name="sparkles-outline" size={17} color={palette.green} />
-                <Text style={styles.aiTitle}>Gợi ý AI</Text>
+                <Text style={styles.aiTitle}>{t.composer.aiSuggestionTitle}</Text>
               </View>
               <Text style={styles.aiText}>{suggestion}</Text>
               <View style={styles.miniActionRow}>
                 <Pressable style={styles.miniPrimary} onPress={() => setNote(suggestion)}>
-                  <Text style={styles.miniPrimaryText}>Dùng gợi ý</Text>
+                  <Text style={styles.miniPrimaryText}>{t.composer.useSuggestion}</Text>
                 </Pressable>
                 <Pressable style={styles.miniSecondary} onPress={() => setSuggestionVisible(false)}>
-                  <Text style={styles.miniSecondaryText}>Bỏ qua</Text>
+                  <Text style={styles.miniSecondaryText}>{t.composer.ignoreSuggestion}</Text>
                 </Pressable>
               </View>
             </View>
@@ -131,7 +145,7 @@ export function MomentComposer({
         </ScrollView>
         <View style={styles.composerFooter}>
           <Pressable style={styles.saveButton} onPress={save}>
-            <Text style={styles.saveButtonText}>Lưu lại</Text>
+            <Text style={styles.saveButtonText}>{t.composer.saveButton}</Text>
           </Pressable>
         </View>
       </SafeAreaView>

@@ -1,13 +1,21 @@
-import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 import { Entry, Settings, WeeklyReel } from '../types';
+
+let SQLite: any = null;
+if (Platform.OS !== 'web') {
+  SQLite = require('expo-sqlite');
+}
 import { defaultSettings } from '../data/mockData';
 
 const DB_NAME = 'auto_diary.db';
 
 // === Database Instance ===
-let db: SQLite.SQLiteDatabase | null = null;
+let db: any = null;
 
-async function getDB(): Promise<SQLite.SQLiteDatabase> {
+async function getDB(): Promise<any> {
+  if (Platform.OS === 'web') {
+    throw new Error('SQLite not supported on web in this mock');
+  }
   if (!db) {
     db = await SQLite.openDatabaseAsync(DB_NAME);
     await initTables(db);
@@ -16,7 +24,7 @@ async function getDB(): Promise<SQLite.SQLiteDatabase> {
 }
 
 // === Table Initialization ===
-async function initTables(database: SQLite.SQLiteDatabase): Promise<void> {
+async function initTables(database: any): Promise<void> {
   await database.execAsync(`
     CREATE TABLE IF NOT EXISTS entries (
       id TEXT PRIMARY KEY,
@@ -56,14 +64,22 @@ async function initTables(database: SQLite.SQLiteDatabase): Promise<void> {
 // === Entry CRUD ===
 
 export async function getAllEntries(): Promise<Entry[]> {
+  if (Platform.OS === 'web') {
+    const raw = localStorage.getItem('ad_entries');
+    return raw ? JSON.parse(raw) : [];
+  }
   const database = await getDB();
-  const rows = await database.getAllAsync<Record<string, unknown>>('SELECT * FROM entries ORDER BY date, time');
+  const rows = await database.getAllAsync('SELECT * FROM entries ORDER BY date, time');
   return rows.map(rowToEntry);
 }
 
 export async function getEntriesByDate(date: string): Promise<Entry[]> {
+  if (Platform.OS === 'web') {
+    const all = await getAllEntries();
+    return all.filter((e) => e.date === date);
+  }
   const database = await getDB();
-  const rows = await database.getAllAsync<Record<string, unknown>>(
+  const rows = await database.getAllAsync(
     'SELECT * FROM entries WHERE date = ? ORDER BY time',
     [date],
   );
@@ -71,6 +87,15 @@ export async function getEntriesByDate(date: string): Promise<Entry[]> {
 }
 
 export async function insertEntry(entry: Entry): Promise<void> {
+  if (Platform.OS === 'web') {
+    const all = await getAllEntries();
+    const existing = all.findIndex((e) => e.id === entry.id);
+    if (existing >= 0) all[existing] = entry;
+    else all.push(entry);
+    all.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+    localStorage.setItem('ad_entries', JSON.stringify(all));
+    return;
+  }
   const database = await getDB();
   await database.runAsync(
     `INSERT OR REPLACE INTO entries (id, date, time, mood, text, aiSuggestion, imageLocalId, imageUri, locationName, locationLat, locationLon, source, status, isHighlight)
@@ -95,6 +120,16 @@ export async function insertEntry(entry: Entry): Promise<void> {
 }
 
 export async function updateEntryStatus(id: string, status: string, isHighlight: boolean): Promise<void> {
+  if (Platform.OS === 'web') {
+    const all = await getAllEntries();
+    const idx = all.findIndex((e) => e.id === id);
+    if (idx >= 0) {
+      all[idx].status = status as any;
+      all[idx].isHighlight = isHighlight;
+      localStorage.setItem('ad_entries', JSON.stringify(all));
+    }
+    return;
+  }
   const database = await getDB();
   await database.runAsync(
     'UPDATE entries SET status = ?, isHighlight = ? WHERE id = ?',
@@ -103,11 +138,21 @@ export async function updateEntryStatus(id: string, status: string, isHighlight:
 }
 
 export async function deleteEntry(id: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    const all = await getAllEntries();
+    const filtered = all.filter((e) => e.id !== id);
+    localStorage.setItem('ad_entries', JSON.stringify(filtered));
+    return;
+  }
   const database = await getDB();
   await database.runAsync('DELETE FROM entries WHERE id = ?', [id]);
 }
 
 export async function deleteAllEntries(): Promise<void> {
+  if (Platform.OS === 'web') {
+    localStorage.removeItem('ad_entries');
+    return;
+  }
   const database = await getDB();
   await database.runAsync('DELETE FROM entries');
 }
@@ -115,8 +160,13 @@ export async function deleteAllEntries(): Promise<void> {
 // === Settings ===
 
 export async function loadSettings(): Promise<Settings> {
+  if (Platform.OS === 'web') {
+    const raw = localStorage.getItem('ad_settings');
+    const loaded = raw ? JSON.parse(raw) : {};
+    return { ...defaultSettings, ...loaded } as Settings;
+  }
   const database = await getDB();
-  const rows = await database.getAllAsync<{ key: string; value: string }>('SELECT * FROM settings');
+  const rows = await database.getAllAsync('SELECT * FROM settings');
   const loaded: Record<string, unknown> = {};
   for (const row of rows) {
     try {
@@ -129,6 +179,13 @@ export async function loadSettings(): Promise<Settings> {
 }
 
 export async function saveSetting(key: string, value: unknown): Promise<void> {
+  if (Platform.OS === 'web') {
+    const raw = localStorage.getItem('ad_settings');
+    const loaded = raw ? JSON.parse(raw) : {};
+    loaded[key] = value;
+    localStorage.setItem('ad_settings', JSON.stringify(loaded));
+    return;
+  }
   const database = await getDB();
   await database.runAsync(
     'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
@@ -139,12 +196,25 @@ export async function saveSetting(key: string, value: unknown): Promise<void> {
 // === Weekly Reels ===
 
 export async function getAllReels(): Promise<WeeklyReel[]> {
+  if (Platform.OS === 'web') {
+    const raw = localStorage.getItem('ad_reels');
+    return raw ? JSON.parse(raw) : [];
+  }
   const database = await getDB();
-  const rows = await database.getAllAsync<Record<string, unknown>>('SELECT * FROM weekly_reels ORDER BY startDate DESC');
+  const rows = await database.getAllAsync('SELECT * FROM weekly_reels ORDER BY startDate DESC');
   return rows.map(rowToReel);
 }
 
 export async function insertReel(reel: WeeklyReel): Promise<void> {
+  if (Platform.OS === 'web') {
+    const all = await getAllReels();
+    const existing = all.findIndex((r) => r.weekId === reel.weekId);
+    if (existing >= 0) all[existing] = reel;
+    else all.push(reel);
+    all.sort((a, b) => b.startDate.localeCompare(a.startDate));
+    localStorage.setItem('ad_reels', JSON.stringify(all));
+    return;
+  }
   const database = await getDB();
   await database.runAsync(
     `INSERT OR REPLACE INTO weekly_reels (weekId, startDate, endDate, dateRange, entryCount, coverImageId, coverTone, entryIds)

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useTranslation } from '../i18n/translations';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
@@ -17,6 +18,7 @@ export function ReelScreen({
   onOpenDate: (date: string) => void;
   onOpenDay: () => void;
 }) {
+  const { t } = useTranslation();
   const now = new Date();
   const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
   const yearAgoDate = yearAgo.toISOString().slice(0, 10);
@@ -26,7 +28,7 @@ export function ReelScreen({
 
   return (
     <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenHeader title="Xem lại" subtitle="Nhìn lại những ngày đã qua của bạn" />
+      <ScreenHeader title={t.reel.title} subtitle={t.reel.subtitle} />
 
       {/* Hôm nay năm trước */}
       <Pressable
@@ -37,11 +39,11 @@ export function ReelScreen({
         }}
       >
         <View style={styles.yearAgoText}>
-          <Text style={styles.sectionKicker}>Hôm nay năm trước</Text>
+          <Text style={styles.sectionKicker}>{t.reel.todayLastYear}</Text>
           <Text style={styles.yearAgoTitle}>
             {hasYearAgoEntries
-              ? `${yearAgoCount} khoảnh khắc đáng nhớ`
-              : 'Chưa có khoảnh khắc nào'}
+              ? t.reel.memorableMoments(yearAgoCount)
+              : t.reel.noMoments}
           </Text>
         </View>
         <View style={styles.stackThumbs}>
@@ -52,7 +54,7 @@ export function ReelScreen({
       </Pressable>
 
       {/* Tuần của bạn */}
-      <Text style={styles.sectionTitle}>Tuần của bạn</Text>
+      <Text style={styles.sectionTitle}>{t.reel.yourWeek}</Text>
       {reels.length > 0 ? (
         reels.map((reel) => (
           <View key={reel.weekId} style={styles.reelCard}>
@@ -64,16 +66,16 @@ export function ReelScreen({
               <Text style={styles.reelDate}>{reel.dateRange}</Text>
             </View>
             <View style={styles.countChip}>
-              <Text style={styles.countChipText}>{reel.entryCount} khoảnh khắc</Text>
+              <Text style={styles.countChipText}>{t.reel.momentCount(reel.entryCount)}</Text>
             </View>
           </View>
         ))
       ) : (
         <View style={styles.emptyState}>
           <Ionicons name="film-outline" size={28} color={palette.green} />
-          <Text style={styles.emptyTitle}>Chưa có reel nào</Text>
+          <Text style={styles.emptyTitle}>{t.reel.noReelsTitle}</Text>
           <Text style={styles.emptyText}>
-            Khi bạn có đủ khoảnh khắc trong tuần, reel sẽ tự động được tạo.
+            {t.reel.noReelsDesc}
           </Text>
         </View>
       )}

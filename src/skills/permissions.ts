@@ -2,6 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as Location from 'expo-location';
 import { Platform } from 'react-native';
+import { t } from '../i18n/translations';
 import { PermissionState } from '../types';
 
 // === Photo Permission ===
@@ -24,7 +25,7 @@ export async function requestLocationAccess(): Promise<{
   locationLon?: number;
 }> {
   if (Platform.OS === 'web') {
-    return { status: 'unavailable', locationName: 'Web không hỗ trợ vị trí nền' };
+    return { status: 'unavailable', locationName: t().permissions.webUnsupported };
   }
 
   try {
@@ -77,8 +78,8 @@ export async function authenticateWithBiometrics(): Promise<boolean> {
 
   try {
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Mở khóa nhật ký',
-      cancelLabel: 'Hủy',
+      promptMessage: t().permissions.biometricPrompt,
+      cancelLabel: t().common.cancel,
       disableDeviceFallback: false,
     });
     return result.success;

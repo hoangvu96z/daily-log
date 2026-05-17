@@ -30,33 +30,33 @@
 - [x] `mockData.ts` — Added mood `bad` (5 moods complete), added emoji, updated `WeeklyReel`
 
 ### 1.6. Refactor App to Use New Architecture
-- [ ] Refactor `App.tsx` to use Zustand store (`src/memory/store.ts`) instead of custom hook
-- [ ] Replace `src/hooks/useJournalStore.ts` with Zustand store import
-- [ ] Wire up SQLite hydration: on boot, load entries/settings from DB → Zustand
-- [ ] Wire up SQLite persistence: on entry/settings change, sync Zustand → DB
-- [ ] Remove `@react-native-async-storage/async-storage` dependency after migration
+- [x] Refactor `App.tsx` to use Zustand store (`src/memory/store.ts`) instead of custom hook
+- [x] Replace `src/hooks/useJournalStore.ts` with Zustand store import
+- [x] Wire up SQLite hydration: on boot, load entries/settings from DB → Zustand
+- [x] Wire up SQLite persistence: on entry/settings change, sync Zustand → DB
+- [x] Remove `@react-native-async-storage/async-storage` dependency after migration
 
 ### 1.7. Navigation Refactor
-- [ ] Create `src/navigation/TabNavigator.tsx` using `@react-navigation/bottom-tabs`
-- [ ] Create `src/navigation/AppNavigator.tsx` (auth gate → tabs)
-- [ ] Migrate tab switching from `useState` in `App.tsx` to react-navigation
-- [ ] Integrate FAB into custom tab bar component
+- [x] Create `src/navigation/TabNavigator.tsx` using `@react-navigation/bottom-tabs`
+- [x] Create `src/navigation/AppNavigator.tsx` (auth gate → tabs)
+- [x] Migrate tab switching from `useState` in `App.tsx` to react-navigation
+- [x] Integrate FAB into custom tab bar component
 
 ### 1.8. Bottom Sheet Refactor
-- [ ] Replace `Modal`-based `AddMomentSheet.tsx` with `@gorhom/bottom-sheet`
-- [ ] Add gesture dismiss support
+- [x] Replace `Modal`-based `AddMomentSheet.tsx` with `@gorhom/bottom-sheet`
+- [x] Add gesture dismiss support
 
 ---
 
 ## Phase 2: Core Features
 
 ### 2.1. Onboarding Screen
-- [ ] Create `src/screens/OnboardingScreen.tsx` (3-4 slides)
-- [ ] Slide 1: Intro — `i18n: onboarding.slide1Title/Text`
-- [ ] Slide 2: Privacy — `i18n: onboarding.slide2Title/Text`
-- [ ] Slide 3: Permissions — progressive permission requests
-- [ ] Persist "onboarding completed" flag (AsyncStorage or SecureStore)
-- [ ] Show onboarding on first launch only
+- [x] Create `src/screens/OnboardingScreen.tsx` (3-4 slides)
+- [x] Slide 1: Intro — `i18n: onboarding.slide1Title/Text`
+- [x] Slide 2: Privacy — `i18n: onboarding.slide2Title/Text`
+- [x] Slide 3: Permissions — progressive permission requests
+- [x] Persist "onboarding completed" flag (AsyncStorage or SecureStore)
+- [x] Show onboarding on first launch only
 
 ### 2.2. Biometric Auth Gate
 - [ ] Implement app lock screen (shown when `faceIDEnabled === true`)
@@ -82,11 +82,11 @@
 - [ ] Persist theme preference to SQLite
 
 ### 2.6. Language Switching
-- [ ] Wire up language selector in MeScreen
-- [ ] Call `setLanguage()` from `src/i18n/translations.ts`
-- [ ] Replace ALL hardcoded text in screens with `t()` calls
-- [ ] Persist language preference to SQLite
-- [ ] Update `Intl.DateTimeFormat` locale dynamically via `getLocale()`
+- [x] Wire up language selector in MeScreen
+- [x] Call `setLanguage()` from `src/i18n/translations.ts` via custom `useTranslation` hook
+- [x] Replace ALL hardcoded text in screens with `t()` calls
+- [x] Persist language preference to SQLite (fully integrated via store sync)
+- [x] Update `Intl.DateTimeFormat` locale dynamically via `getLocale()`
 
 ---
 
@@ -124,8 +124,8 @@
 - [ ] Fade/slide transitions (calm, journal-like)
 
 ### 4.2. UI Polish
-- [ ] Add emoji to mood chips in MomentComposer and DayScreen (`😞😐🙂😊🤩`)
-- [ ] Fix hardcoded date `'2026-05-16'` in HomeScreen → calculate "yesterday" dynamically
+- [x] Add emoji to mood chips in MomentComposer and DayScreen (`😞😐🙂😊🤩`)
+- [x] Fix hardcoded date `'2026-05-16'` in HomeScreen → calculate "yesterday" dynamically
 - [ ] Implement reverse geocoding (lat/lon → human-readable place name)
 - [ ] Add micro-animations for card transitions
 - [ ] Backup & Restore settings row → implement or mark as "coming soon"
@@ -148,17 +148,17 @@
 
 After `src/i18n/translations.ts` is ready, these files need hardcoded text replaced with `t()` calls:
 
-| File | Hardcoded Strings |
-|------|-------------------|
-| `App.tsx` | `'Đang mở nhật ký riêng...'` |
-| `HomeScreen.tsx` | Title, subtitle, kicker, hero text, buttons, privacy note, mood calendar dialog |
-| `DayScreen.tsx` | Empty state, suggested label, save/discard buttons, date format locale |
-| `ReelScreen.tsx` | Section titles, moment counts |
-| `MeScreen.tsx` | All settings labels, subtitles, delete dialog, permission status text |
-| `AddMomentSheet.tsx` | Sheet title, 3 action titles + subtitles |
-| `MomentComposer.tsx` | Header, add photo, mood label, note placeholder, AI card, save button |
-| `src/skills/permissions.ts` | Biometric prompt text, web unsupported text |
-| `src/skills/aiService.ts` | All mock suggestion strings, mood text |
+| File | Hardcoded Strings | Status |
+|------|-------------------|--------|
+| `App.tsx` | `'Đang mở nhật ký riêng...'` | `[x] Done` |
+| `HomeScreen.tsx` | Title, subtitle, kicker, hero text, buttons, privacy note, mood calendar dialog | `[x] Done` |
+| `DayScreen.tsx` | Empty state, suggested label, save/discard buttons, date format locale | `[x] Done` |
+| `ReelScreen.tsx` | Section titles, moment counts | `[x] Done` |
+| `MeScreen.tsx` | All settings labels, subtitles, delete dialog, permission status text | `[x] Done` |
+| `AddMomentSheet.tsx` | Sheet title, 3 action titles + subtitles | `[x] Done` |
+| `MomentComposer.tsx` | Header, add photo, mood label, note placeholder, AI card, save button | `[x] Done` |
+| `src/skills/permissions.ts` | Biometric prompt text, web unsupported text | `[x] Done` |
+| `src/skills/aiService.ts` | All mock suggestion strings, mood text | `[x] Done` |
 
 ---
 
@@ -167,7 +167,7 @@ After `src/i18n/translations.ts` is ready, these files need hardcoded text repla
 | Phase | Items | Done | Remaining |
 |-------|-------|------|-----------|
 | Phase 1: Architecture | 20 | 12 | 8 |
-| Phase 2: Core Features | 18 | 0 | 18 |
+| Phase 2: Core Features | 18 | 11 | 7 |
 | Phase 3: Auto-Tracking | 10 | 0 | 10 |
-| Phase 4: Polish | 14 | 0 | 14 |
-| **Total** | **62** | **12** | **50** |
+| Phase 4: Polish | 14 | 2 | 12 |
+| **Total** | **62** | **25** | **37** |

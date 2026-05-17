@@ -46,6 +46,9 @@ const vi = {
     moodCalendarTitle: 'Lịch cảm xúc',
     moodCalendarDesc: 'Tóm tắt 7 ngày gần đây từ các entry đã lưu trên máy.',
     emptyMood: 'Trống',
+    emptyYesterday: 'Hôm qua chưa có khoảnh khắc nào được lưu.',
+    welcomeText: 'Chào bạn! Hãy bắt đầu ghi lại khoảnh khắc đầu tiên bằng nút + bên dưới.',
+    entryCount: (count: number) => `${count} entry`,
   },
 
   // --- Day Screen ---
@@ -64,6 +67,9 @@ const vi = {
     memorableMoments: (count: number) => `${count} khoảnh khắc đáng nhớ`,
     yourWeek: 'Tuần của bạn',
     momentCount: (count: number) => `${count} khoảnh khắc`,
+    noMoments: 'Chưa có khoảnh khắc nào',
+    noReelsTitle: 'Chưa có reel nào',
+    noReelsDesc: 'Khi bạn có đủ khoảnh khắc trong tuần, reel sẽ tự động được tạo.',
   },
 
   // --- Add Moment Sheet ---
@@ -170,20 +176,26 @@ const vi = {
 
   // --- Onboarding (future) ---
   onboarding: {
-    slide1Title: 'Nhật ký tự động cho riêng bạn',
-    slide1Text: 'App lặng lẽ ghi lại những khoảnh khắc mỗi ngày, không cần bạn phải ngồi viết.',
-    slide2Title: 'Riêng tư tuyệt đối',
-    slide2Text: 'Không mạng xã hội, không người lạ. Nhật ký chỉ nằm trên máy bạn.',
-    slide3Title: 'Quyền truy cập',
-    slide3Text: 'Cho phép app đọc ảnh, vị trí để tự tạo nhật ký. Bạn có thể bật sau.',
-    allow: 'Cho phép',
-    later: 'Để sau',
+    skip: 'Bỏ qua',
+    slide1Title: 'Nhật ký tự động\ncho riêng bạn',
+    slide1Text: 'App lặng lẽ ghi lại những khoảnh khắc mỗi ngày,\nkhông cần bạn phải ngồi viết.',
+    slide2Title: 'Riêng tư\ntuyệt đối',
+    slide2Text: 'Không mạng xã hội, không người lạ.\nNhật ký chỉ nằm trên máy bạn.',
+    slide3Title: 'AI gợi ý,\nbạn quyết định',
+    slide3Text: 'App dùng AI để tạo gợi ý nhật ký từ ảnh và vị trí.\nBạn chỉ cần chạm xác nhận hoặc bỏ qua.',
+    slide4Title: 'Quyền truy cập',
+    slide4Text: 'Cho phép app đọc ảnh, vị trí để tự tạo nhật ký.\nBạn có thể bật từng quyền sau trong Cài đặt.',
     getStarted: 'Bắt đầu',
   },
 
   // --- Calendar stub ---
   calendar: {
     stubText: 'Lịch: hoàn thành một việc quan trọng',
+  },
+
+  permissions: {
+    webUnsupported: 'Web không hỗ trợ vị trí nền',
+    biometricPrompt: 'Mở khóa nhật ký',
   },
 };
 
@@ -227,6 +239,9 @@ const en: typeof vi = {
     moodCalendarTitle: 'Mood Calendar',
     moodCalendarDesc: 'Summary of the last 7 days from entries saved on your device.',
     emptyMood: 'Empty',
+    emptyYesterday: 'No moments recorded yesterday.',
+    welcomeText: 'Welcome! Start capturing your first moment with the + button below.',
+    entryCount: (count: number) => `${count} ${count === 1 ? 'entry' : 'entries'}`,
   },
 
   day: {
@@ -242,7 +257,10 @@ const en: typeof vi = {
     todayLastYear: 'Today Last Year',
     memorableMoments: (count: number) => `${count} memorable moments`,
     yourWeek: 'Your Week',
-    momentCount: (count: number) => `${count} moments`,
+    momentCount: (count: number) => `${count} ${count === 1 ? 'moment' : 'moments'}`,
+    noMoments: 'No moments yet',
+    noReelsTitle: 'No reels yet',
+    noReelsDesc: 'When you have enough moments this week, a weekly reel will be automatically generated.',
   },
 
   addMoment: {
@@ -336,19 +354,25 @@ const en: typeof vi = {
   },
 
   onboarding: {
-    slide1Title: 'An automatic diary just for you',
-    slide1Text: 'The app quietly records moments every day without you needing to write.',
-    slide2Title: 'Completely private',
-    slide2Text: 'No social networks, no strangers. Your diary stays on your device.',
-    slide3Title: 'Permissions',
-    slide3Text: 'Allow the app to read photos and location to auto-create your diary. You can enable later.',
-    allow: 'Allow',
-    later: 'Later',
+    skip: 'Skip',
+    slide1Title: 'An automatic diary\njust for you',
+    slide1Text: 'The app quietly records moments every day,\nwithout you needing to write.',
+    slide2Title: 'Completely\nprivate',
+    slide2Text: 'No social networks, no strangers.\nYour diary stays on your device.',
+    slide3Title: 'AI suggests,\nyou decide',
+    slide3Text: 'The app uses AI to suggest entries from photos and location.\nYou just tap to confirm or dismiss.',
+    slide4Title: 'Access permissions',
+    slide4Text: 'Allow the app to read photos and location to auto-create diary.\nYou can enable them individually later in Settings.',
     getStarted: 'Get Started',
   },
 
   calendar: {
     stubText: 'Calendar: completed an important task',
+  },
+
+  permissions: {
+    webUnsupported: 'Web does not support background location',
+    biometricPrompt: 'Unlock diary',
   },
 };
 
@@ -369,6 +393,16 @@ export function getLanguage(): Language {
 
 export function t(): typeof vi {
   return translations[currentLanguage];
+}
+
+import { useJournalStore } from '../memory/store';
+
+export function useTranslation() {
+  const language = useJournalStore((state) => state.settings?.language || 'vi');
+  return {
+    t: translations[language],
+    lang: language,
+  };
 }
 
 /**

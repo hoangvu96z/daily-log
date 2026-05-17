@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useTranslation, getLocale } from '../i18n/translations';
 import { ImagePlaceholder } from '../components/ImagePlaceholder';
 import { moodEmoji, moodLabels } from '../data/mockData';
 import { styles } from '../styles';
@@ -20,14 +21,16 @@ export function DayScreen({
   onSaveSuggestion: (id: string) => void;
   onDiscardSuggestion: (id: string) => void;
 }) {
+  const { t } = useTranslation();
+  const locale = getLocale();
   const dayEntries = entries.filter((entry) => entry.date === selectedDate);
 
   return (
     <ScrollView contentContainerStyle={styles.screenContent}>
       <View style={styles.dayHeader}>
         <View>
-          <Text style={styles.screenTitle}>{formatDateTitle(selectedDate)}</Text>
-          <Text style={styles.screenSubtitle}>{dayEntries.length} khoảnh khắc trong ngày</Text>
+          <Text style={styles.screenTitle}>{formatDateTitle(selectedDate, locale)}</Text>
+          <Text style={styles.screenSubtitle}>{t.day.momentsInDay(dayEntries.length)}</Text>
         </View>
         <View style={styles.dateNav}>
           <Pressable style={styles.iconButton} onPress={() => onChangeDate(shiftDate(selectedDate, -1))}>
@@ -42,8 +45,8 @@ export function DayScreen({
         {dayEntries.length === 0 && (
           <View style={styles.emptyState}>
             <Ionicons name="journal-outline" size={28} color={palette.green} />
-            <Text style={styles.emptyTitle}>Chưa có khoảnh khắc</Text>
-            <Text style={styles.emptyText}>Bấm nút + để thêm ghi chú, ảnh hoặc mốc từ lịch cho ngày này.</Text>
+            <Text style={styles.emptyTitle}>{t.day.emptyTitle}</Text>
+            <Text style={styles.emptyText}>{t.day.emptyText}</Text>
           </View>
         )}
         {dayEntries.map((entry) => (
@@ -52,6 +55,7 @@ export function DayScreen({
             entry={entry}
             onSave={() => onSaveSuggestion(entry.id)}
             onDiscard={() => onDiscardSuggestion(entry.id)}
+            t={t}
           />
         ))}
       </View>
@@ -65,15 +69,15 @@ function shiftDate(date: string, days: number) {
   return next.toISOString().slice(0, 10);
 }
 
-function formatDateTitle(date: string) {
-  return new Intl.DateTimeFormat('vi-VN', {
+function formatDateTitle(date: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
   }).format(new Date(`${date}T12:00:00`));
 }
 
-function TimelineCard({ entry, onSave, onDiscard }: { entry: Entry; onSave: () => void; onDiscard: () => void }) {
+function TimelineCard({ entry, onSave, onDiscard, t }: { entry: Entry; onSave: () => void; onDiscard: () => void; t: any }) {
   const suggested = entry.status === 'suggested';
 
   return (
@@ -87,19 +91,19 @@ function TimelineCard({ entry, onSave, onDiscard }: { entry: Entry; onSave: () =
         <View style={styles.entryTopRow}>
           <Text style={styles.entryTime}>{entry.time}</Text>
           <View style={styles.moodChip}>
-            <Text style={styles.moodText}>{moodEmoji[entry.mood]} {moodLabels[entry.mood]}</Text>
+            <Text style={styles.moodText}>{moodEmoji[entry.mood]} {t.mood[entry.mood]}</Text>
           </View>
-          {suggested && <Text style={styles.suggestedLabel}>Gợi ý</Text>}
+          {suggested && <Text style={styles.suggestedLabel}>{t.day.suggested}</Text>}
         </View>
         <Text style={styles.entryText}>{entry.text}</Text>
         {entry.imageLocalId && <ImagePlaceholder label={entry.imageLocalId} uri={entry.imageUri} />}
         {suggested && (
           <View style={styles.miniActionRow}>
             <Pressable style={styles.miniPrimary} onPress={onSave}>
-              <Text style={styles.miniPrimaryText}>Lưu</Text>
+              <Text style={styles.miniPrimaryText}>{t.common.save}</Text>
             </Pressable>
             <Pressable style={styles.miniSecondary} onPress={onDiscard}>
-              <Text style={styles.miniSecondaryText}>Bỏ</Text>
+              <Text style={styles.miniSecondaryText}>{t.common.discard}</Text>
             </Pressable>
           </View>
         )}

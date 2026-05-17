@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Entry, Settings, TabKey, WeeklyReel } from '../types';
 import { defaultSettings } from '../data/mockData';
+import { deleteAllEntries, deleteEntry, getAllEntries, getAllReels, insertEntry, loadSettings, saveSetting, updateEntryStatus } from './database';
 
 // === Store Interface ===
 interface JournalState {
@@ -10,19 +11,22 @@ interface JournalState {
 
   // Onboarding
   onboardingComplete: boolean;
-  setOnboardingComplete: (value: boolean) => void;
+  setOnboardingComplete: (value: boolean) => Promise<void>;
+
+  // Initialization
+  initStore: () => Promise<void>;
 
   // Entries
   entries: Entry[];
-  addEntry: (entry: Entry) => void;
-  saveSuggestion: (id: string) => void;
-  discardSuggestion: (id: string) => void;
-  resetEntries: () => void;
+  addEntry: (entry: Entry) => Promise<void>;
+  saveSuggestion: (id: string) => Promise<void>;
+  discardSuggestion: (id: string) => Promise<void>;
+  resetEntries: () => Promise<void>;
   setEntries: (entries: Entry[]) => void;
 
   // Settings
   settings: Settings;
-  updateSettings: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
+  updateSettings: <K extends keyof Settings>(key: K, value: Settings[K]) => Promise<void>;
   setSettings: (settings: Settings) => void;
 
   // Weekly Reels
@@ -48,33 +52,64 @@ export const useJournalStore = create<JournalState>((set) => ({
 
   // Onboarding — starts as not complete
   onboardingComplete: false,
-  setOnboardingComplete: (value) => set({ onboardingComplete: value }),
+  setOnboardingComplete: async (value) => {
+    set({ onboardingComplete: value });
+    await saveSetting('onboardingComplete', value);
+  },
+
+  // Initialization
+  initStore: async () => {
+    const [entries, settings, reels] = await Promise.all([
+      getAllEntries(),
+      loadSettings(),
+      getAllReels(),
+    ]);
+    const onboardingFlag = (settings as any).onboardingComplete === true;
+    set({
+      entries,
+      settings,
+      reels,
+      onboardingComplete: onboardingFlag,
+      hydrated: true,
+    });
+  },
 
   // Entries — start empty, no mock data
   entries: [],
-  addEntry: (entry) =>
+  addEntry: async (entry) => {
+    await insertEntry(entry);
     set((state) => ({
       entries: [...state.entries, entry].sort((a, b) => a.time.localeCompare(b.time)),
-    })),
-  saveSuggestion: (id) =>
+    }));
+  },
+  saveSuggestion: async (id) => {
+    await updateEntryStatus(id, 'saved', true);
     set((state) => ({
       entries: state.entries.map((e) =>
         e.id === id ? { ...e, status: 'saved' as const, isHighlight: true } : e,
       ),
-    })),
-  discardSuggestion: (id) =>
+    }));
+  },
+  discardSuggestion: async (id) => {
+    await deleteEntry(id);
     set((state) => ({
       entries: state.entries.filter((e) => e.id !== id),
-    })),
-  resetEntries: () => set({ entries: [] }),
+    }));
+  },
+  resetEntries: async () => {
+    await deleteAllEntries();
+    set({ entries: [] });
+  },
   setEntries: (entries) => set({ entries }),
 
   // Settings — all permissions off by default
   settings: defaultSettings,
-  updateSettings: (key, value) =>
+  updateSettings: async (key, value) => {
+    await saveSetting(key as string, value);
     set((state) => ({
       settings: { ...state.settings, [key]: value },
-    })),
+    }));
+  },
   setSettings: (settings) => set({ settings }),
 
   // Weekly Reels — start empty

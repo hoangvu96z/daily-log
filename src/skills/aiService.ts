@@ -1,4 +1,5 @@
 import { ComposerMode, Mood } from '../types';
+import { t } from '../i18n/translations';
 
 // === AI Service Interface ===
 
@@ -41,33 +42,34 @@ export const aiService: AISuggestionService = new MockAISuggestionService();
 // === Mock Text Generation ===
 
 function createMockSuggestion(input: AISuggestionInput): string {
+  const dictionary = t();
   if (input.calendarText) {
-    return `${input.calendarText} được giữ lại như một mốc nhỏ trong ngày, đủ để nhớ khi xem lại.`;
+    return `${input.calendarText} ${dictionary.ai.calendarSuffix}`;
   }
 
   if (input.mode === 'photo') {
     if (input.locationName) {
-      return `Một khoảnh khắc ở ${input.locationName}, được lưu lại nhẹ nhàng cùng cảm giác ${moodText(input.mood)}.`;
+      return dictionary.ai.photoWithLocation(input.locationName, moodText(input.mood, dictionary));
     }
-    return `Một khoảnh khắc có ảnh được lưu lại, vừa đủ để nhớ nhịp của ngày hôm nay.`;
+    return dictionary.ai.photoGeneric;
   }
 
-  return `Một ghi chú ngắn trong ngày, không cần quá dài, chỉ để sau này bạn nhận ra mình đã đi qua gì.`;
+  return dictionary.ai.noteGeneric;
 }
 
-function moodText(mood: Mood): string {
+function moodText(mood: Mood, dictionary: any): string {
   switch (mood) {
     case 'very_bad':
-      return 'khá nặng';
+      return dictionary.ai.moodTextVeryBad;
     case 'bad':
-      return 'chậm lại';
+      return dictionary.ai.moodTextBad;
     case 'good':
-      return 'ổn';
+      return dictionary.ai.moodTextGood;
     case 'great':
-      return 'rất sáng';
+      return dictionary.ai.moodTextGreat;
     case 'neutral':
     default:
-      return 'bình thường';
+      return dictionary.ai.moodTextNeutral;
   }
 }
 

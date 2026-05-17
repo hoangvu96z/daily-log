@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { useTranslation } from '../i18n/translations';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { requestLocationAccess, requestPhotoAccess } from '../services/permissions';
 import { styles } from '../styles';
@@ -18,6 +19,7 @@ export function MeScreen({
   entriesCount: number;
   onResetJournal: () => Promise<void>;
 }) {
+  const { t, lang } = useTranslation();
   const [deleteVisible, setDeleteVisible] = useState(false);
   const [deleteText, setDeleteText] = useState('');
 
@@ -50,7 +52,7 @@ export function MeScreen({
   };
 
   const confirmDelete = async () => {
-    if (deleteText.trim().toUpperCase() !== 'XÓA') {
+    if (deleteText.trim().toUpperCase() !== t.settings.deleteConfirmWord) {
       return;
     }
     await onResetJournal();
@@ -60,44 +62,49 @@ export function MeScreen({
 
   return (
     <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenHeader title="Cài đặt" subtitle="Quyền riêng tư và ứng dụng" />
-      <SettingsCard title="Quyền & dữ liệu">
-        <SettingsRow icon="shield-checkmark-outline" title="Quyền truy cập" subtitle="Ảnh, vị trí, hoạt động ứng dụng..." />
+      <ScreenHeader title={t.settings.title} subtitle={t.settings.subtitle} />
+      <SettingsCard title={t.settings.permissionsGroup}>
+        <SettingsRow icon="shield-checkmark-outline" title={t.settings.permissionsTitle} subtitle={t.settings.permissionsSubtitle} />
         <ToggleRow
-          title={`Ảnh & video${settings.photoPermissionStatus ? ` • ${permissionText(settings.photoPermissionStatus)}` : ''}`}
+          title={`${t.settings.photosAndVideo}${settings.photoPermissionStatus ? ` • ${permissionText(settings.photoPermissionStatus, t)}` : ''}`}
           value={settings.allowPhotos}
           onValueChange={togglePhotos}
         />
         <ToggleRow
-          title={`Vị trí${settings.locationPermissionStatus ? ` • ${permissionText(settings.locationPermissionStatus)}` : ''}`}
+          title={`${t.settings.location}${settings.locationPermissionStatus ? ` • ${permissionText(settings.locationPermissionStatus, t)}` : ''}`}
           value={settings.allowLocation}
           onValueChange={toggleLocation}
         />
-        <SettingsRow icon="cloud-outline" title="Sao lưu & khôi phục" subtitle="Backup iCloud/Drive, khôi phục khi đổi máy" />
+        <SettingsRow icon="cloud-outline" title={t.settings.backupTitle} subtitle={t.settings.backupSubtitle} />
         <SettingsRow
           danger
           icon="trash-outline"
-          title="Xóa toàn bộ nhật ký"
-          subtitle={`${entriesCount} entry trên thiết bị này`}
+          title={t.settings.deleteAllTitle}
+          subtitle={t.settings.deleteAllSubtitle(entriesCount)}
           onPress={() => setDeleteVisible(true)}
         />
       </SettingsCard>
-      <SettingsCard title="Bảo vệ nhật ký">
+      <SettingsCard title={t.settings.protectionGroup}>
         <ToggleRow
-          title={settings.biometricAvailable ? 'Khóa Face ID / vân tay' : 'Face ID / vân tay chưa khả dụng'}
+          title={settings.biometricAvailable ? t.settings.faceIDEnabled : t.settings.faceIDUnavailable}
           value={settings.faceIDEnabled}
           onValueChange={(value) => settings.biometricAvailable && updateSetting('faceIDEnabled', value)}
         />
-        <SettingsRow icon="keypad-outline" title="Mã PIN mở app" subtitle="Dùng khi không muốn Face ID" />
+        <SettingsRow icon="keypad-outline" title={t.settings.pinTitle} subtitle={t.settings.pinSubtitle} />
       </SettingsCard>
-      <SettingsCard title="Ứng dụng">
-        <SettingsRow icon="notifications-outline" title="Thông báo" subtitle="Daily và weekly reminder" />
-        <SettingsRow icon="contrast-outline" title="Giao diện" subtitle="Theo hệ thống" />
-        <SettingsRow icon="language-outline" title="Ngôn ngữ" subtitle="Tiếng Việt" />
+      <SettingsCard title={t.settings.appGroup}>
+        <SettingsRow icon="notifications-outline" title={t.settings.notifications} subtitle={t.settings.notificationsSubtitle} />
+        <SettingsRow icon="contrast-outline" title={t.settings.theme} subtitle={settings.theme === 'light' ? t.settings.themeLight : settings.theme === 'dark' ? t.settings.themeDark : t.settings.themeSystem} />
+        <SettingsRow
+          icon="language-outline"
+          title={t.settings.language}
+          subtitle={lang === 'vi' ? t.settings.languageVi : t.settings.languageEn}
+          onPress={() => updateSetting('language', lang === 'vi' ? 'en' : 'vi')}
+        />
       </SettingsCard>
       <View style={styles.footerLinks}>
-        <Text style={styles.footerLink}>Chính sách quyền riêng tư</Text>
-        <Text style={styles.footerLink}>Điều khoản sử dụng</Text>
+        <Text style={styles.footerLink}>{t.settings.privacyPolicy}</Text>
+        <Text style={styles.footerLink}>{t.settings.termsOfUse}</Text>
       </View>
       <DeleteJournalDialog
         visible={deleteVisible}
@@ -105,6 +112,7 @@ export function MeScreen({
         onChangeText={setDeleteText}
         onCancel={() => setDeleteVisible(false)}
         onConfirm={confirmDelete}
+        t={t}
       />
     </ScrollView>
   );
@@ -161,33 +169,35 @@ function DeleteJournalDialog({
   onChangeText,
   onCancel,
   onConfirm,
+  t,
 }: {
   visible: boolean;
   value: string;
   onChangeText: (value: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
+  t: any;
 }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.dialogScrim}>
         <View style={styles.dialogCard}>
-          <Text style={styles.dialogTitle}>Xóa toàn bộ nhật ký?</Text>
-          <Text style={styles.dialogText}>Nhập XÓA để xác nhận. Dữ liệu local sẽ bị xóa khỏi thiết bị này.</Text>
+          <Text style={styles.dialogTitle}>{t.settings.deleteDialogTitle}</Text>
+          <Text style={styles.dialogText}>{t.settings.deleteDialogText}</Text>
           <TextInput
             style={styles.confirmInput}
             value={value}
             onChangeText={onChangeText}
             autoCapitalize="characters"
-            placeholder="XÓA"
+            placeholder={t.settings.deleteConfirmWord}
             placeholderTextColor="#9aa29c"
           />
           <View style={styles.dialogActions}>
             <Pressable style={styles.dialogSecondary} onPress={onCancel}>
-              <Text style={styles.dialogSecondaryText}>Hủy</Text>
+              <Text style={styles.dialogSecondaryText}>{t.common.cancel}</Text>
             </Pressable>
             <Pressable style={styles.dialogDanger} onPress={onConfirm}>
-              <Text style={styles.dialogDangerText}>Xóa</Text>
+              <Text style={styles.dialogDangerText}>{t.common.delete}</Text>
             </Pressable>
           </View>
         </View>
@@ -196,15 +206,15 @@ function DeleteJournalDialog({
   );
 }
 
-function permissionText(status: string) {
+function permissionText(status: string, t: any) {
   switch (status) {
     case 'granted':
-      return 'đã cho phép';
+      return t.settings.permissionGranted;
     case 'denied':
-      return 'bị từ chối';
+      return t.settings.permissionDenied;
     case 'unavailable':
-      return 'không hỗ trợ';
+      return t.settings.permissionUnavailable;
     default:
-      return 'chưa hỏi';
+      return t.settings.permissionUnknown;
   }
 }
