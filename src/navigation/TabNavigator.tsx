@@ -65,6 +65,7 @@ export function TabNavigator() {
       <Tab.Navigator
         tabBar={(props) => <BottomTabs {...props} onAddPress={() => setSheetVisible(true)} />}
         screenOptions={{ headerShown: false }}
+        sceneContainerStyle={{ backgroundColor: 'transparent' }}
       >
         <Tab.Screen name="home">
           {(props) => (
@@ -107,9 +108,10 @@ export function TabNavigator() {
               {...props}
               settings={settings}
               onChangeSettings={(s) => {
-                Object.keys(s).forEach((k) => {
-                  if (s[k as keyof typeof s] !== settings[k as keyof typeof settings]) {
-                    updateSettings(k as keyof typeof s, s[k as keyof typeof s]);
+                const nextSettings = typeof s === 'function' ? s(settings) : s;
+                Object.keys(nextSettings).forEach((k) => {
+                  if (nextSettings[k as keyof typeof nextSettings] !== settings[k as keyof typeof settings]) {
+                    updateSettings(k as any, nextSettings[k as keyof typeof nextSettings]);
                   }
                 });
               }}

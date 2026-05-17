@@ -7,7 +7,7 @@ export const defaultSettings: Settings = {
   allowUsage: false,
   allowCalendar: false,
   faceIDEnabled: false,
-  theme: 'system',
+  theme: 'light',
   language: 'vi',
 };
 

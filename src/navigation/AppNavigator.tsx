@@ -1,4 +1,4 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { useJournalStore } from '../memory/store';
@@ -7,12 +7,20 @@ import { TabNavigator } from './TabNavigator';
 
 const Stack = createNativeStackNavigator();
 
+const DarkSanctuaryTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: 'transparent',
+  },
+};
+
 export function AppNavigator() {
   const { onboardingComplete, setOnboardingComplete } = useJournalStore();
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <NavigationContainer theme={DarkSanctuaryTheme}>
+      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
         {!onboardingComplete ? (
           <Stack.Screen name="Onboarding">
             {(props) => (

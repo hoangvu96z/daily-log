@@ -94,7 +94,15 @@ export function MeScreen({
       </SettingsCard>
       <SettingsCard title={t.settings.appGroup}>
         <SettingsRow icon="notifications-outline" title={t.settings.notifications} subtitle={t.settings.notificationsSubtitle} />
-        <SettingsRow icon="contrast-outline" title={t.settings.theme} subtitle={settings.theme === 'light' ? t.settings.themeLight : settings.theme === 'dark' ? t.settings.themeDark : t.settings.themeSystem} />
+        <SettingsRow
+          icon="contrast-outline"
+          title={t.settings.theme}
+          subtitle={settings.theme === 'light' ? t.settings.themeLight : settings.theme === 'dark' ? t.settings.themeDark : t.settings.themeSystem}
+          onPress={() => {
+            const nextTheme = settings.theme === 'light' ? 'dark' : settings.theme === 'dark' ? 'system' : 'light';
+            updateSetting('theme', nextTheme);
+          }}
+        />
         <SettingsRow
           icon="language-outline"
           title={t.settings.language}
