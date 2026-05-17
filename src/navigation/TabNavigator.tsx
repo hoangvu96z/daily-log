@@ -9,7 +9,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { MeScreen } from '../screens/MeScreen';
 import { ReelScreen } from '../screens/ReelScreen';
 import { pickMomentImage } from '../services/imagePicker';
-import { requestLocationAccess } from '../services/permissions';
+import { requestLocationAccess } from '../skills/permissions';
 import { ComposerDraft, ComposerMode, Entry } from '../types';
 
 const Tab = createBottomTabNavigator();

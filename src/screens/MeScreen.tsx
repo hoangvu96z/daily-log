@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { useTranslation } from '../i18n/translations';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { requestLocationAccess, requestPhotoAccess } from '../services/permissions';
+import { requestLocationAccess, requestPhotoAccess } from '../skills/permissions';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { Settings } from '../types';

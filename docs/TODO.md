@@ -59,9 +59,9 @@
 - [x] Show onboarding on first launch only
 
 ### 2.2. Biometric Auth Gate
-- [ ] Implement app lock screen (shown when `faceIDEnabled === true`)
-- [ ] Call `authenticateWithBiometrics()` from `src/skills/permissions.ts`
-- [ ] Integrate into `AppNavigator` (auth gate before tab navigator)
+- [x] Implement app lock screen (shown when `faceIDEnabled === true`) — `src/screens/LockScreen.tsx`
+- [x] Call `authenticateWithBiometrics()` from `src/skills/permissions.ts`
+- [x] Integrate into `AppNavigator` (auth gate before tab navigator)
 
 ### 2.3. PIN Code
 - [ ] Create PIN setup screen (set/change PIN)
@@ -75,11 +75,12 @@
 - [ ] Replace stub text `calendar.stubText` with real event data
 - [ ] Prefill time and text from selected calendar event
 
-### 2.5. Theme Switching
+### 2.5. Theme Switching & Color Palettes
 - [ ] Wire up theme toggle in MeScreen (Light / Dark / System)
-- [ ] Create theme provider using Zustand `settings.theme`
-- [ ] Apply theme colors dynamically to palette/styles
-- [ ] Persist theme preference to SQLite
+- [ ] Implement color scheme picker (e.g., Sage Green, Ocean Blue, Lavender, Terracotta) in Settings
+- [ ] Create theme provider using Zustand `settings.theme` and `settings.accentColor`
+- [ ] Apply dynamic color palettes to overall components and primary accents
+- [ ] Persist theme & accent color preferences to SQLite
 
 ### 2.6. Language Switching
 - [x] Wire up language selector in MeScreen
@@ -87,6 +88,12 @@
 - [x] Replace ALL hardcoded text in screens with `t()` calls
 - [x] Persist language preference to SQLite (fully integrated via store sync)
 - [x] Update `Intl.DateTimeFormat` locale dynamically via `getLocale()`
+
+### 2.7. Custom Wallpaper
+- [ ] Implement custom wallpaper upload in Settings (`MeScreen`)
+- [ ] Use `expo-image-picker` to select background image
+- [ ] Save custom wallpaper URI to SQLite settings database
+- [ ] Display custom wallpaper as app background dynamically in `App.tsx` with light opacity
 
 ---
 
@@ -138,7 +145,7 @@
 ### 4.4. Cleanup
 - [ ] Remove legacy `src/hooks/useJournalStore.ts` (after Zustand migration complete)
 - [ ] Remove legacy `src/services/aiSuggestion.ts` (replaced by `src/skills/aiService.ts`)
-- [ ] Remove legacy `src/services/permissions.ts` (replaced by `src/skills/permissions.ts`)
+- [x] Remove legacy `src/services/permissions.ts` (replaced by `src/skills/permissions.ts`)
 - [ ] Remove `@react-native-async-storage/async-storage` from `package.json`
 - [ ] Verify TypeScript strict mode passes
 

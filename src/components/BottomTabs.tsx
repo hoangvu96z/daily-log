@@ -47,7 +47,7 @@ export function BottomTabs({ state, descriptors, navigation, onAddPress }: Botto
       </View>
       
       <Pressable style={styles.fab} onPress={onAddPress}>
-        <Ionicons name="add" size={30} color={palette.white} />
+        <Ionicons name="add" size={30} color={palette.paper} />
       </Pressable>
     </>
   );

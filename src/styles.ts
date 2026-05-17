@@ -254,7 +254,7 @@ const lightStyles = StyleSheet.create({
   },
   fab: {
     alignItems: 'center',
-    backgroundColor: lightPalette.primaryContainer,
+    backgroundColor: lightPalette.primary,
     borderColor: lightPalette.background,
     borderRadius: 34,
     borderWidth: 5,
@@ -1140,7 +1140,7 @@ const darkStyles = StyleSheet.create({
   },
   fab: {
     alignItems: 'center',
-    backgroundColor: darkPalette.slate,
+    backgroundColor: darkPalette.primary,
     borderColor: darkPalette.background,
     borderRadius: 34,
     borderWidth: 5,
@@ -1873,7 +1873,30 @@ const getActiveStyles = () => {
 export const styles = new Proxy({} as typeof lightStyles, {
   get(target, prop) {
     const activeStyles = getActiveStyles();
-    return activeStyles[prop as keyof typeof lightStyles];
+    const styleObj = activeStyles[prop as keyof typeof lightStyles];
+    
+    // Inject modern Plus Jakarta Sans Google Font dynamically for any text-related styles
+    if (styleObj && typeof styleObj === 'object') {
+      const flat = StyleSheet.flatten(styleObj);
+      if (flat && (flat.fontSize !== undefined || flat.color !== undefined || flat.fontWeight !== undefined || flat.lineHeight !== undefined)) {
+        let fontFamily = 'PlusJakartaSans_400Regular';
+        if (flat.fontWeight === '800' || flat.fontWeight === 'bold' || flat.fontWeight === '900') {
+          fontFamily = 'PlusJakartaSans_800ExtraBold';
+        } else if (flat.fontWeight === '700') {
+          fontFamily = 'PlusJakartaSans_700Bold';
+        } else if (flat.fontWeight === '600') {
+          fontFamily = 'PlusJakartaSans_600SemiBold';
+        } else if (flat.fontWeight === '500') {
+          fontFamily = 'PlusJakartaSans_500Medium';
+        }
+        return {
+          ...flat,
+          fontFamily,
+        };
+      }
+      return flat;
+    }
+    return styleObj;
   },
   ownKeys() {
     return Reflect.ownKeys(lightStyles);

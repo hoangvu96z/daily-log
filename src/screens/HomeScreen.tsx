@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useTranslation, getLocale } from '../i18n/translations';
-import { ScreenHeader } from '../components/ScreenHeader';
 import { moodEmoji, moodLabels } from '../data/mockData';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
@@ -58,7 +57,7 @@ export function HomeScreen({ entries, onOpenDay }: { entries: Entry[]; onOpenDay
     let sentimentBonus = 0;
     highlights.forEach((e) => {
       const text = (e.text || '').toLowerCase();
-      
+
       keywords.positive.forEach((word) => {
         if (text.includes(word)) sentimentBonus += 3;
       });
@@ -71,7 +70,7 @@ export function HomeScreen({ entries, onOpenDay }: { entries: Entry[]; onOpenDay
     let activityBonus = 0;
     highlights.forEach((e) => {
       const text = (e.text || '').toLowerCase();
-      
+
       keywords.mindful.forEach((word) => {
         if (text.includes(word)) activityBonus += 5;
       });
@@ -107,7 +106,7 @@ export function HomeScreen({ entries, onOpenDay }: { entries: Entry[]; onOpenDay
             <Text style={styles.cardKicker}>{t.home.kicker}</Text>
             <Ionicons name="sparkles-sharp" size={18} color={palette.primary} />
           </View>
-          
+
           {highlights.length > 0 ? (
             <>
               <Text style={styles.heroTitle}>{t.home.heroText}</Text>
@@ -133,8 +132,8 @@ export function HomeScreen({ entries, onOpenDay }: { entries: Entry[]; onOpenDay
                 {entries.length > 0 ? t.home.emptyYesterday : t.home.welcomeText}
               </Text>
               <Text style={[styles.screenSubtitle, { marginTop: 6, fontSize: 14, opacity: 0.8 }]}>
-                {entries.length > 0 
-                  ? homeT.emptyYesterday 
+                {entries.length > 0
+                  ? homeT.emptyYesterday
                   : t.home.welcomeText}
               </Text>
             </View>
@@ -144,7 +143,7 @@ export function HomeScreen({ entries, onOpenDay }: { entries: Entry[]; onOpenDay
         {/* Card 2: Peace Index Card */}
         <View style={[styles.heroCard, { alignItems: 'center', paddingVertical: 24 }]}>
           <Text style={[styles.cardKicker, { marginBottom: 16 }]}>{homeT.peaceIndex}</Text>
-          
+
           <View style={{
             width: 120,
             height: 120,
@@ -175,11 +174,11 @@ export function HomeScreen({ entries, onOpenDay }: { entries: Entry[]; onOpenDay
           </View>
 
           <Text style={[styles.screenSubtitle, { marginTop: 16, textAlign: 'center', fontSize: 14 }]}>
-            {peaceIndex >= 80 
+            {peaceIndex >= 80
               ? homeT.serenityOptimal
-              : peaceIndex >= 60 
-              ? homeT.serenityModerate
-              : homeT.serenityMindful}
+              : peaceIndex >= 60
+                ? homeT.serenityModerate
+                : homeT.serenityMindful}
           </Text>
         </View>
 
@@ -200,10 +199,10 @@ export function HomeScreen({ entries, onOpenDay }: { entries: Entry[]; onOpenDay
         </View>
 
         {/* Card 4: Additional Insights Button */}
-        <Pressable 
-          style={[styles.heroCard, { 
-            flexDirection: 'row', 
-            justifyContent: 'space-between', 
+        <Pressable
+          style={[styles.heroCard, {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
             alignItems: 'center',
             paddingVertical: 14,
             backgroundColor: palette.primaryContainer,

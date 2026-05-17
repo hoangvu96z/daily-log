@@ -8,13 +8,29 @@ import { useTranslation } from './src/i18n/translations';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useJournalStore } from './src/memory/store';
 import { AppNavigator } from './src/navigation/AppNavigator';
-import { checkBiometricAvailability } from './src/services/permissions';
+import { checkBiometricAvailability } from './src/skills/permissions';
+import {
+  useFonts,
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
 import { styles } from './src/styles';
 import { palette } from './src/theme/palette';
 
 export default function App() {
   const { hydrated, initStore, updateSettings, settings } = useJournalStore();
   const { t } = useTranslation();
+
+  const [fontsLoaded] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+  });
 
   useEffect(() => {
     initStore();
@@ -30,7 +46,7 @@ export default function App() {
   const systemColorScheme = Appearance.getColorScheme();
   const activeTheme = storeTheme === 'system' ? (systemColorScheme || 'light') : (storeTheme || 'light');
 
-  if (!hydrated) {
+  if (!hydrated || !fontsLoaded) {
     return (
       <SafeAreaView style={styles.root}>
         <StatusBar style={activeTheme === 'dark' ? 'light' : 'dark'} />
