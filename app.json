@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Nhat Ky Rieng",
+    "slug": "private-auto-journal",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#f7f0e6"
+      }
+    }
+  }
+}
