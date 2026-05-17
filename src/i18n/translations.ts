@@ -49,6 +49,16 @@ const vi = {
     emptyYesterday: 'Hôm qua chưa có khoảnh khắc nào được lưu.',
     welcomeText: 'Chào bạn! Hãy bắt đầu ghi lại khoảnh khắc đầu tiên bằng nút + bên dưới.',
     entryCount: (count: number) => `${count} entry`,
+    // Bento Grid and Insights Additions
+    peaceIndex: 'Chỉ số bình yên',
+    serenityOptimal: 'Đã đạt mức bình yên tối ưu.',
+    serenityModerate: 'Trạng thái bình yên vừa phải.',
+    serenityMindful: 'Khuyến nghị nên thực hành chánh niệm hôm nay.',
+    dailyInsights: 'Gợi ý suy ngẫm',
+    luminousInsights: 'Gợi ý từ Luminous',
+    insightsDesc: 'Dựa trên các bài nhật ký gần đây của bạn:',
+    insightsText: '"Năng lượng của bạn lưu chuyển tuyệt vời nhất khi đi dạo ngoài thiên nhiên và dành thời gian viết nhật ký vào sáng sớm. Hãy tiếp tục ưu tiên những khoảng lặng thiền định."',
+    heroSub: 'Môi trường phản chiếu bình yên của riêng bạn. Hãy nhìn lại hành trình và điều hòa năng lượng cho hôm nay.',
   },
 
   // --- Day Screen ---
@@ -242,6 +252,16 @@ const en: typeof vi = {
     emptyYesterday: 'No moments recorded yesterday.',
     welcomeText: 'Welcome! Start capturing your first moment with the + button below.',
     entryCount: (count: number) => `${count} ${count === 1 ? 'entry' : 'entries'}`,
+    // Bento Grid and Insights Additions
+    peaceIndex: 'Peace Index',
+    serenityOptimal: 'Optimal serenity level reached.',
+    serenityModerate: 'Moderate state of peace.',
+    serenityMindful: 'Mindfulness recommended today.',
+    dailyInsights: 'Daily Insights',
+    luminousInsights: 'Luminous Insights',
+    insightsDesc: 'Based on your recent timeline reflections:',
+    insightsText: '"Your energy flows beautifully when taking nature walks and dedicating time to journal early in the day. Keep prioritizing spaces of silent meditation."',
+    heroSub: 'Your luminous sanctuary awaits. Reflect on your journey and align your energy for today.',
   },
 
   day: {
