@@ -638,22 +638,27 @@ export const styles = StyleSheet.create({
   moodOption: {
     backgroundColor: palette.white,
     borderColor: palette.line,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    paddingHorizontal: 13,
+    paddingHorizontal: 12,
     paddingVertical: 10,
+    alignItems: 'center',
+    gap: 4,
   },
   moodOptionSelected: {
-    backgroundColor: palette.green,
+    backgroundColor: palette.greenSoft,
     borderColor: palette.green,
+  },
+  moodEmoji: {
+    fontSize: 20,
   },
   moodOptionText: {
     color: palette.ink,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
   },
   moodOptionTextSelected: {
-    color: palette.white,
+    color: palette.green,
   },
   noteInput: {
     backgroundColor: palette.white,

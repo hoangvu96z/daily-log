@@ -1,12 +1,16 @@
 import { create } from 'zustand';
 import { Entry, Settings, TabKey, WeeklyReel } from '../types';
-import { initialEntries, initialSettings, weeklyReels } from '../data/mockData';
+import { defaultSettings } from '../data/mockData';
 
 // === Store Interface ===
 interface JournalState {
   // Hydration
   hydrated: boolean;
   setHydrated: (value: boolean) => void;
+
+  // Onboarding
+  onboardingComplete: boolean;
+  setOnboardingComplete: (value: boolean) => void;
 
   // Entries
   entries: Entry[];
@@ -42,8 +46,12 @@ export const useJournalStore = create<JournalState>((set) => ({
   hydrated: false,
   setHydrated: (value) => set({ hydrated: value }),
 
-  // Entries — initialized with mock data, will be overwritten by DB hydration
-  entries: initialEntries,
+  // Onboarding — starts as not complete
+  onboardingComplete: false,
+  setOnboardingComplete: (value) => set({ onboardingComplete: value }),
+
+  // Entries — start empty, no mock data
+  entries: [],
   addEntry: (entry) =>
     set((state) => ({
       entries: [...state.entries, entry].sort((a, b) => a.time.localeCompare(b.time)),
@@ -61,16 +69,16 @@ export const useJournalStore = create<JournalState>((set) => ({
   resetEntries: () => set({ entries: [] }),
   setEntries: (entries) => set({ entries }),
 
-  // Settings
-  settings: initialSettings,
+  // Settings — all permissions off by default
+  settings: defaultSettings,
   updateSettings: (key, value) =>
     set((state) => ({
       settings: { ...state.settings, [key]: value },
     })),
   setSettings: (settings) => set({ settings }),
 
-  // Weekly Reels
-  reels: weeklyReels,
+  // Weekly Reels — start empty
+  reels: [],
   setReels: (reels) => set({ reels }),
 
   // UI State

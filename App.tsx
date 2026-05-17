@@ -9,6 +9,7 @@ import { useJournalStore } from './src/hooks/useJournalStore';
 import { DayScreen } from './src/screens/DayScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { MeScreen } from './src/screens/MeScreen';
+import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { ReelScreen } from './src/screens/ReelScreen';
 import { pickMomentImage } from './src/services/imagePicker';
 import { checkBiometricAvailability, requestLocationAccess } from './src/services/permissions';
@@ -17,7 +18,16 @@ import { palette } from './src/theme/palette';
 import { ComposerDraft, ComposerMode, Entry, TabKey } from './src/types';
 
 export default function App() {
-  const { hydrated, entries, settings, setEntries, setSettings, resetJournal } = useJournalStore();
+  const {
+    hydrated,
+    entries,
+    settings,
+    onboardingComplete,
+    setEntries,
+    setSettings,
+    completeOnboarding,
+    resetJournal,
+  } = useJournalStore();
   const [activeTab, setActiveTab] = useState<TabKey>('home');
   const [sheetVisible, setSheetVisible] = useState(false);
   const [composerVisible, setComposerVisible] = useState(false);
@@ -76,20 +86,43 @@ export default function App() {
     setActiveTab('day');
   };
 
+  // --- Loading state ---
+  if (!hydrated) {
+    return (
+      <SafeAreaView style={styles.root}>
+        <StatusBar style="dark" />
+        <View style={[styles.phone, { justifyContent: 'center', alignItems: 'center' }]}>
+          <Ionicons name="journal-outline" size={48} color={palette.green} />
+          <Text style={[styles.loadingText, { marginTop: 16 }]}>Đang mở nhật ký riêng...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // --- Onboarding ---
+  if (!onboardingComplete) {
+    return (
+      <SafeAreaView style={styles.root}>
+        <StatusBar style="dark" />
+        <OnboardingScreen onComplete={completeOnboarding} />
+      </SafeAreaView>
+    );
+  }
+
+  // --- Main App ---
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayDate = yesterday.toISOString().slice(0, 10);
+
   return (
     <SafeAreaView style={styles.root}>
       <StatusBar style="dark" />
       <View style={styles.phone}>
-        {!hydrated && (
-          <View style={styles.loadingBanner}>
-            <Text style={styles.loadingText}>Đang mở nhật ký riêng...</Text>
-          </View>
-        )}
         {activeTab === 'home' && (
           <HomeScreen
             entries={entries}
             onOpenDay={() => {
-              setSelectedDate('2026-05-16');
+              setSelectedDate(yesterdayDate);
               setActiveTab('day');
             }}
           />
@@ -103,7 +136,7 @@ export default function App() {
             onDiscardSuggestion={discardSuggestion}
           />
         )}
-        {activeTab === 'reel' && <ReelScreen entries={entries} onOpenDate={setSelectedDate} onOpenDay={() => setActiveTab('day')} />}
+        {activeTab === 'reel' && <ReelScreen entries={entries} reels={[]} onOpenDate={setSelectedDate} onOpenDay={() => setActiveTab('day')} />}
         {activeTab === 'me' && (
           <MeScreen settings={settings} onChangeSettings={setSettings} entriesCount={entries.length} onResetJournal={resetJournal} />
         )}

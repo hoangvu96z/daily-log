@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { Entry, Settings, WeeklyReel } from '../types';
-import { initialSettings } from '../data/mockData';
+import { defaultSettings } from '../data/mockData';
 
 const DB_NAME = 'auto_diary.db';
 
@@ -125,7 +125,7 @@ export async function loadSettings(): Promise<Settings> {
       loaded[row.key] = row.value;
     }
   }
-  return { ...initialSettings, ...loaded } as Settings;
+  return { ...defaultSettings, ...loaded } as Settings;
 }
 
 export async function saveSetting(key: string, value: unknown): Promise<void> {

@@ -95,6 +95,7 @@ export function MomentComposer({
                 style={[styles.moodOption, mood === option.value && styles.moodOptionSelected]}
                 onPress={() => setMood(option.value)}
               >
+                <Text style={styles.moodEmoji}>{option.emoji}</Text>
                 <Text style={[styles.moodOptionText, mood === option.value && styles.moodOptionTextSelected]}>
                   {option.label}
                 </Text>

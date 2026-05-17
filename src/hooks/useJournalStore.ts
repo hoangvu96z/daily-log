@@ -1,21 +1,27 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useMemo, useState } from 'react';
-import { initialEntries, initialSettings } from '../data/mockData';
+import { defaultSettings } from '../data/mockData';
 import { Entry, Settings } from '../types';
 
 const entriesKey = 'private-auto-journal.entries';
 const settingsKey = 'private-auto-journal.settings';
+const onboardingKey = 'private-auto-journal.onboarding-complete';
 
 export function useJournalStore() {
-  const [entries, setEntries] = useState<Entry[]>(initialEntries);
-  const [settings, setSettings] = useState<Settings>(initialSettings);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [hydrated, setHydrated] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
     async function hydrate() {
-      const [entriesJson, settingsJson] = await Promise.all([AsyncStorage.getItem(entriesKey), AsyncStorage.getItem(settingsKey)]);
+      const [entriesJson, settingsJson, onboardingFlag] = await Promise.all([
+        AsyncStorage.getItem(entriesKey),
+        AsyncStorage.getItem(settingsKey),
+        AsyncStorage.getItem(onboardingKey),
+      ]);
       if (!mounted) {
         return;
       }
@@ -23,8 +29,9 @@ export function useJournalStore() {
         setEntries(JSON.parse(entriesJson));
       }
       if (settingsJson) {
-        setSettings({ ...initialSettings, ...JSON.parse(settingsJson) });
+        setSettings({ ...defaultSettings, ...JSON.parse(settingsJson) });
       }
+      setOnboardingComplete(onboardingFlag === 'true');
       setHydrated(true);
     }
 
@@ -47,18 +54,25 @@ export function useJournalStore() {
     }
   }, [settings, hydrated]);
 
+  const completeOnboarding = async () => {
+    setOnboardingComplete(true);
+    await AsyncStorage.setItem(onboardingKey, 'true').catch(() => undefined);
+  };
+
   return useMemo(
     () => ({
       hydrated,
       entries,
       settings,
+      onboardingComplete,
       setEntries,
       setSettings,
+      completeOnboarding,
       resetJournal: async () => {
         setEntries([]);
         await AsyncStorage.setItem(entriesKey, JSON.stringify([]));
       },
     }),
-    [entries, hydrated, settings],
+    [entries, hydrated, settings, onboardingComplete],
   );
 }

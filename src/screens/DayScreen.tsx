@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { ImagePlaceholder } from '../components/ImagePlaceholder';
-import { moodLabels } from '../data/mockData';
+import { moodEmoji, moodLabels } from '../data/mockData';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { Entry } from '../types';
@@ -87,7 +87,7 @@ function TimelineCard({ entry, onSave, onDiscard }: { entry: Entry; onSave: () =
         <View style={styles.entryTopRow}>
           <Text style={styles.entryTime}>{entry.time}</Text>
           <View style={styles.moodChip}>
-            <Text style={styles.moodText}>{moodLabels[entry.mood]}</Text>
+            <Text style={styles.moodText}>{moodEmoji[entry.mood]} {moodLabels[entry.mood]}</Text>
           </View>
           {suggested && <Text style={styles.suggestedLabel}>Gợi ý</Text>}
         </View>
