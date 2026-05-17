@@ -72,10 +72,42 @@ export const initialSettings: Settings = {
 };
 
 export const weeklyReels: WeeklyReel[] = [
-  { weekId: 'Tuần 18', dateRange: '29.04 - 05.05', entryCount: 12, coverTone: palette.green },
-  { weekId: 'Tuần 17', dateRange: '22.04 - 28.04', entryCount: 9, coverTone: palette.blue },
-  { weekId: 'Tuần 16', dateRange: '15.04 - 21.04', entryCount: 15, coverTone: palette.coral },
+  {
+    weekId: 'Tuần 18',
+    startDate: '2026-04-29',
+    endDate: '2026-05-05',
+    dateRange: '29.04 - 05.05',
+    entryCount: 12,
+    coverTone: palette.green,
+    entryIds: [],
+  },
+  {
+    weekId: 'Tuần 17',
+    startDate: '2026-04-22',
+    endDate: '2026-04-28',
+    dateRange: '22.04 - 28.04',
+    entryCount: 9,
+    coverTone: palette.blue,
+    entryIds: [],
+  },
+  {
+    weekId: 'Tuần 16',
+    startDate: '2026-04-15',
+    endDate: '2026-04-21',
+    dateRange: '15.04 - 21.04',
+    entryCount: 15,
+    coverTone: palette.coral,
+    entryIds: [],
+  },
 ];
+
+export const moodEmoji: Record<Mood, string> = {
+  very_bad: '😞',
+  bad: '😐',
+  neutral: '🙂',
+  good: '😊',
+  great: '🤩',
+};
 
 export const moodLabels: Record<Mood, string> = {
   very_bad: 'Tệ',
@@ -85,11 +117,13 @@ export const moodLabels: Record<Mood, string> = {
   great: 'Tuyệt',
 };
 
-export const moodOptions: Array<{ value: Mood; label: string }> = [
-  { value: 'very_bad', label: 'Tệ' },
-  { value: 'neutral', label: 'Bình thường' },
-  { value: 'good', label: 'Ổn' },
-  { value: 'great', label: 'Tuyệt' },
+// All 5 moods with emoji
+export const moodOptions: Array<{ value: Mood; label: string; emoji: string }> = [
+  { value: 'very_bad', label: 'Tệ', emoji: '😞' },
+  { value: 'bad', label: 'Chậm', emoji: '😐' },
+  { value: 'neutral', label: 'Bình thường', emoji: '🙂' },
+  { value: 'good', label: 'Ổn', emoji: '😊' },
+  { value: 'great', label: 'Tuyệt', emoji: '🤩' },
 ];
 
 export const tabItems: TabItem[] = [
