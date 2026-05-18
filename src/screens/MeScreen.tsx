@@ -1,10 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Modal, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { useTranslation } from '../i18n/translations';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { requestCalendarAccess } from '../skills/calendar';
 import { requestLocationAccess, requestPhotoAccess } from '../skills/permissions';
+import {
+  cancelAllReminders,
+  getNotificationPermission,
+  requestNotificationPermission,
+  scheduleDailyReminder,
+  scheduleWeeklyReminder,
+} from '../skills/notifications';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { AccentColor, Settings, ThemeMode } from '../types';
@@ -29,6 +36,8 @@ export function MeScreen({
   const [deleteText, setDeleteText] = useState('');
   const [accentVisible, setAccentVisible] = useState(false);
   const [wallpaperVisible, setWallpaperVisible] = useState(false);
+  const [notifVisible, setNotifVisible] = useState(false);
+  const [notifEnabled, setNotifEnabled] = useState(false);
 
   const updateSetting = <K extends keyof Settings>(key: K, value: Settings[K]) => {
     onChangeSettings((current) => ({ ...current, [key]: value }));
@@ -101,7 +110,15 @@ export function MeScreen({
           value={settings.allowCalendar}
           onValueChange={toggleCalendar}
         />
-        <SettingsRow icon="cloud-outline" title={t.settings.backupTitle} subtitle={t.settings.backupSubtitle} />
+        <SettingsRow
+          icon="cloud-outline"
+          title={t.settings.backupTitle}
+          subtitle={t.settings.backupSubtitle}
+          comingSoon
+          onPress={() =>
+            Alert.alert('Sắp ra mắt', 'Tính năng Backup & Restore sẽ được thêm vào phiên bản tiếp theo.', [{ text: 'OK' }])
+          }
+        />
         <SettingsRow
           danger
           icon="trash-outline"
@@ -131,7 +148,12 @@ export function MeScreen({
         )}
       </SettingsCard>
       <SettingsCard title={t.settings.appGroup}>
-        <SettingsRow icon="notifications-outline" title={t.settings.notifications} subtitle={t.settings.notificationsSubtitle} />
+        <SettingsRow
+          icon="notifications-outline"
+          title={t.settings.notifications}
+          subtitle={notifEnabled ? 'Đang bật — nhắc nhở hàng ngày' : t.settings.notificationsSubtitle}
+          onPress={() => setNotifVisible(true)}
+        />
         <SettingsRow
           icon="contrast-outline"
           title={t.settings.theme}
@@ -210,6 +232,27 @@ export function MeScreen({
         }}
         t={t}
       />
+      <NotificationsDialog
+        visible={notifVisible}
+        enabled={notifEnabled}
+        onClose={() => setNotifVisible(false)}
+        onEnable={async () => {
+          const status = await requestNotificationPermission();
+          if (status !== 'granted') {
+            Alert.alert('Cần quyền thông báo', 'Vào Cài đặt máy → Thông báo → Bật cho ứng dụng này.', [{ text: 'OK' }]);
+            return;
+          }
+          await scheduleDailyReminder(21, 0);
+          await scheduleWeeklyReminder();
+          setNotifEnabled(true);
+          setNotifVisible(false);
+        }}
+        onDisable={async () => {
+          await cancelAllReminders();
+          setNotifEnabled(false);
+          setNotifVisible(false);
+        }}
+      />
     </ScrollView>
   );
 }
@@ -228,12 +271,14 @@ function SettingsRow({
   title,
   subtitle,
   danger,
+  comingSoon,
   onPress,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle: string;
   danger?: boolean;
+  comingSoon?: boolean;
   onPress?: () => void;
 }) {
   return (
@@ -242,13 +287,33 @@ function SettingsRow({
         <Ionicons name={icon} size={20} color={danger ? palette.coral : palette.green} />
       </View>
       <View style={styles.settingsTextBox}>
-        <Text style={[styles.settingsTitle, danger && styles.dangerText]}>{title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={[styles.settingsTitle, danger && styles.dangerText]}>{title}</Text>
+          {comingSoon && (
+            <View style={comingSoonBadgeStyle}>
+              <Text style={comingSoonTextStyle}>Soon</Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.settingsSubtitle}>{subtitle}</Text>
       </View>
       <Ionicons name="chevron-forward" size={18} color="#a7aea9" />
     </Pressable>
   );
 }
+
+const comingSoonBadgeStyle: any = {
+  backgroundColor: 'rgba(46,79,50,0.1)',
+  borderRadius: 8,
+  paddingHorizontal: 6,
+  paddingVertical: 1,
+};
+
+const comingSoonTextStyle: any = {
+  fontSize: 10,
+  color: palette.green,
+  fontFamily: 'PlusJakartaSans_500Medium',
+};
 
 function ToggleRow({ title, value, onValueChange }: { title: string; value: boolean; onValueChange: (value: boolean) => void }) {
   return (
@@ -468,4 +533,52 @@ function permissionText(status: string, t: any) {
     default:
       return t.settings.permissionUnknown;
   }
+}
+
+function NotificationsDialog({
+  visible,
+  enabled,
+  onClose,
+  onEnable,
+  onDisable,
+}: {
+  visible: boolean;
+  enabled: boolean;
+  onClose: () => void;
+  onEnable: () => void;
+  onDisable: () => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.dialogScrim}>
+        <View style={styles.dialogCard}>
+          <Text style={styles.dialogTitle}>Thông báo nhắc nhở</Text>
+          <Text style={styles.dialogText}>
+            Bật để nhận nhắc nhở hàng ngày lúc 21:00 và tóm tắt tuần mỗi Chủ nhật 20:00.
+          </Text>
+          <View style={styles.themeOptionList}>
+            <Pressable
+              style={[styles.themeOption, !enabled && styles.themeOptionActive]}
+              onPress={onEnable}
+            >
+              <Ionicons name="notifications-outline" size={20} color={palette.primary} />
+              <Text style={styles.themeOptionText}>Bật thông báo</Text>
+              {!enabled && <Ionicons name="checkmark-circle" size={20} color={palette.primary} />}
+            </Pressable>
+            <Pressable
+              style={[styles.themeOption, enabled && styles.themeOptionActive]}
+              onPress={onDisable}
+            >
+              <Ionicons name="notifications-off-outline" size={20} color={palette.primary} />
+              <Text style={styles.themeOptionText}>Tắt thông báo</Text>
+              {enabled && <Ionicons name="checkmark-circle" size={20} color={palette.primary} />}
+            </Pressable>
+          </View>
+          <Pressable style={styles.dialogSecondary} onPress={onClose}>
+            <Text style={styles.dialogSecondaryText}>Đóng</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
 }

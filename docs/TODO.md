@@ -100,43 +100,43 @@
 ## Phase 3: Auto-Tracking (USP)
 
 ### 3.1. Signal Collection
-- [ ] In `autoTracker.ts`, implement photo scanning via `expo-media-library`
-- [ ] Implement location capture via `expo-location`
+- [x] In `autoTracker.ts`, implement photo scanning via `expo-media-library`
+- [x] Implement location capture via `expo-location`
 - [ ] (Future) Implement calendar event reading via `expo-calendar`
 
 ### 3.2. Clustering Logic
-- [ ] Group collected signals into 30-60 minute clusters
-- [ ] Deduplicate — skip clusters that already have an entry
+- [x] Group collected signals into 30-60 minute clusters
+- [x] Deduplicate — skip clusters that already have an entry
 
 ### 3.3. Auto Entry Generation
-- [ ] For each new cluster, create Entry with `status: 'suggested'`, `mood: 'neutral'`
-- [ ] Pick representative photo (`imageLocalId`) for the cluster
-- [ ] Generate AI suggestion text via `aiService.generateSuggestion()`
-- [ ] Save to SQLite via `database.insertEntry()`
+- [x] For each new cluster, create Entry with `status: 'suggested'`, `mood: 'neutral'`
+- [x] Pick representative photo (`imageLocalId`) for the cluster
+- [x] Generate AI suggestion text via `aiService.generateSuggestion()`
+- [x] Save to SQLite via `database.insertEntry()`
 
 ### 3.4. Background Execution
-- [ ] Complete the `TaskManager.defineTask` body in `autoTracker.ts`
+- [x] Complete the `TaskManager.defineTask` body in `autoTracker.ts`
 - [ ] Test background fetch on iOS (real device only)
 - [ ] Test background fetch on Android
-- [ ] Handle "background fetch disabled" state gracefully
+- [x] Handle "background fetch disabled" state gracefully
 
 ---
 
 ## Phase 4: Polish & Delight
 
 ### 4.1. Reel Slideshow
-- [ ] Implement full-screen slideshow player using `react-native-reanimated`
-- [ ] Auto-advance slides (3-5 seconds per entry)
-- [ ] Show: photo → mood chip → entry text per slide
-- [ ] Fade/slide transitions (calm, journal-like)
+- [x] Implement full-screen slideshow player using `react-native-reanimated`
+- [x] Auto-advance slides (3-5 seconds per entry)
+- [x] Show: photo → mood chip → entry text per slide
+- [x] Fade/slide transitions (calm, journal-like)
 
 ### 4.2. UI Polish
 - [x] Add emoji to mood chips in MomentComposer and DayScreen (`😞😐🙂😊🤩`)
 - [x] Fix hardcoded date `'2026-05-16'` in HomeScreen → calculate "yesterday" dynamically
-- [ ] Implement reverse geocoding (lat/lon → human-readable place name)
-- [ ] Add micro-animations for card transitions
-- [ ] Backup & Restore settings row → implement or mark as "coming soon"
-- [ ] Notification settings → implement push notification scheduling
+- [x] Implement reverse geocoding (lat/lon → human-readable place name)
+- [x] Add micro-animations for card transitions
+- [x] Backup & Restore settings row → implement or mark as "coming soon"
+- [x] Notification settings → implement push notification scheduling
 
 ### 4.3. Data Integrity
 - [ ] Ensure `locationLat/Lon` are saved when creating entries manually

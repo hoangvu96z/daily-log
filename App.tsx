@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useJournalStore } from './src/memory/store';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { checkBiometricAvailability } from './src/skills/permissions';
+import { registerAutoTracker } from './src/skills/autoTracker';
 import {
   useFonts,
   PlusJakartaSans_400Regular,
@@ -34,6 +35,7 @@ export default function App() {
 
   useEffect(() => {
     initStore();
+    registerAutoTracker();
   }, [initStore]);
 
   useEffect(() => {
