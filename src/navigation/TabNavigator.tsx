@@ -2,6 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React, { useState } from 'react';
 import { AddMomentSheet } from '../components/AddMomentSheet';
 import { BottomTabs } from '../components/BottomTabs';
+import { CalendarEventPicker } from '../components/CalendarEventPicker';
 import { MomentComposer } from '../components/MomentComposer';
 import { useJournalStore } from '../memory/store';
 import { DayScreen } from '../screens/DayScreen';
@@ -9,15 +10,28 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { MeScreen } from '../screens/MeScreen';
 import { ReelScreen } from '../screens/ReelScreen';
 import { pickMomentImage } from '../services/imagePicker';
+import { calendarEventToDraft, getTodayCalendarEvents } from '../skills/calendar';
 import { requestLocationAccess } from '../skills/permissions';
-import { ComposerDraft, ComposerMode, Entry } from '../types';
+import { CalendarEventDraft, ComposerDraft, ComposerMode, Entry } from '../types';
 
 const Tab = createBottomTabNavigator();
 
 export function TabNavigator() {
-  const { entries, reels, settings, addEntry: storeAddEntry, saveSuggestion, discardSuggestion, updateSettings, resetEntries } = useJournalStore();
+  const {
+    entries,
+    reels,
+    settings,
+    addEntry: storeAddEntry,
+    saveSuggestion,
+    discardSuggestion,
+    updateSettings,
+    resetEntries,
+  } = useJournalStore();
+
   const [sheetVisible, setSheetVisible] = useState(false);
   const [composerVisible, setComposerVisible] = useState(false);
+  const [calendarPickerVisible, setCalendarPickerVisible] = useState(false);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEventDraft[]>([]);
   const [composerDraft, setComposerDraft] = useState<ComposerDraft>({ mode: 'note' });
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
 
@@ -32,14 +46,25 @@ export function TabNavigator() {
     }
 
     if (mode === 'calendar') {
-      nextDraft.calendarText = 'Lịch: hoàn thành một việc quan trọng';
+      const result = await getTodayCalendarEvents();
+      await updateSettings('calendarPermissionStatus', result.status);
+      await updateSettings('allowCalendar', result.status === 'granted');
+      setSheetVisible(false);
+
+      if (result.events.length > 0) {
+        setCalendarEvents(result.events);
+        setCalendarPickerVisible(true);
+        return;
+      }
+
+      nextDraft.calendarText = 'Mốc từ lịch';
     }
 
     if (settings.allowLocation) {
       const locationResult = await requestLocationAccess();
       nextDraft.locationName = locationResult.locationName;
-      updateSettings('locationPermissionStatus', locationResult.status);
-      updateSettings('allowLocation', locationResult.status === 'granted');
+      await updateSettings('locationPermissionStatus', locationResult.status);
+      await updateSettings('allowLocation', locationResult.status === 'granted');
     }
 
     setComposerDraft(nextDraft);
@@ -51,9 +76,6 @@ export function TabNavigator() {
     await storeAddEntry(entry);
     setComposerVisible(false);
     setSelectedDate(entry.date);
-    // Note: To navigate to Day tab, we should use a navigation ref or pass it down,
-    // but React Navigation will handle tab focus via useNavigation if needed.
-    // For now, setting the date is enough. We'll add navigation.navigate('day') below.
   };
 
   const yesterday = new Date();
@@ -123,15 +145,26 @@ export function TabNavigator() {
       </Tab.Navigator>
 
       <AddMomentSheet visible={sheetVisible} onClose={() => setSheetVisible(false)} onPick={openComposer} />
+      <CalendarEventPicker
+        visible={calendarPickerVisible}
+        events={calendarEvents}
+        onClose={() => setCalendarPickerVisible(false)}
+        onCreateBlank={() => {
+          setCalendarPickerVisible(false);
+          setComposerDraft({ mode: 'calendar', calendarText: 'Mốc từ lịch' });
+          setComposerVisible(true);
+        }}
+        onSelect={(event) => {
+          setCalendarPickerVisible(false);
+          setComposerDraft(calendarEventToDraft(event));
+          setComposerVisible(true);
+        }}
+      />
       <MomentComposer
         visible={composerVisible}
         draft={composerDraft}
         onClose={() => setComposerVisible(false)}
-        onSave={(entry) => {
-          addEntry(entry);
-          // Actually we don't have access to navigation here easily without useNavigation hook,
-          // but we can fix that next.
-        }}
+        onSave={addEntry}
       />
     </>
   );

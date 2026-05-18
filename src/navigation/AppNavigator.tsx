@@ -1,9 +1,12 @@
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { hasPinCode } from '../memory/secureStore';
 import { useJournalStore } from '../memory/store';
 import { LockScreen } from '../screens/LockScreen';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
+import { PinSetupScreen } from '../screens/PinSetupScreen';
+import { PinUnlockScreen } from '../screens/PinUnlockScreen';
 import { TabNavigator } from './TabNavigator';
 
 const Stack = createNativeStackNavigator();
@@ -17,19 +20,33 @@ const DarkSanctuaryTheme = {
 };
 
 export function AppNavigator() {
-  const { onboardingComplete, setOnboardingComplete, settings, hydrated } =
-    useJournalStore();
-
-  // unlocked starts false on every app launch — re-locks when app is closed/restarted
+  const { onboardingComplete, setOnboardingComplete, settings, hydrated, updateSettings } = useJournalStore();
   const [unlocked, setUnlocked] = useState(false);
 
-  // Determine whether the lock gate should be shown.
-  // Only show when: store is hydrated + onboarding is done + faceID is enabled + not yet unlocked.
-  const showLockGate =
-    hydrated && onboardingComplete && settings.faceIDEnabled && !unlocked;
+  useEffect(() => {
+    if (!hydrated) return;
+
+    hasPinCode().then((pinSet) => {
+      updateSettings('pinSet', pinSet);
+      if (!pinSet) {
+        updateSettings('pinEnabled', false);
+      }
+    });
+  }, [hydrated, updateSettings]);
+
+  const showLockGate = hydrated && onboardingComplete && !unlocked && (settings.faceIDEnabled || settings.pinEnabled);
 
   if (showLockGate) {
-    return <LockScreen onUnlock={() => setUnlocked(true)} />;
+    if (settings.faceIDEnabled) {
+      return (
+        <LockScreen
+          onUnlock={() => setUnlocked(true)}
+          allowPinFallback={Boolean(settings.pinEnabled && settings.pinSet)}
+        />
+      );
+    }
+
+    return <PinUnlockScreen onUnlock={() => setUnlocked(true)} />;
   }
 
   return (
@@ -52,7 +69,10 @@ export function AppNavigator() {
             )}
           </Stack.Screen>
         ) : (
-          <Stack.Screen name="Tabs" component={TabNavigator} />
+          <>
+            <Stack.Screen name="Tabs" component={TabNavigator} />
+            <Stack.Screen name="PinSetup" component={PinSetupScreen} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

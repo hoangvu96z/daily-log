@@ -11,6 +11,7 @@ import {
 import { useTranslation } from '../i18n/translations';
 import { palette } from '../theme/palette';
 import { authenticateWithBiometrics } from '../skills/permissions';
+import { PinUnlockScreen } from './PinUnlockScreen';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -19,14 +20,16 @@ type AuthState = 'idle' | 'authenticating' | 'failed';
 interface LockScreenProps {
   /** Called once biometric auth succeeds */
   onUnlock: () => void;
+  allowPinFallback?: boolean;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function LockScreen({ onUnlock }: LockScreenProps) {
+export function LockScreen({ onUnlock, allowPinFallback }: LockScreenProps) {
   const { t } = useTranslation();
 
   const [authState, setAuthState] = useState<AuthState>('idle');
+  const [pinMode, setPinMode] = useState(false);
 
   // Pulse animation for the lock icon ring
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -105,6 +108,19 @@ export function LockScreen({ onUnlock }: LockScreenProps) {
     }
   }, [authState, pulseAnim, fadeAnim, onUnlock, triggerShake]);
 
+  if (pinMode) {
+    return (
+      <PinUnlockScreen
+        onUnlock={onUnlock}
+        showBiometric
+        onUseBiometric={() => {
+          setPinMode(false);
+          setTimeout(() => handleAuthenticate(), 150);
+        }}
+      />
+    );
+  }
+
   // Auto-trigger biometric prompt on first mount
   useEffect(() => {
     const timer = setTimeout(() => handleAuthenticate(), 400);
@@ -179,6 +195,13 @@ export function LockScreen({ onUnlock }: LockScreenProps) {
         <Pressable onPress={handleAuthenticate} style={s.retryButton}>
           <Ionicons name="refresh-outline" size={16} color={palette.muted} />
           <Text style={s.retryText}>{t.permissions.biometricPrompt}</Text>
+        </Pressable>
+      )}
+
+      {allowPinFallback && (
+        <Pressable onPress={() => setPinMode(true)} style={s.pinFallbackButton}>
+          <Ionicons name="keypad-outline" size={16} color={palette.primary} />
+          <Text style={s.pinFallbackText}>Dùng mã PIN</Text>
         </Pressable>
       )}
 
@@ -304,6 +327,20 @@ const s = StyleSheet.create({
     fontSize: 14,
     color: palette.muted,
     fontWeight: '600',
+  },
+  pinFallbackButton: {
+    position: 'absolute',
+    bottom: 84,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  pinFallbackText: {
+    fontSize: 14,
+    color: palette.primary,
+    fontWeight: '800',
   },
 
   // Footer

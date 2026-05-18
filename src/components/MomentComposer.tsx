@@ -57,8 +57,8 @@ export function MomentComposer({
     const now = new Date();
     onSave({
       id: Date.now().toString(),
-      date: now.toISOString().slice(0, 10),
-      time: now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      date: draft.prefillDate || now.toISOString().slice(0, 10),
+      time: draft.prefillTime || now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false }),
       mood,
       text: note || suggestion,
       aiSuggestion: suggestion,

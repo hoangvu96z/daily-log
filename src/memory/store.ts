@@ -59,11 +59,20 @@ export const useJournalStore = create<JournalState>((set) => ({
 
   // Initialization
   initStore: async () => {
-    const [entries, settings, reels] = await Promise.all([
+    const [loadedEntries, settings, reels] = await Promise.all([
       getAllEntries(),
       loadSettings(),
       getAllReels(),
     ]);
+    const legacyDemoIds = new Set(['1', '2', '3', '4', '5']);
+    const entries = loadedEntries.filter((entry) => !legacyDemoIds.has(entry.id));
+    if (entries.length !== loadedEntries.length) {
+      await Promise.all(
+        loadedEntries
+          .filter((entry) => legacyDemoIds.has(entry.id))
+          .map((entry) => deleteEntry(entry.id)),
+      );
+    }
     const onboardingFlag = (settings as any).onboardingComplete === true;
     set({
       entries,

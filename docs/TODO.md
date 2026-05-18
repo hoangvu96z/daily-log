@@ -64,23 +64,23 @@
 - [x] Integrate into `AppNavigator` (auth gate before tab navigator)
 
 ### 2.3. PIN Code
-- [ ] Create PIN setup screen (set/change PIN)
-- [ ] Use `src/memory/secureStore.ts` to store hashed PIN
-- [ ] Implement PIN input screen for app unlock
-- [ ] Allow PIN as alternative to biometric
+- [x] Create PIN setup screen (set/change PIN)
+- [x] Use `src/memory/secureStore.ts` to store hashed PIN
+- [x] Implement PIN input screen for app unlock
+- [x] Allow PIN as alternative to biometric
 
 ### 2.4. Calendar Integration
-- [ ] Request calendar permission (`expo-calendar`)
-- [ ] Read today's events in "Add from Calendar" flow
-- [ ] Replace stub text `calendar.stubText` with real event data
-- [ ] Prefill time and text from selected calendar event
+- [x] Request calendar permission (`expo-calendar`)
+- [x] Read today's events in "Add from Calendar" flow
+- [x] Replace stub text `calendar.stubText` with real event data
+- [x] Prefill time and text from selected calendar event
 
 ### 2.5. Theme Switching & Color Palettes
-- [ ] Wire up theme toggle in MeScreen (Light / Dark / System)
-- [ ] Implement color scheme picker (e.g., Sage Green, Ocean Blue, Lavender, Terracotta) in Settings
-- [ ] Create theme provider using Zustand `settings.theme` and `settings.accentColor`
-- [ ] Apply dynamic color palettes to overall components and primary accents
-- [ ] Persist theme & accent color preferences to SQLite
+- [x] Wire up theme toggle in MeScreen (Light / Dark / System)
+- [x] Implement color scheme picker (e.g., Sage Green, Ocean Blue, Lavender, Terracotta) in Settings
+- [x] Create theme provider using Zustand `settings.theme` and `settings.accentColor`
+- [x] Apply dynamic color palettes to overall components and primary accents
+- [x] Persist theme & accent color preferences to SQLite
 
 ### 2.6. Language Switching
 - [x] Wire up language selector in MeScreen
@@ -90,10 +90,10 @@
 - [x] Update `Intl.DateTimeFormat` locale dynamically via `getLocale()`
 
 ### 2.7. Custom Wallpaper
-- [ ] Implement custom wallpaper upload in Settings (`MeScreen`)
-- [ ] Use `expo-image-picker` to select background image
-- [ ] Save custom wallpaper URI to SQLite settings database
-- [ ] Display custom wallpaper as app background dynamically in `App.tsx` with light opacity
+- [x] Implement custom wallpaper upload in Settings (`MeScreen`)
+- [x] Use `expo-image-picker` to select background image
+- [x] Save custom wallpaper URI to SQLite settings database
+- [x] Display custom wallpaper as app background dynamically in `App.tsx` with light opacity
 
 ---
 
@@ -174,7 +174,7 @@ After `src/i18n/translations.ts` is ready, these files need hardcoded text repla
 | Phase | Items | Done | Remaining |
 |-------|-------|------|-----------|
 | Phase 1: Architecture | 20 | 12 | 8 |
-| Phase 2: Core Features | 18 | 11 | 7 |
+| Phase 2: Core Features | 18 | 18 | 0 |
 | Phase 3: Auto-Tracking | 10 | 0 | 10 |
 | Phase 4: Polish | 14 | 2 | 12 |
 | **Total** | **62** | **25** | **37** |

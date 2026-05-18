@@ -1,5 +1,6 @@
 import { StyleSheet, Appearance } from 'react-native';
 import { useJournalStore } from './memory/store';
+import { palette } from './theme/palette';
 
 const lightPalette = {
   background: '#f6faff',
@@ -894,6 +895,69 @@ const lightStyles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
+  calendarEventList: {
+    maxHeight: 280,
+    marginTop: 16,
+  },
+  calendarEventListContent: {
+    gap: 10,
+  },
+  calendarEventRow: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.78)',
+    borderColor: 'rgba(3, 31, 65, 0.08)',
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    padding: 12,
+  },
+  calendarEventIcon: {
+    alignItems: 'center',
+    backgroundColor: lightPalette.primaryContainer,
+    borderRadius: 14,
+    height: 38,
+    justifyContent: 'center',
+    width: 38,
+  },
+  calendarEventTextBox: {
+    flex: 1,
+  },
+  calendarEventTitle: {
+    color: lightPalette.onSurface,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  calendarEventMeta: {
+    color: lightPalette.onSurfaceVariant,
+    fontSize: 12,
+    marginTop: 3,
+  },
+  themeOptionList: {
+    gap: 10,
+    marginBottom: 16,
+    marginTop: 16,
+  },
+  themeOption: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.74)',
+    borderColor: 'rgba(3, 31, 65, 0.08)',
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    padding: 14,
+  },
+  themeOptionActive: {
+    backgroundColor: lightPalette.primaryContainer,
+    borderColor: lightPalette.primary,
+  },
+  themeOptionText: {
+    color: lightPalette.onSurface,
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '800',
+  },
   moodCalendarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1776,6 +1840,69 @@ const darkStyles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
+  calendarEventList: {
+    maxHeight: 280,
+    marginTop: 16,
+  },
+  calendarEventListContent: {
+    gap: 10,
+  },
+  calendarEventRow: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    padding: 12,
+  },
+  calendarEventIcon: {
+    alignItems: 'center',
+    backgroundColor: darkPalette.primaryContainer,
+    borderRadius: 14,
+    height: 38,
+    justifyContent: 'center',
+    width: 38,
+  },
+  calendarEventTextBox: {
+    flex: 1,
+  },
+  calendarEventTitle: {
+    color: darkPalette.onSurface,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  calendarEventMeta: {
+    color: darkPalette.onSurfaceVariant,
+    fontSize: 12,
+    marginTop: 3,
+  },
+  themeOptionList: {
+    gap: 10,
+    marginBottom: 16,
+    marginTop: 16,
+  },
+  themeOption: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    padding: 14,
+  },
+  themeOptionActive: {
+    backgroundColor: darkPalette.primaryContainer,
+    borderColor: darkPalette.primary,
+  },
+  themeOptionText: {
+    color: darkPalette.onSurface,
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '800',
+  },
   moodCalendarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1875,10 +2002,71 @@ export const styles = new Proxy({} as typeof lightStyles, {
     const activeStyles = getActiveStyles();
     const styleObj = activeStyles[prop as keyof typeof lightStyles];
     
-    // Inject modern Plus Jakarta Sans Google Font dynamically for any text-related styles
     if (styleObj && typeof styleObj === 'object') {
-      const flat = StyleSheet.flatten(styleObj);
-      if (flat && (flat.fontSize !== undefined || flat.color !== undefined || flat.fontWeight !== undefined || flat.lineHeight !== undefined)) {
+      const flat = { ...StyleSheet.flatten(styleObj) };
+      
+      // Helper to convert dynamic hex color to rgba for translucent borders/glows
+      const getAlphaColor = (color: string, opacity: number) => {
+        if (color.startsWith('#')) {
+          const r = parseInt(color.slice(1, 3), 16);
+          const g = parseInt(color.slice(3, 5), 16);
+          const b = parseInt(color.slice(5, 7), 16);
+          return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        }
+        return color;
+      };
+
+      // Dynamic Accent Color Mapping
+      Object.keys(flat).forEach((key) => {
+        const val = flat[key];
+        if (typeof val === 'string') {
+          const lowerVal = val.toLowerCase();
+          
+          // Replace light/dark hardcoded primary accents
+          if (lowerVal === '#031f41' || lowerVal === '#5bc0be') {
+            flat[key] = palette.primary;
+          }
+          // Replace primary containers
+          else if (lowerVal === '#dff0ff' || lowerVal === 'rgba(91, 192, 190, 0.15)') {
+            flat[key] = palette.primaryContainer;
+          }
+          // Replace light/dark hardcoded green
+          else if (lowerVal === '#031f41' || lowerVal === '#5bc0be') {
+            flat[key] = palette.green;
+          }
+          // Replace greenSoft
+          else if (lowerVal === '#dff0ff' || lowerVal === 'rgba(91, 192, 190, 0.15)') {
+            flat[key] = palette.greenSoft;
+          }
+          // Replace backgrounds
+          else if (lowerVal === '#f6faff' || lowerVal === '#0b132b') {
+            flat[key] = palette.background;
+          }
+          // Replace slate surfaces
+          else if (lowerVal === '#ffffff' || lowerVal === '#1c2541') {
+            flat[key] = palette.slate;
+          }
+          // Replace cream
+          else if (lowerVal === '#ffffff' || lowerVal === 'rgba(28, 37, 65, 0.7)') {
+            flat[key] = palette.cream;
+          }
+          // Replace glow values
+          else if (lowerVal.includes('rgba(3, 31, 65, 0.1') || lowerVal.includes('rgba(91, 192, 190, 0.4)')) {
+            flat[key] = palette.glow;
+          }
+          // Convert hardcoded translucent colors to follow active accent color dynamically
+          else if (lowerVal.includes('rgba(3, 31, 65,') || lowerVal.includes('rgba(91, 192, 190,')) {
+            const match = lowerVal.match(/rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([\d\.]+)\s*\)/);
+            if (match && match[1]) {
+              const opacity = parseFloat(match[1]);
+              flat[key] = getAlphaColor(palette.primary, opacity);
+            }
+          }
+        }
+      });
+
+      // Inject modern Plus Jakarta Sans Google Font dynamically for any text-related styles
+      if (flat.fontSize !== undefined || flat.color !== undefined || flat.fontWeight !== undefined || flat.lineHeight !== undefined) {
         let fontFamily = 'PlusJakartaSans_400Regular';
         if (flat.fontWeight === '800' || flat.fontWeight === 'bold' || flat.fontWeight === '900') {
           fontFamily = 'PlusJakartaSans_800ExtraBold';
@@ -1889,10 +2077,7 @@ export const styles = new Proxy({} as typeof lightStyles, {
         } else if (flat.fontWeight === '500') {
           fontFamily = 'PlusJakartaSans_500Medium';
         }
-        return {
-          ...flat,
-          fontFamily,
-        };
+        flat.fontFamily = fontFamily;
       }
       return flat;
     }

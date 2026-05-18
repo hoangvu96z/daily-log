@@ -4,6 +4,7 @@ import {
   Animated,
   Dimensions,
   FlatList,
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -29,6 +30,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
   const { t, lang } = useTranslation();
   const { updateSettings } = useJournalStore();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(SCREEN_WIDTH);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
@@ -83,7 +85,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
     if (isLastSlide) {
       onComplete();
     } else {
-      flatListRef.current?.scrollToOffset({ offset: (currentIndex + 1) * SCREEN_WIDTH, animated: true });
+      flatListRef.current?.scrollToOffset({ offset: (currentIndex + 1) * containerWidth, animated: true });
     }
   };
 
@@ -93,11 +95,20 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
 
   const onScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-    { useNativeDriver: false },
+    {
+      useNativeDriver: false,
+      listener: (e: any) => {
+        const x = e.nativeEvent.contentOffset.x;
+        const index = Math.round(x / containerWidth);
+        if (index >= 0 && index < slides.length) {
+          setCurrentIndex(index);
+        }
+      }
+    }
   );
 
   const renderSlide = ({ item }: { item: Slide }) => (
-    <View style={[s.slide, { width: SCREEN_WIDTH }]}>
+    <View style={[s.slide, { width: containerWidth }]}>
       <View style={s.slideContent}>
         <View style={[s.iconCircle, { backgroundColor: item.iconBg }]}>
           <Ionicons name={item.icon} size={48} color={item.accent} />
@@ -113,10 +124,22 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
   };
 
   return (
-    <View style={s.container}>
+    <View
+      style={s.container}
+      onLayout={(e) => {
+        const { width } = e.nativeEvent.layout;
+        if (width > 0) {
+          setContainerWidth(width);
+        }
+      }}
+    >
       <View style={s.skipRow}>
-        <Pressable onPress={toggleLang} style={s.skipButton}>
-          <Text style={s.langText}>{lang === 'vi' ? '🇻🇳 VN' : '🇬🇧 EN'}</Text>
+        <Pressable onPress={toggleLang} style={s.langButton}>
+          <Image
+            source={{ uri: lang === 'vi' ? 'https://flagcdn.com/w80/vn.png' : 'https://flagcdn.com/w80/gb.png' }}
+            style={s.flagImage}
+          />
+          <Text style={s.langText}>{lang === 'vi' ? 'VI' : 'EN'}</Text>
         </Pressable>
         {!isLastSlide ? (
           <Pressable onPress={goSkip} style={s.skipButton}>
@@ -138,17 +161,15 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
         bounces={false}
         onScroll={onScroll}
         scrollEventThrottle={16}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
       />
 
       <View style={s.footer}>
         <View style={s.dots}>
           {slides.map((_, index) => {
             const inputRange = [
-              (index - 1) * SCREEN_WIDTH,
-              index * SCREEN_WIDTH,
-              (index + 1) * SCREEN_WIDTH,
+              (index - 1) * containerWidth,
+              index * containerWidth,
+              (index + 1) * containerWidth,
             ];
             const dotWidth = scrollX.interpolate({
               inputRange,
@@ -196,6 +217,22 @@ const s = StyleSheet.create({
   skipButton: {
     paddingVertical: 8,
     paddingHorizontal: 16,
+  },
+  langButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.82)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: palette.outlineVariant,
+  },
+  flagImage: {
+    width: 20,
+    height: 14,
+    borderRadius: 2,
+    marginRight: 6,
   },
   skipText: {
     fontSize: 15,

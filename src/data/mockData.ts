@@ -1,17 +1,18 @@
 import { Mood, Settings, TabItem } from '../types';
 
-// === Default Settings (empty state) ===
 export const defaultSettings: Settings = {
   allowPhotos: false,
   allowLocation: false,
   allowUsage: false,
   allowCalendar: false,
   faceIDEnabled: false,
+  pinEnabled: false,
+  pinSet: false,
   theme: 'light',
+  accentColor: 'navy',
+  wallpaperUri: undefined,
   language: 'vi',
 };
-
-// === Mood Emoji & Labels ===
 
 export const moodEmoji: Record<Mood, string> = {
   very_bad: '😞',
@@ -29,7 +30,6 @@ export const moodLabels: Record<Mood, string> = {
   great: 'Tuyệt',
 };
 
-// All 5 moods with emoji
 export const moodOptions: Array<{ value: Mood; label: string; emoji: string }> = [
   { value: 'very_bad', label: 'Tệ', emoji: '😞' },
   { value: 'bad', label: 'Chậm', emoji: '😐' },
@@ -38,7 +38,6 @@ export const moodOptions: Array<{ value: Mood; label: string; emoji: string }> =
   { value: 'great', label: 'Tuyệt', emoji: '🤩' },
 ];
 
-// === Tab Items ===
 export const tabItems: TabItem[] = [
   { key: 'home', label: 'Home', icon: 'home-outline' },
   { key: 'day', label: 'Ngày', icon: 'calendar-outline' },

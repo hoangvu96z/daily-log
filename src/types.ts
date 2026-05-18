@@ -7,6 +7,8 @@ export type EntryStatus = 'saved' | 'suggested';
 export type EntrySource = 'auto' | 'manual';
 export type ComposerMode = 'photo' | 'note' | 'calendar';
 export type PermissionState = 'unknown' | 'granted' | 'denied' | 'unavailable';
+export type ThemeMode = 'system' | 'light' | 'dark';
+export type AccentColor = 'navy' | 'sage' | 'ocean' | 'lavender' | 'terracotta';
 
 // === Entry ===
 export type Entry = {
@@ -34,9 +36,14 @@ export type Settings = {
   allowCalendar: boolean;
   photoPermissionStatus?: PermissionState;
   locationPermissionStatus?: PermissionState;
+  calendarPermissionStatus?: PermissionState;
   faceIDEnabled: boolean;
   biometricAvailable?: boolean;
-  theme: 'system' | 'light' | 'dark';
+  pinEnabled?: boolean;
+  pinSet?: boolean;
+  theme: ThemeMode;
+  accentColor?: AccentColor;
+  wallpaperUri?: string;
   language: 'vi' | 'en';
   // Note: pinCodeHash is stored in expo-secure-store, NOT here
 };
@@ -59,6 +66,18 @@ export type ComposerDraft = {
   imageUri?: string;
   locationName?: string;
   calendarText?: string;
+  calendarEventId?: string;
+  prefillDate?: string;
+  prefillTime?: string;
+};
+
+export type CalendarEventDraft = {
+  id: string;
+  title: string;
+  notes?: string;
+  location?: string;
+  startDate: string;
+  endDate?: string;
 };
 
 // === Tab Item ===

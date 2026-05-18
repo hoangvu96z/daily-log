@@ -3,17 +3,21 @@ import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { useTranslation } from '../i18n/translations';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { requestCalendarAccess } from '../skills/calendar';
 import { requestLocationAccess, requestPhotoAccess } from '../skills/permissions';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
-import { Settings } from '../types';
+import { AccentColor, Settings, ThemeMode } from '../types';
+import { pickMomentImage } from '../services/imagePicker';
 
 export function MeScreen({
+  navigation,
   settings,
   onChangeSettings,
   entriesCount,
   onResetJournal,
 }: {
+  navigation?: any;
   settings: Settings;
   onChangeSettings: React.Dispatch<React.SetStateAction<Settings>>;
   entriesCount: number;
@@ -21,7 +25,10 @@ export function MeScreen({
 }) {
   const { t, lang } = useTranslation();
   const [deleteVisible, setDeleteVisible] = useState(false);
+  const [themeVisible, setThemeVisible] = useState(false);
   const [deleteText, setDeleteText] = useState('');
+  const [accentVisible, setAccentVisible] = useState(false);
+  const [wallpaperVisible, setWallpaperVisible] = useState(false);
 
   const updateSetting = <K extends keyof Settings>(key: K, value: Settings[K]) => {
     onChangeSettings((current) => ({ ...current, [key]: value }));
@@ -51,6 +58,20 @@ export function MeScreen({
     }));
   };
 
+  const toggleCalendar = async (value: boolean) => {
+    if (!value) {
+      onChangeSettings((current) => ({ ...current, allowCalendar: false }));
+      return;
+    }
+
+    const status = await requestCalendarAccess();
+    onChangeSettings((current) => ({
+      ...current,
+      allowCalendar: status === 'granted',
+      calendarPermissionStatus: status,
+    }));
+  };
+
   const confirmDelete = async () => {
     if (deleteText.trim().toUpperCase() !== t.settings.deleteConfirmWord) {
       return;
@@ -75,6 +96,11 @@ export function MeScreen({
           value={settings.allowLocation}
           onValueChange={toggleLocation}
         />
+        <ToggleRow
+          title={`${t.settings.calendar}${settings.calendarPermissionStatus ? ` • ${permissionText(settings.calendarPermissionStatus, t)}` : ''}`}
+          value={settings.allowCalendar}
+          onValueChange={toggleCalendar}
+        />
         <SettingsRow icon="cloud-outline" title={t.settings.backupTitle} subtitle={t.settings.backupSubtitle} />
         <SettingsRow
           danger
@@ -90,7 +116,19 @@ export function MeScreen({
           value={settings.faceIDEnabled}
           onValueChange={(value) => settings.biometricAvailable && updateSetting('faceIDEnabled', value)}
         />
-        <SettingsRow icon="keypad-outline" title={t.settings.pinTitle} subtitle={t.settings.pinSubtitle} />
+        <SettingsRow
+          icon="keypad-outline"
+          title={t.settings.pinTitle}
+          subtitle={settings.pinSet ? (settings.pinEnabled ? 'Đang bật PIN' : 'Đã tạo PIN, đang tắt') : t.settings.pinSubtitle}
+          onPress={() => navigation?.navigate?.('PinSetup')}
+        />
+        {settings.pinSet && (
+          <ToggleRow
+            title="Dùng PIN để khóa app"
+            value={Boolean(settings.pinEnabled)}
+            onValueChange={(value) => updateSetting('pinEnabled', value)}
+          />
+        )}
       </SettingsCard>
       <SettingsCard title={t.settings.appGroup}>
         <SettingsRow icon="notifications-outline" title={t.settings.notifications} subtitle={t.settings.notificationsSubtitle} />
@@ -98,10 +136,19 @@ export function MeScreen({
           icon="contrast-outline"
           title={t.settings.theme}
           subtitle={settings.theme === 'light' ? t.settings.themeLight : settings.theme === 'dark' ? t.settings.themeDark : t.settings.themeSystem}
-          onPress={() => {
-            const nextTheme = settings.theme === 'light' ? 'dark' : settings.theme === 'dark' ? 'system' : 'light';
-            updateSetting('theme', nextTheme);
-          }}
+          onPress={() => setThemeVisible(true)}
+        />
+        <SettingsRow
+          icon="color-palette-outline"
+          title={t.settings.accentColor}
+          subtitle={accentColorLabel(settings.accentColor || 'navy', t)}
+          onPress={() => setAccentVisible(true)}
+        />
+        <SettingsRow
+          icon="image-outline"
+          title={t.settings.customWallpaper}
+          subtitle={settings.wallpaperUri ? t.settings.customWallpaperSet : t.settings.customWallpaperDefault}
+          onPress={() => setWallpaperVisible(true)}
         />
         <SettingsRow
           icon="language-outline"
@@ -120,6 +167,47 @@ export function MeScreen({
         onChangeText={setDeleteText}
         onCancel={() => setDeleteVisible(false)}
         onConfirm={confirmDelete}
+        t={t}
+      />
+      <ThemeDialog
+        visible={themeVisible}
+        currentTheme={settings.theme}
+        onCancel={() => setThemeVisible(false)}
+        onPick={(theme) => {
+          updateSetting('theme', theme);
+          setThemeVisible(false);
+        }}
+        labels={{
+          system: t.settings.themeSystem,
+          light: t.settings.themeLight,
+          dark: t.settings.themeDark,
+        }}
+      />
+      <AccentColorDialog
+        visible={accentVisible}
+        currentAccent={settings.accentColor || 'navy'}
+        onCancel={() => setAccentVisible(false)}
+        onPick={(accent) => {
+          updateSetting('accentColor', accent);
+          setAccentVisible(false);
+        }}
+        t={t}
+      />
+      <WallpaperDialog
+        visible={wallpaperVisible}
+        hasWallpaper={Boolean(settings.wallpaperUri)}
+        onCancel={() => setWallpaperVisible(false)}
+        onPick={async () => {
+          setWallpaperVisible(false);
+          const uri = await pickMomentImage();
+          if (uri) {
+            updateSetting('wallpaperUri', uri);
+          }
+        }}
+        onRemove={() => {
+          updateSetting('wallpaperUri', undefined);
+          setWallpaperVisible(false);
+        }}
         t={t}
       />
     </ScrollView>
@@ -212,6 +300,161 @@ function DeleteJournalDialog({
       </View>
     </Modal>
   );
+}
+
+function ThemeDialog({
+  visible,
+  currentTheme,
+  onCancel,
+  onPick,
+  labels,
+}: {
+  visible: boolean;
+  currentTheme: ThemeMode;
+  onCancel: () => void;
+  onPick: (theme: ThemeMode) => void;
+  labels: Record<ThemeMode, string>;
+}) {
+  const options: Array<{ key: ThemeMode; icon: keyof typeof Ionicons.glyphMap }> = [
+    { key: 'system', icon: 'phone-portrait-outline' },
+    { key: 'light', icon: 'sunny-outline' },
+    { key: 'dark', icon: 'moon-outline' },
+  ];
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <View style={styles.dialogScrim}>
+        <View style={styles.dialogCard}>
+          <Text style={styles.dialogTitle}>Chọn giao diện</Text>
+          <Text style={styles.dialogText}>Đổi theme ngay và lưu vào cài đặt trên máy.</Text>
+          <View style={styles.themeOptionList}>
+            {options.map((option) => (
+              <Pressable
+                key={option.key}
+                style={[styles.themeOption, currentTheme === option.key && styles.themeOptionActive]}
+                onPress={() => onPick(option.key)}
+              >
+                <Ionicons name={option.icon} size={20} color={palette.primary} />
+                <Text style={styles.themeOptionText}>{labels[option.key]}</Text>
+                {currentTheme === option.key && <Ionicons name="checkmark-circle" size={20} color={palette.primary} />}
+              </Pressable>
+            ))}
+          </View>
+          <Pressable style={styles.dialogSecondary} onPress={onCancel}>
+            <Text style={styles.dialogSecondaryText}>Đóng</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function AccentColorDialog({
+  visible,
+  currentAccent,
+  onCancel,
+  onPick,
+  t,
+}: {
+  visible: boolean;
+  currentAccent: AccentColor;
+  onCancel: () => void;
+  onPick: (accent: AccentColor) => void;
+  t: any;
+}) {
+  const options: Array<{ key: AccentColor; label: string; color: string }> = [
+    { key: 'navy', label: t.settings.accentNavy, color: '#031f41' },
+    { key: 'sage', label: t.settings.accentSage, color: '#2E4F32' },
+    { key: 'ocean', label: t.settings.accentOcean, color: '#0B4F6C' },
+    { key: 'lavender', label: t.settings.accentLavender, color: '#4A3C6B' },
+    { key: 'terracotta', label: t.settings.accentTerracotta, color: '#8E3E26' },
+  ];
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <View style={styles.dialogScrim}>
+        <View style={styles.dialogCard}>
+          <Text style={styles.dialogTitle}>{t.settings.accentColor}</Text>
+          <Text style={styles.dialogText}>{t.settings.accentColorDesc}</Text>
+          <View style={styles.themeOptionList}>
+            {options.map((option) => (
+              <Pressable
+                key={option.key}
+                style={[styles.themeOption, currentAccent === option.key && styles.themeOptionActive]}
+                onPress={() => onPick(option.key)}
+              >
+                <View style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 10,
+                  backgroundColor: option.color,
+                  marginRight: 6,
+                }} />
+                <Text style={styles.themeOptionText}>{option.label}</Text>
+                {currentAccent === option.key && <Ionicons name="checkmark-circle" size={20} color={palette.primary} />}
+              </Pressable>
+            ))}
+          </View>
+          <Pressable style={styles.dialogSecondary} onPress={onCancel}>
+            <Text style={styles.dialogSecondaryText}>Đóng</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function WallpaperDialog({
+  visible,
+  hasWallpaper,
+  onCancel,
+  onPick,
+  onRemove,
+  t,
+}: {
+  visible: boolean;
+  hasWallpaper: boolean;
+  onCancel: () => void;
+  onPick: () => void;
+  onRemove: () => void;
+  t: any;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <View style={styles.dialogScrim}>
+        <View style={styles.dialogCard}>
+          <Text style={styles.dialogTitle}>{t.settings.customWallpaper}</Text>
+          <Text style={styles.dialogText}>{t.settings.customWallpaperDesc}</Text>
+          <View style={styles.themeOptionList}>
+            <Pressable style={styles.themeOption} onPress={onPick}>
+              <Ionicons name="images-outline" size={20} color={palette.primary} />
+              <Text style={styles.themeOptionText}>{t.settings.pickFromGallery}</Text>
+            </Pressable>
+            {hasWallpaper && (
+              <Pressable style={[styles.themeOption, { borderColor: palette.red }]} onPress={onRemove}>
+                <Ionicons name="trash-outline" size={20} color={palette.red} />
+                <Text style={[styles.themeOptionText, { color: palette.red }]}>{t.settings.removeWallpaper}</Text>
+              </Pressable>
+            )}
+          </View>
+          <Pressable style={styles.dialogSecondary} onPress={onCancel}>
+            <Text style={styles.dialogSecondaryText}>{t.common.cancel}</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function accentColorLabel(accent: AccentColor, t: any) {
+  switch (accent) {
+    case 'navy': return t.settings.accentNavy;
+    case 'sage': return t.settings.accentSage;
+    case 'ocean': return t.settings.accentOcean;
+    case 'lavender': return t.settings.accentLavender;
+    case 'terracotta': return t.settings.accentTerracotta;
+    default: return t.settings.accentNavy;
+  }
 }
 
 function permissionText(status: string, t: any) {

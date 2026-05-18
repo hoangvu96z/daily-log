@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import { useTranslation, getLocale } from '../i18n/translations';
+import { useTranslation } from '../i18n/translations';
 import { moodEmoji, moodLabels } from '../data/mockData';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
@@ -27,7 +27,7 @@ const SENTIMENT_KEYWORDS = {
 };
 
 export function HomeScreen({ entries, onOpenDay }: { entries: Entry[]; onOpenDay: () => void }) {
-  const { t, lang } = useTranslation();
+  const { t, lang, locale } = useTranslation();
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [insightVisible, setInsightVisible] = useState(false);
 
@@ -222,14 +222,13 @@ export function HomeScreen({ entries, onOpenDay }: { entries: Entry[]; onOpenDay
         <Text style={styles.privacyText}>{t.home.privacyNote}</Text>
       </View>
 
-      <MoodCalendar visible={calendarVisible} entries={entries} onClose={() => setCalendarVisible(false)} t={t} />
+      <MoodCalendar visible={calendarVisible} entries={entries} onClose={() => setCalendarVisible(false)} t={t} locale={locale} />
       <DailyInsightDialog visible={insightVisible} entries={entries} onClose={() => setInsightVisible(false)} t={t} />
     </ScrollView>
   );
 }
 
-function MoodCalendar({ visible, entries, onClose, t }: { visible: boolean; entries: Entry[]; onClose: () => void; t: any }) {
-  const locale = getLocale();
+function MoodCalendar({ visible, entries, onClose, t, locale }: { visible: boolean; entries: Entry[]; onClose: () => void; t: any; locale: string }) {
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - index));

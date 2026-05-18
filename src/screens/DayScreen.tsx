@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { useTranslation, getLocale } from '../i18n/translations';
+import { useTranslation } from '../i18n/translations';
 import { ImagePlaceholder } from '../components/ImagePlaceholder';
 import { moodEmoji, moodLabels } from '../data/mockData';
 import { styles } from '../styles';
@@ -21,8 +21,7 @@ export function DayScreen({
   onSaveSuggestion: (id: string) => void;
   onDiscardSuggestion: (id: string) => void;
 }) {
-  const { t } = useTranslation();
-  const locale = getLocale();
+  const { t, locale } = useTranslation();
   const dayEntries = entries.filter((entry) => entry.date === selectedDate);
 
   return (

@@ -6,6 +6,25 @@ const KEYS = {
   FACE_ID_ENABLED: 'auto_diary_face_id_enabled',
 } as const;
 
+const webStore = {
+  async setItem(key: string, value: string) {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(key, value);
+    }
+  },
+  async getItem(key: string) {
+    if (typeof localStorage === 'undefined') {
+      return null;
+    }
+    return localStorage.getItem(key);
+  },
+  async deleteItem(key: string) {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(key);
+    }
+  },
+};
+
 // === PIN Code ===
 
 /**
@@ -13,7 +32,7 @@ const KEYS = {
  * In a real app, hash the PIN before calling this function.
  */
 export async function savePinHash(hash: string): Promise<void> {
-  if (Platform.OS === 'web') return;
+  if (Platform.OS === 'web') return webStore.setItem(KEYS.PIN_HASH, hash);
   await SecureStore.setItemAsync(KEYS.PIN_HASH, hash);
 }
 
@@ -21,7 +40,7 @@ export async function savePinHash(hash: string): Promise<void> {
  * Retrieve the stored PIN hash. Returns null if no PIN is set.
  */
 export async function getPinHash(): Promise<string | null> {
-  if (Platform.OS === 'web') return null;
+  if (Platform.OS === 'web') return webStore.getItem(KEYS.PIN_HASH);
   return SecureStore.getItemAsync(KEYS.PIN_HASH);
 }
 
@@ -29,7 +48,7 @@ export async function getPinHash(): Promise<string | null> {
  * Remove the stored PIN hash (disable PIN lock).
  */
 export async function removePinHash(): Promise<void> {
-  if (Platform.OS === 'web') return;
+  if (Platform.OS === 'web') return webStore.deleteItem(KEYS.PIN_HASH);
   await SecureStore.deleteItemAsync(KEYS.PIN_HASH);
 }
 
@@ -41,13 +60,22 @@ export async function hasPinCode(): Promise<boolean> {
   return hash != null && hash.length > 0;
 }
 
+export async function savePin(pin: string): Promise<void> {
+  await savePinHash(simpleHash(pin));
+}
+
+export async function verifyPin(pin: string): Promise<boolean> {
+  const currentHash = await getPinHash();
+  return currentHash != null && currentHash === simpleHash(pin);
+}
+
 // === Face ID / Biometric Flag ===
 
 /**
  * Save the Face ID / biometric enabled flag.
  */
 export async function setFaceIDEnabled(enabled: boolean): Promise<void> {
-  if (Platform.OS === 'web') return;
+  if (Platform.OS === 'web') return webStore.setItem(KEYS.FACE_ID_ENABLED, enabled ? 'true' : 'false');
   await SecureStore.setItemAsync(KEYS.FACE_ID_ENABLED, enabled ? 'true' : 'false');
 }
 
@@ -55,7 +83,7 @@ export async function setFaceIDEnabled(enabled: boolean): Promise<void> {
  * Check if Face ID / biometric lock is enabled.
  */
 export async function isFaceIDEnabled(): Promise<boolean> {
-  if (Platform.OS === 'web') return false;
+  if (Platform.OS === 'web') return (await webStore.getItem(KEYS.FACE_ID_ENABLED)) === 'true';
   const value = await SecureStore.getItemAsync(KEYS.FACE_ID_ENABLED);
   return value === 'true';
 }
