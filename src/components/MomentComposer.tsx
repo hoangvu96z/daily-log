@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState, useMemo } from 'react';
-import { Modal, Pressable, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Modal, Pressable, SafeAreaView, ScrollView, Text, TextInput, View, ActivityIndicator } from 'react-native';
 import { moodOptions } from '../data/mockData';
 import { useTranslation } from '../i18n/translations';
 import { pickMomentImage } from '../services/imagePicker';
@@ -8,7 +8,7 @@ import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { ComposerDraft, Entry, Mood } from '../types';
 import { ImagePlaceholder } from './ImagePlaceholder';
-import { uuidv4 } from '../skills/autoTracker';
+import { aiService, AISuggestionInput } from '../skills/aiService';
 
 export function MomentComposer({
   visible,
@@ -21,31 +21,68 @@ export function MomentComposer({
   onClose: () => void;
   onSave: (entry: Entry) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [mood, setMood] = useState<Mood>('good');
   const [note, setNote] = useState('');
   const [suggestionVisible, setSuggestionVisible] = useState(true);
   const [pickedImageUri, setPickedImageUri] = useState<string | undefined>();
   const imageUri = pickedImageUri || draft.imageUri;
 
-  const suggestion = useMemo(() => {
-    if (draft.calendarText) {
-      return `${draft.calendarText} ${t.ai.calendarSuffix}`;
-    }
-    if (draft.mode === 'photo') {
-      if (draft.locationName) {
-        const moodTextStr =
-          mood === 'very_bad' ? t.ai.moodTextVeryBad :
-          mood === 'bad' ? t.ai.moodTextBad :
-          mood === 'good' ? t.ai.moodTextGood :
-          mood === 'great' ? t.ai.moodTextGreat :
-          t.ai.moodTextNeutral;
-        return t.ai.photoWithLocation(draft.locationName, moodTextStr);
+  const [suggestion, setSuggestion] = useState('');
+  const [loadingSuggestion, setLoadingSuggestion] = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    let active = true;
+
+    async function fetchSuggestion() {
+      setLoadingSuggestion(true);
+
+      // Determine period
+      let period: string | undefined = undefined;
+      const hourStr = draft.prefillTime || new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+      const hour = parseInt(hourStr.split(':')[0], 10);
+      if (!isNaN(hour)) {
+        if (hour >= 5 && hour < 12) period = 'sáng';
+        else if (hour >= 12 && hour < 18) period = 'chiều';
+        else period = 'tối';
       }
-      return t.ai.photoGeneric;
+
+      // Day of week
+      const dayLabels = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+      const dayOfWeek = dayLabels[new Date().getDay()];
+
+      const input: AISuggestionInput = {
+        mode: draft.mode,
+        mood,
+        time: draft.prefillTime || new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        dayOfWeek,
+        period,
+        locationName: draft.locationName,
+        calendarText: draft.calendarText,
+        photoLabels: imageUri ? ['photo'] : undefined,
+      };
+
+      try {
+        const text = await aiService.generateSuggestion(input);
+        if (active) {
+          setSuggestion(text);
+          setLoadingSuggestion(false);
+        }
+      } catch (err) {
+        if (active) {
+          setLoadingSuggestion(false);
+        }
+      }
     }
-    return t.ai.noteGeneric;
-  }, [draft, mood, t]);
+
+    fetchSuggestion();
+
+    return () => {
+      active = false;
+    };
+  }, [visible, draft, mood, imageUri]);
 
   const addImage = async () => {
     const uri = await pickMomentImage();
@@ -57,7 +94,7 @@ export function MomentComposer({
   const save = () => {
     const now = new Date();
     onSave({
-      id: uuidv4(),
+      id: Date.now().toString(),
       date: draft.prefillDate || now.toISOString().slice(0, 10),
       time: draft.prefillTime || now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false }),
       mood,
@@ -134,15 +171,26 @@ export function MomentComposer({
                 <Ionicons name="sparkles-outline" size={17} color={palette.green} />
                 <Text style={styles.aiTitle}>{t.composer.aiSuggestionTitle}</Text>
               </View>
-              <Text style={styles.aiText}>{suggestion}</Text>
-              <View style={styles.miniActionRow}>
-                <Pressable style={styles.miniPrimary} onPress={() => setNote(suggestion)}>
-                  <Text style={styles.miniPrimaryText}>{t.composer.useSuggestion}</Text>
-                </Pressable>
-                <Pressable style={styles.miniSecondary} onPress={() => setSuggestionVisible(false)}>
-                  <Text style={styles.miniSecondaryText}>{t.composer.ignoreSuggestion}</Text>
-                </Pressable>
-              </View>
+              {loadingSuggestion ? (
+                <View style={{ paddingVertical: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>
+                  <ActivityIndicator size="small" color={palette.green} />
+                  <Text style={{ color: palette.muted, fontSize: 13 }}>
+                    {lang === 'en' ? 'Generating suggestion...' : 'Đang tạo gợi ý...'}
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.aiText}>{suggestion}</Text>
+                  <View style={styles.miniActionRow}>
+                    <Pressable style={styles.miniPrimary} onPress={() => setNote(suggestion)}>
+                      <Text style={styles.miniPrimaryText}>{t.composer.useSuggestion}</Text>
+                    </Pressable>
+                    <Pressable style={styles.miniSecondary} onPress={() => setSuggestionVisible(false)}>
+                      <Text style={styles.miniSecondaryText}>{t.composer.ignoreSuggestion}</Text>
+                    </Pressable>
+                  </View>
+                </>
+              )}
             </View>
           )}
         </ScrollView>

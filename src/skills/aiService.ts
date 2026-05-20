@@ -1,5 +1,5 @@
 import { ComposerMode, Mood } from '../types';
-import { t } from '../i18n/translations';
+import { t, getLanguage } from '../i18n/translations';
 
 // === AI Service Interface ===
 
@@ -36,8 +36,66 @@ class MockAISuggestionService implements AISuggestionService {
   }
 }
 
-// Singleton instance — swap this for a real implementation later
-export const aiService: AISuggestionService = new MockAISuggestionService();
+class GeminiAISuggestionService implements AISuggestionService {
+  async generateSuggestion(input: AISuggestionInput): Promise<string> {
+    // Try to get GEMINI_API_KEY from env or store (if configured)
+    const apiKey = (typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : '') || '';
+    if (!apiKey) {
+      return createMockSuggestion(input);
+    }
+
+    const prompt = buildAIPrompt(input);
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const apiCall = async () => {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      const json = await response.json();
+      const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) {
+        throw new Error('Empty API response');
+      }
+
+      return text.trim();
+    };
+
+    // Timeout helper (3 seconds)
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('API request timed out')), 3000)
+    );
+
+    try {
+      // Race API call against 3-second timeout
+      return await Promise.race([apiCall(), timeout]);
+    } catch (error) {
+      console.warn('[GeminiAISuggestionService] Failed or timed out, falling back to mock:', error);
+      return createMockSuggestion(input);
+    }
+  }
+}
+
+// Singleton instance — using the robust Gemini service with automatic fallback
+export const aiService: AISuggestionService = new GeminiAISuggestionService();
 
 // === Mock Text Generation ===
 

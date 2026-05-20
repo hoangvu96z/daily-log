@@ -13,6 +13,7 @@ export const defaultSettings: Settings = {
   accentColor: 'navy',
   wallpaperUri: undefined,
   language: 'vi',
+  isPremium: false,
 };
 
 export const moodEmoji: Record<Mood, string> = {

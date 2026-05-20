@@ -16,8 +16,9 @@ import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { AccentColor, Settings, ThemeMode } from '../types';
 import { pickMomentImage } from '../services/imagePicker';
-import { registerAutoTracker, unregisterAutoTracker, runAutoTrackerOnce, getAutoTrackerStatus } from '../skills/autoTracker';
+import { PaywallModal } from '../components/PaywallModal';
 import * as BackgroundFetch from 'expo-background-fetch';
+import { getAutoTrackerStatus, registerAutoTracker, runAutoTrackerOnce, unregisterAutoTracker } from '../skills/autoTracker';
 
 export function MeScreen({
   navigation,
@@ -40,6 +41,8 @@ export function MeScreen({
   const [wallpaperVisible, setWallpaperVisible] = useState(false);
   const [notifVisible, setNotifVisible] = useState(false);
   const [notifEnabled, setNotifEnabled] = useState(false);
+  const [privacyVisible, setPrivacyVisible] = useState(false);
+  const [paywallVisible, setPaywallVisible] = useState(false);
 
   const updateSetting = <K extends keyof Settings>(key: K, value: Settings[K]) => {
     onChangeSettings((current) => ({ ...current, [key]: value }));
@@ -99,7 +102,7 @@ export function MeScreen({
       Alert.alert(
         t.settings.notifPermissionAlertTitle || 'Permission Required',
         t.settings.notifPermissionAlertText || 'Please enable permissions to use Auto-Tracking.',
-        [{ text: t.common.ok }]
+        [{ text: t.common.close }]
       );
       return;
     }
@@ -123,7 +126,7 @@ export function MeScreen({
         Alert.alert(
           t.settings.bgFetchWarningTitle,
           t.settings.bgFetchWarningText,
-          [{ text: t.common.ok }]
+          [{ text: t.common.close }]
         );
       }
     } catch (e) {
@@ -149,8 +152,112 @@ export function MeScreen({
   return (
     <ScrollView contentContainerStyle={styles.screenContent}>
       <ScreenHeader title={t.settings.title} subtitle={t.settings.subtitle} />
+      {!settings.isPremium ? (
+        <Pressable
+          style={{
+            marginHorizontal: 16,
+            marginBottom: 16,
+            borderRadius: 16,
+            padding: 16,
+            backgroundColor: palette.primary,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            shadowColor: palette.primary,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 10,
+            elevation: 4,
+          }}
+          onPress={() => setPaywallVisible(true)}
+        >
+          <View style={{ gap: 4, flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Ionicons name="sparkles" size={16} color={palette.white} />
+              <Text style={{ color: palette.white, fontSize: 14, fontWeight: '800' }}>
+                Daily Log Premium
+              </Text>
+            </View>
+            <Text style={{ color: palette.white, opacity: 0.85, fontSize: 11.5 }}>
+              {lang === 'vi' ? 'Mở khóa AI gợi ý, backup và theme cao cấp' : 'Unlock AI writing prompts, backup & customization'}
+            </Text>
+          </View>
+          <View style={{
+            backgroundColor: palette.white,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            borderRadius: 12,
+          }}>
+            <Text style={{ color: palette.primary, fontSize: 12, fontWeight: '800' }}>
+              {lang === 'vi' ? 'Nâng cấp' : 'Upgrade'}
+            </Text>
+          </View>
+        </Pressable>
+      ) : (
+        <View
+          style={{
+            marginHorizontal: 16,
+            marginBottom: 16,
+            borderRadius: 16,
+            padding: 14,
+            backgroundColor: palette.primaryContainer,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 12,
+            borderWidth: 1,
+            borderColor: palette.primary,
+          }}
+        >
+          <View style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: palette.white,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+            <Ionicons name="gift" size={20} color={palette.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: palette.ink, fontSize: 13, fontWeight: '800' }}>
+              {lang === 'vi' ? 'Bạn đang sở hữu Premium!' : 'Premium Account Active!'}
+            </Text>
+            <Text style={{ color: palette.muted, fontSize: 11 }}>
+              {lang === 'vi' ? 'Đã mở khóa toàn bộ tính năng cao cấp' : 'All premium features are fully unlocked'}
+            </Text>
+          </View>
+        </View>
+      )}
+      {/* Group 1: Diary Lock — privacy first */}
+      <SettingsCard title={t.settings.protectionGroup}>
+        <ToggleRow
+          title={settings.biometricAvailable ? t.settings.faceIDEnabled : t.settings.faceIDUnavailable}
+          value={settings.faceIDEnabled}
+          onValueChange={(value) => settings.biometricAvailable && updateSetting('faceIDEnabled', value)}
+        />
+        <SettingsRow
+          icon="keypad-outline"
+          title={t.settings.pinTitle}
+          subtitle={settings.pinSet ? (settings.pinEnabled ? 'Đang bật PIN' : 'Đã tạo PIN, đang tắt') : t.settings.pinSubtitle}
+          onPress={() => navigation?.navigate?.('PinSetup')}
+        />
+        {settings.pinSet && (
+          <ToggleRow
+            title="Dùng PIN để khóa app"
+            value={Boolean(settings.pinEnabled)}
+            onValueChange={(value) => updateSetting('pinEnabled', value)}
+          />
+        )}
+      </SettingsCard>
+      {/* Group 2: Permissions & Data */}
       <SettingsCard title={t.settings.permissionsGroup}>
-        <SettingsRow icon="shield-checkmark-outline" title={t.settings.permissionsTitle} subtitle={t.settings.permissionsSubtitle} />
+        <SettingsRow icon="lock-closed-outline" title={t.settings.permissionsTitle} subtitle={t.settings.permissionsSubtitle} />
+        <SettingsRow
+          icon="shield-checkmark-outline"
+          title={t.settings.privacyTitle}
+          subtitle={lang === 'vi' ? 'Tìm hiểu cách dữ liệu của bạn được bảo mật' : 'Learn how your data is secured'}
+          onPress={() => setPrivacyVisible(true)}
+        />
         <ToggleRow
           title={`${t.settings.photosAndVideo}${settings.photoPermissionStatus ? ` • ${permissionText(settings.photoPermissionStatus, t)}` : ''}`}
           value={settings.allowPhotos}
@@ -176,10 +283,13 @@ export function MeScreen({
           icon="cloud-outline"
           title={t.settings.backupTitle}
           subtitle={t.settings.backupSubtitle}
-          comingSoon
-          onPress={() =>
-            Alert.alert(t.settings.comingSoon, t.settings.backupAlertText, [{ text: t.common.ok }])
-          }
+          onPress={() => {
+            if (!settings.isPremium) {
+              setPaywallVisible(true);
+            } else {
+              Alert.alert('Sắp ra mắt', 'Tính năng Backup & Restore sẽ được thêm vào phiên bản tiếp theo.', [{ text: 'OK' }]);
+            }
+          }}
         />
         <SettingsRow
           danger
@@ -189,26 +299,12 @@ export function MeScreen({
           onPress={() => setDeleteVisible(true)}
         />
       </SettingsCard>
-      <SettingsCard title={t.settings.protectionGroup}>
-        <ToggleRow
-          title={settings.biometricAvailable ? t.settings.faceIDEnabled : t.settings.faceIDUnavailable}
-          value={settings.faceIDEnabled}
-          onValueChange={(value) => settings.biometricAvailable && updateSetting('faceIDEnabled', value)}
-        />
-        <SettingsRow
-          icon="keypad-outline"
-          title={t.settings.pinTitle}
-          subtitle={settings.pinSet ? (settings.pinEnabled ? t.settings.pinEnabledState : t.settings.pinDisabledState) : t.settings.pinSubtitle}
-          onPress={() => navigation?.navigate?.('PinSetup')}
-        />
-        {settings.pinSet && (
-          <ToggleRow
-            title={t.settings.usePinLock}
-            value={Boolean(settings.pinEnabled)}
-            onValueChange={(value) => updateSetting('pinEnabled', value)}
-          />
-        )}
-      </SettingsCard>
+      {/* Privacy microcopy */}
+      <View style={styles.privacyStrip}>
+        <Ionicons name="lock-closed-outline" size={19} color={palette.primary} />
+        <Text style={styles.privacyText}>{(t.settings as any).privacyMicrocopy}</Text>
+      </View>
+      {/* Group 3: App & Appearance */}
       <SettingsCard title={t.settings.appGroup}>
         <SettingsRow
           icon="notifications-outline"
@@ -232,7 +328,13 @@ export function MeScreen({
           icon="image-outline"
           title={t.settings.customWallpaper}
           subtitle={settings.wallpaperUri ? t.settings.customWallpaperSet : t.settings.customWallpaperDefault}
-          onPress={() => setWallpaperVisible(true)}
+          onPress={() => {
+            if (!settings.isPremium) {
+              setPaywallVisible(true);
+            } else {
+              setWallpaperVisible(true);
+            }
+          }}
         />
         <SettingsRow
           icon="language-outline"
@@ -272,10 +374,15 @@ export function MeScreen({
         currentAccent={settings.accentColor || 'navy'}
         onCancel={() => setAccentVisible(false)}
         onPick={(accent) => {
-          updateSetting('accentColor', accent);
           setAccentVisible(false);
+          if ((accent === 'lavender' || accent === 'terracotta') && !settings.isPremium) {
+            setPaywallVisible(true);
+            return;
+          }
+          updateSetting('accentColor', accent);
         }}
         t={t}
+        isPremium={settings.isPremium}
       />
       <WallpaperDialog
         visible={wallpaperVisible}
@@ -301,7 +408,7 @@ export function MeScreen({
         onEnable={async () => {
           const status = await requestNotificationPermission();
           if (status !== 'granted') {
-            Alert.alert(t.settings.notifPermissionAlertTitle, t.settings.notifPermissionAlertText, [{ text: t.common.ok }]);
+            Alert.alert(t.settings.notifPermissionAlertTitle, t.settings.notifPermissionAlertText, [{ text: t.common.close }]);
             return;
           }
           await scheduleDailyReminder(21, 0);
@@ -315,7 +422,94 @@ export function MeScreen({
           setNotifVisible(false);
         }}
       />
+      <PrivacyExplanationDialog
+        visible={privacyVisible}
+        onClose={() => setPrivacyVisible(false)}
+        t={t}
+      />
+      <PaywallModal
+        visible={paywallVisible}
+        onClose={() => setPaywallVisible(false)}
+        onSuccess={() => updateSetting('isPremium', true)}
+      />
     </ScrollView>
+  );
+}
+
+function PrivacyExplanationDialog({
+  visible,
+  onClose,
+  t,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  t: any;
+}) {
+  const setT = t.settings as any;
+  const sections = [
+    {
+      icon: 'phone-portrait-outline' as const,
+      title: setT.privacyOnDeviceTitle,
+      desc: setT.privacyOnDeviceDesc,
+    },
+    {
+      icon: 'sparkles-outline' as const,
+      title: setT.privacyAITitle,
+      desc: setT.privacyAIDesc,
+    },
+    {
+      icon: 'cloud-offline-outline' as const,
+      title: setT.privacyServerTitle,
+      desc: setT.privacyServerDesc,
+    },
+  ];
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.dialogScrim}>
+        <View style={[styles.dialogCard, { width: '90%', paddingVertical: 24 }]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text style={[styles.dialogTitle, { fontSize: 18, marginRight: 8, flex: 1 }]}>{setT.privacyTitle}</Text>
+            <Pressable onPress={onClose} style={{ padding: 4 }}>
+              <Ionicons name="close" size={24} color={palette.muted} />
+            </Pressable>
+          </View>
+
+          <ScrollView style={{ maxHeight: 320 }} showsVerticalScrollIndicator={false}>
+            {sections.map((section, idx) => (
+              <View key={idx} style={{ flexDirection: 'row', gap: 14, marginBottom: 20 }}>
+                <View style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 19,
+                  backgroundColor: palette.primaryContainer,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginTop: 2
+                }}>
+                  <Ionicons name={section.icon} size={18} color={palette.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: palette.ink, marginBottom: 4 }}>
+                    {section.title}
+                  </Text>
+                  <Text style={{ fontSize: 12.5, color: palette.muted, lineHeight: 18 }}>
+                    {section.desc}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+
+          <Pressable
+            style={[styles.saveButton, { marginTop: 12, width: '100%' }]}
+            onPress={onClose}
+          >
+            <Text style={styles.saveButtonText}>{t.common.close}</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -346,7 +540,7 @@ function SettingsRow({
   return (
     <Pressable style={styles.settingsRow} onPress={onPress}>
       <View style={[styles.settingsIcon, danger && styles.settingsIconDanger]}>
-        <Ionicons name={icon} size={20} color={danger ? palette.coral : palette.green} />
+        <Ionicons name={icon} size={20} color={danger ? palette.coral : palette.primary} />
       </View>
       <View style={styles.settingsTextBox}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -483,19 +677,21 @@ function AccentColorDialog({
   onCancel,
   onPick,
   t,
+  isPremium,
 }: {
   visible: boolean;
   currentAccent: AccentColor;
   onCancel: () => void;
   onPick: (accent: AccentColor) => void;
   t: any;
+  isPremium: boolean;
 }) {
-  const options: Array<{ key: AccentColor; label: string; color: string }> = [
+  const options: Array<{ key: AccentColor; label: string; color: string; isPremium?: boolean }> = [
     { key: 'navy', label: t.settings.accentNavy, color: '#031f41' },
     { key: 'sage', label: t.settings.accentSage, color: '#2E4F32' },
     { key: 'ocean', label: t.settings.accentOcean, color: '#0B4F6C' },
-    { key: 'lavender', label: t.settings.accentLavender, color: '#4A3C6B' },
-    { key: 'terracotta', label: t.settings.accentTerracotta, color: '#8E3E26' },
+    { key: 'lavender', label: t.settings.accentLavender, color: '#4A3C6B', isPremium: true },
+    { key: 'terracotta', label: t.settings.accentTerracotta, color: '#8E3E26', isPremium: true },
   ];
 
   return (
@@ -518,7 +714,9 @@ function AccentColorDialog({
                   backgroundColor: option.color,
                   marginRight: 6,
                 }} />
-                <Text style={styles.themeOptionText}>{option.label}</Text>
+                <Text style={styles.themeOptionText}>
+                  {option.label} {option.isPremium && !isPremium ? '🔒' : ''}
+                </Text>
                 {currentAccent === option.key && <Ionicons name="checkmark-circle" size={20} color={palette.primary} />}
               </Pressable>
             ))}

@@ -24,9 +24,9 @@ export function CalendarEventPicker({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.dialogScrim}>
         <View style={styles.dialogCard}>
-          <Text style={styles.dialogTitle}>{t.calendar.calendarPickerTitle}</Text>
+          <Text style={styles.dialogTitle}>{t.calendar.pickerTitle}</Text>
           <Text style={styles.dialogText}>
-            {events.length ? t.calendar.calendarPickerDescHasEvents : t.calendar.calendarPickerDescNoEvents}
+            {events.length ? t.calendar.pickerDescWithEvents : t.calendar.pickerDescNoEvents}
           </Text>
           <ScrollView style={styles.calendarEventList} contentContainerStyle={styles.calendarEventListContent}>
             {events.map((event) => (

@@ -301,3 +301,155 @@ export async function getAutoTrackerStatus(): Promise<BackgroundFetch.Background
     return null;
   }
 }
+
+/**
+ * Foreground auto-suggestion refresh.
+ *
+ * Call this when the app comes to foreground or on tab switch.
+ * It runs the same clustering + dedup logic as the background task
+ * but synchronously in the foreground, solving the reliability issue
+ * where background fetch gets killed by iOS/Android OEM battery optimization.
+ *
+ * Returns the number of new suggestions created.
+ */
+export async function refreshAutoSuggestions(): Promise<number> {
+  if (Platform.OS === 'web') return 0;
+
+  try {
+    const signals: Signal[] = [];
+
+    // Collect photos from last 48 hours
+    const { status: mediaStatus } = await MediaLibrary.getPermissionsAsync();
+    if (mediaStatus === 'granted') {
+      const twoDaysAgo = Date.now() - 48 * 60 * 60 * 1000;
+      const recentPhotos = await MediaLibrary.getAssetsAsync({
+        mediaType: 'photo',
+        createdAfter: twoDaysAgo,
+        first: 50,
+        sortBy: ['creationTime'],
+      });
+
+      for (const asset of recentPhotos.assets) {
+        signals.push({
+          type: 'photo',
+          timestamp: asset.creationTime,
+          data: asset,
+        });
+      }
+    }
+
+    // Current location if available
+    let hasLocationPerm = false;
+    try {
+      const fg = await Location.getForegroundPermissionsAsync();
+      hasLocationPerm = fg.granted;
+    } catch {
+      // ignore
+    }
+
+    if (hasLocationPerm) {
+      try {
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        signals.push({ type: 'location', timestamp: loc.timestamp, data: loc });
+      } catch {
+        // ignore
+      }
+    }
+
+    if (signals.length === 0) return 0;
+
+    // Cluster signals
+    signals.sort((a, b) => a.timestamp - b.timestamp);
+    const clusters: Cluster[] = [];
+    let currentCluster: Cluster | null = null;
+    const CLUSTER_WINDOW_MS = 60 * 60 * 1000; // 60 minutes (wider for foreground)
+
+    for (const signal of signals) {
+      if (!currentCluster) {
+        currentCluster = { startTime: signal.timestamp, endTime: signal.timestamp, signals: [signal] };
+      } else if (signal.timestamp - currentCluster.endTime <= CLUSTER_WINDOW_MS) {
+        currentCluster.endTime = signal.timestamp;
+        currentCluster.signals.push(signal);
+      } else {
+        clusters.push(currentCluster);
+        currentCluster = { startTime: signal.timestamp, endTime: signal.timestamp, signals: [signal] };
+      }
+    }
+    if (currentCluster) clusters.push(currentCluster);
+
+    // Deduplicate against existing entries
+    const allEntries = await getAllEntries();
+    let created = 0;
+
+    for (const cluster of clusters) {
+      const avgTime = (cluster.startTime + cluster.endTime) / 2;
+      const clusterDate = new Date(avgTime);
+      const dateStr = clusterDate.toISOString().split('T')[0];
+      const timeStr = clusterDate.toTimeString().substring(0, 5);
+
+      const hasDuplicate = allEntries.some((entry) => {
+        if (entry.date !== dateStr) return false;
+        const [h, m] = entry.time.split(':').map(Number);
+        const entryTime = new Date(clusterDate);
+        entryTime.setHours(h, m, 0, 0);
+        return Math.abs(entryTime.getTime() - avgTime) / (1000 * 60 * 60) < 1.5;
+      });
+
+      if (hasDuplicate) continue;
+
+      const photos = cluster.signals.filter((s) => s.type === 'photo');
+      const locs = cluster.signals.filter((s) => s.type === 'location');
+      const mainPhoto = photos.length > 0 ? photos[Math.floor(photos.length / 2)].data : null;
+      const mainLoc = locs.length > 0 ? locs[0].data : null;
+
+      let locationName: string | undefined;
+      if (mainLoc) {
+        try {
+          const geocode = await Location.reverseGeocodeAsync({
+            latitude: mainLoc.coords.latitude,
+            longitude: mainLoc.coords.longitude,
+          });
+          if (geocode?.length > 0) {
+            const place = geocode[0];
+            locationName = place.name || place.street || place.city || undefined;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      const suggestionText = await aiService.generateSuggestion({
+        mode: mainPhoto ? 'photo' : 'note',
+        mood: 'neutral',
+        time: timeStr,
+        locationName,
+      });
+
+      const newEntry: Entry = {
+        id: uuidv4(),
+        date: dateStr,
+        time: timeStr,
+        mood: 'neutral',
+        source: 'auto',
+        status: 'suggested',
+        text: suggestionText,
+        aiSuggestion: suggestionText,
+        imageLocalId: mainPhoto?.id,
+        imageUri: mainPhoto?.uri,
+        locationName,
+        locationLat: mainLoc?.coords.latitude,
+        locationLon: mainLoc?.coords.longitude,
+        isHighlight: false,
+      };
+
+      await insertEntry(newEntry);
+      created++;
+      console.log(`[AutoTracker:Foreground] Created suggestion for ${dateStr} ${timeStr}`);
+    }
+
+    return created;
+  } catch (error) {
+    console.error('[AutoTracker:Foreground] refreshAutoSuggestions failed:', error);
+    return 0;
+  }
+}

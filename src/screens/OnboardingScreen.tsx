@@ -37,7 +37,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
   const slides: Slide[] = useMemo(() => [
     {
       id: '1',
-      icon: 'journal-outline',
+      icon: 'time-outline',
       iconBg: palette.greenSoft,
       title: t.onboarding.slide1Title,
       text: t.onboarding.slide1Text,
@@ -45,7 +45,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
     },
     {
       id: '2',
-      icon: 'lock-closed-outline',
+      icon: 'eye-off-outline',
       iconBg: palette.mint,
       title: t.onboarding.slide2Title,
       text: t.onboarding.slide2Text,
@@ -107,17 +107,63 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
     }
   );
 
-  const renderSlide = ({ item }: { item: Slide }) => (
-    <View style={[s.slide, { width: containerWidth }]}>
-      <View style={s.slideContent}>
-        <View style={[s.iconCircle, { backgroundColor: item.iconBg }]}>
-          <Ionicons name={item.icon} size={48} color={item.accent} />
+  const permIcons = (t.onboarding as any).slide4PermPhotos ? [
+    { icon: 'camera-outline' as keyof typeof Ionicons.glyphMap, label: (t.onboarding as any).slide4PermPhotos },
+    { icon: 'location-outline' as keyof typeof Ionicons.glyphMap, label: (t.onboarding as any).slide4PermLocation },
+    { icon: 'calendar-outline' as keyof typeof Ionicons.glyphMap, label: (t.onboarding as any).slide4PermCalendar },
+  ] : [];
+
+  const renderSlide = ({ item, index }: { item: Slide; index: number }) => {
+    const inputRange = [
+      (index - 1) * containerWidth,
+      index * containerWidth,
+      (index + 1) * containerWidth,
+    ];
+
+    const translateY = scrollX.interpolate({
+      inputRange,
+      outputRange: [-40, 0, 40],
+      extrapolate: 'clamp',
+    });
+
+    const textTranslateY = scrollX.interpolate({
+      inputRange,
+      outputRange: [20, 0, -20],
+      extrapolate: 'clamp',
+    });
+
+    const opacity = scrollX.interpolate({
+      inputRange,
+      outputRange: [0.4, 1, 0.4],
+      extrapolate: 'clamp',
+    });
+
+    return (
+      <View style={[s.slide, { width: containerWidth }]}>
+        <View style={s.slideContent}>
+          <Animated.View style={[s.iconCircle, { backgroundColor: item.iconBg, transform: [{ translateY }], opacity }]}>
+            <Ionicons name={item.icon} size={48} color={item.accent} />
+          </Animated.View>
+          <Animated.Text style={[s.slideTitle, { transform: [{ translateY: textTranslateY }] }]}>
+            {item.title}
+          </Animated.Text>
+          <Animated.Text style={[s.slideText, { transform: [{ translateY: textTranslateY }] }]}>
+            {item.text}
+          </Animated.Text>
+          {item.id === '4' && permIcons.length > 0 && (
+            <Animated.View style={[s.permRow, { transform: [{ translateY: textTranslateY }] }]}>
+              {permIcons.map((p, i) => (
+                <View key={i} style={s.permItem}>
+                  <Ionicons name={p.icon} size={20} color={item.accent} />
+                  <Text style={s.permLabel}>{p.label}</Text>
+                </View>
+              ))}
+            </Animated.View>
+          )}
         </View>
-        <Text style={s.slideTitle}>{item.title}</Text>
-        <Text style={s.slideText}>{item.text}</Text>
       </View>
-    </View>
-  );
+    );
+  };
 
   const toggleLang = () => {
     updateSettings('language', lang === 'vi' ? 'en' : 'vi');
@@ -277,6 +323,27 @@ const s = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     letterSpacing: 0.1,
+  },
+  permRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
+    marginTop: 28,
+    flexWrap: 'wrap',
+  },
+  permItem: {
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: palette.greenSoft,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+  },
+  permLabel: {
+    fontSize: 12,
+    color: palette.muted,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   footer: {
     flexDirection: 'row',

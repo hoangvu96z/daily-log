@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from '../i18n/translations';
 import { moodEmoji, moodLabels } from '../data/mockData';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { Entry } from '../types';
+import { HighlightTile } from '../components/HighlightTile';
 
 enum SentimentType {
   POSITIVE = 'positive',
@@ -26,7 +28,15 @@ const SENTIMENT_KEYWORDS = {
   },
 };
 
-export function HomeScreen({ entries, onOpenDay }: { entries: Entry[]; onOpenDay: () => void }) {
+export function HomeScreen({
+  entries,
+  onOpenDay,
+  onSelectDate,
+}: {
+  entries: Entry[];
+  onOpenDay: () => void;
+  onSelectDate?: (date: string) => void;
+}) {
   const { t, lang, locale } = useTranslation();
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [insightVisible, setInsightVisible] = useState(false);
@@ -100,33 +110,62 @@ export function HomeScreen({ entries, onOpenDay }: { entries: Entry[]; onOpenDay
 
       {/* Bento Grid Stack */}
       <View style={{ gap: 16 }}>
-        {/* Card 1: Daily Alignment / Highlight Panel */}
-        <View style={styles.heroCard}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={styles.cardKicker}>{t.home.kicker}</Text>
-            <Ionicons name="sparkles-sharp" size={18} color={palette.primary} />
+        {highlights.length > 0 ? (
+          /* Render 2x2 Bento Grid */
+          <View style={{ gap: 12 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <Text style={styles.cardKicker}>{t.home.kicker}</Text>
+              <Ionicons name="sparkles-sharp" size={18} color={palette.primary} />
+            </View>
+            
+            {/* Row 1 */}
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Animated.View entering={FadeInDown.delay(100).springify()} style={{ flex: 1 }}>
+                <HighlightTile entry={highlights[0]} onPress={onOpenDay} />
+              </Animated.View>
+              <Animated.View entering={FadeInDown.delay(180).springify()} style={{ flex: 1 }}>
+                {highlights[1] ? (
+                  <HighlightTile entry={highlights[1]} onPress={onOpenDay} />
+                ) : (
+                  <Pressable style={localStyles.emptyTilePlaceholder} onPress={onOpenDay}>
+                    <Ionicons name="add-circle-outline" size={24} color={palette.primary} style={{ opacity: 0.5 }} />
+                    <Text style={localStyles.emptyTileText}>{t.home.emptyYesterday}</Text>
+                  </Pressable>
+                )}
+              </Animated.View>
+            </View>
+            
+            {/* Row 2 */}
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Animated.View entering={FadeInDown.delay(260).springify()} style={{ flex: 1 }}>
+                {highlights[2] ? (
+                  <HighlightTile entry={highlights[2]} onPress={onOpenDay} />
+                ) : (
+                  <Pressable style={localStyles.emptyTilePlaceholder} onPress={onOpenDay}>
+                    <Ionicons name="sparkles-outline" size={24} color={palette.primary} style={{ opacity: 0.5 }} />
+                    <Text style={localStyles.emptyTileText}>Gợi ý thêm</Text>
+                  </Pressable>
+                )}
+              </Animated.View>
+              <Animated.View entering={FadeInDown.delay(340).springify()} style={{ flex: 1 }}>
+                {/* Tile 4: Mini Peace Index */}
+                <View style={localStyles.miniPeaceTile}>
+                  <Ionicons name="heart-circle-outline" size={24} color={palette.primary} />
+                  <Text style={localStyles.miniPeacePercent}>{peaceIndex}%</Text>
+                  <Text style={localStyles.miniPeaceDesc} numberOfLines={2}>
+                    {lang === 'vi' ? 'Chỉ số bình yên' : 'Peace index'}
+                  </Text>
+                </View>
+              </Animated.View>
+            </View>
           </View>
-
-          {highlights.length > 0 ? (
-            <>
-              <Text style={styles.heroTitle}>{t.home.heroText}</Text>
-              <Text style={[styles.screenSubtitle, { marginTop: 6, fontSize: 14, opacity: 0.8 }]}>
-                {homeT.heroSub}
-              </Text>
-              <View style={styles.chipWrap}>
-                {highlights.map((entry) => (
-                  <View key={entry.id} style={styles.eventChip}>
-                    <View style={styles.chipIcon}>
-                      <Ionicons name={entry.imageLocalId ? 'image-outline' : 'sparkles-outline'} size={14} color={palette.primary} />
-                    </View>
-                    <Text style={styles.eventChipText}>
-                      {entry.text && entry.text.length > 20 ? `${entry.text.substring(0, 20)}...` : entry.text}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </>
-          ) : (
+        ) : (
+          /* Fallback: Old Card 1 (Daily Alignment) */
+          <View style={styles.heroCard}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={styles.cardKicker}>{t.home.kicker}</Text>
+              <Ionicons name="sparkles-sharp" size={18} color={palette.primary} />
+            </View>
             <View style={{ marginTop: 10 }}>
               <Text style={styles.heroTitle}>
                 {entries.length > 0 ? t.home.emptyYesterday : t.home.welcomeText}
@@ -137,68 +176,70 @@ export function HomeScreen({ entries, onOpenDay }: { entries: Entry[]; onOpenDay
                   : t.home.welcomeText}
               </Text>
             </View>
-          )}
-        </View>
+          </View>
+        )}
 
-        {/* Card 2: Peace Index Card */}
-        <View style={[styles.heroCard, { alignItems: 'center', paddingVertical: 24 }]}>
-          <Text style={[styles.cardKicker, { marginBottom: 16 }]}>{homeT.peaceIndex}</Text>
+        {/* Card 2: Peace Index Card — Only show if highlights.length === 0 to avoid duplication */}
+        {highlights.length === 0 && (
+          <View style={[styles.heroCard, { alignItems: 'center', paddingVertical: 24 }]}>
+            <Text style={[styles.cardKicker, { marginBottom: 16 }]}>{homeT.peaceIndex}</Text>
 
-          <View style={{
-            width: 120,
-            height: 120,
-            borderRadius: 60,
-            borderWidth: 6,
-            borderColor: palette.outline,
-            justifyContent: 'center',
-            alignItems: 'center',
-            position: 'relative',
-          }}>
             <View style={{
-              position: 'absolute',
-              width: 108,
-              height: 108,
-              borderRadius: 54,
-              backgroundColor: palette.primaryContainer,
-              opacity: 0.15,
-            }} />
-            <Text style={{
-              color: palette.onSurface,
-              fontSize: 36,
-              fontWeight: '800',
-              letterSpacing: -1,
+              width: 120,
+              height: 120,
+              borderRadius: 60,
+              borderWidth: 6,
+              borderColor: palette.outline,
+              justifyContent: 'center',
+              alignItems: 'center',
+              position: 'relative',
             }}>
-              {peaceIndex}
-              <Text style={{ fontSize: 16, color: palette.primary }}>%</Text>
+              <View style={{
+                position: 'absolute',
+                width: 108,
+                height: 108,
+                borderRadius: 54,
+                backgroundColor: palette.primaryContainer,
+                opacity: 0.15,
+              }} />
+              <Text style={{
+                color: palette.onSurface,
+                fontSize: 36,
+                fontWeight: '800',
+                letterSpacing: -1,
+              }}>
+                {peaceIndex}
+                <Text style={{ fontSize: 16, color: palette.primary }}>%</Text>
+              </Text>
+            </View>
+
+            <Text style={[styles.screenSubtitle, { marginTop: 16, textAlign: 'center', fontSize: 14 }]}>
+              {peaceIndex >= 80
+                ? homeT.serenityOptimal
+                : peaceIndex >= 60
+                  ? homeT.serenityModerate
+                  : homeT.serenityMindful}
             </Text>
           </View>
+        )}
 
-          <Text style={[styles.screenSubtitle, { marginTop: 16, textAlign: 'center', fontSize: 14 }]}>
-            {peaceIndex >= 80
-              ? homeT.serenityOptimal
-              : peaceIndex >= 60
-                ? homeT.serenityModerate
-                : homeT.serenityMindful}
-          </Text>
-        </View>
-
-        {/* Card 3: Action Buttons row */}
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-          <Pressable style={styles.primaryButton} onPress={onOpenDay}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {/* Card 3: Action Buttons — stacked full-width */}
+        <View style={{ gap: 10 }}>
+          <Pressable style={[styles.primaryButton, { flex: undefined }]} onPress={onOpenDay}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
               <Ionicons name="eye-outline" size={18} color={palette.white} />
               <Text style={styles.primaryButtonText}>{t.home.viewFullDay}</Text>
             </View>
           </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => setCalendarVisible(true)}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Pressable style={[styles.secondaryButton, { flex: undefined }]} onPress={() => setCalendarVisible(true)}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
               <Ionicons name="calendar-outline" size={18} color={palette.primary} />
               <Text style={styles.secondaryButtonText}>{t.home.moodCalendar}</Text>
             </View>
           </Pressable>
         </View>
 
-        {/* Card 4: Additional Insights Button */}
+        {/* Card 4: Daily Insights — warm hint card */}
         <Pressable
           style={[styles.heroCard, {
             flexDirection: 'row',
@@ -209,9 +250,11 @@ export function HomeScreen({ entries, onOpenDay }: { entries: Entry[]; onOpenDay
           }]}
           onPress={() => setInsightVisible(true)}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
             <Ionicons name="bulb-outline" size={20} color={palette.primary} />
-            <Text style={[styles.settingsTitle, { color: palette.onSurface }]}>{homeT.dailyInsights}</Text>
+            <Text style={[styles.settingsTitle, { color: palette.onSurface }]}>
+              {(homeT as any).insightHint || homeT.dailyInsights}
+            </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={palette.primary} />
         </Pressable>
@@ -222,13 +265,50 @@ export function HomeScreen({ entries, onOpenDay }: { entries: Entry[]; onOpenDay
         <Text style={styles.privacyText}>{t.home.privacyNote}</Text>
       </View>
 
-      <MoodCalendar visible={calendarVisible} entries={entries} onClose={() => setCalendarVisible(false)} t={t} locale={locale} />
+      <MoodCalendar
+        visible={calendarVisible}
+        entries={entries}
+        onClose={() => setCalendarVisible(false)}
+        onSelectDate={onSelectDate}
+        t={t}
+        locale={locale}
+      />
       <DailyInsightDialog visible={insightVisible} entries={entries} onClose={() => setInsightVisible(false)} t={t} />
     </ScrollView>
   );
 }
 
-function MoodCalendar({ visible, entries, onClose, t, locale }: { visible: boolean; entries: Entry[]; onClose: () => void; t: any; locale: string }) {
+function MoodCalendar({
+  visible,
+  entries,
+  onClose,
+  onSelectDate,
+  t,
+  locale,
+}: {
+  visible: boolean;
+  entries: Entry[];
+  onClose: () => void;
+  onSelectDate?: (date: string) => void;
+  t: any;
+  locale: string;
+}) {
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (visible) {
+      setSelectedDateKey(new Date().toISOString().slice(0, 10));
+    }
+  }, [visible]);
+
+  const moodColors: Record<string, string> = {
+    very_bad: '#E53935',
+    bad: '#FB8C00',
+    neutral: '#9E9E9E',
+    good: '#43A047',
+    great: '#7E57C2',
+  };
+
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - index));
@@ -244,24 +324,170 @@ function MoodCalendar({ visible, entries, onClose, t, locale }: { visible: boole
     };
   });
 
+  // Calculate streak
+  let streak = 0;
+  for (let i = days.length - 1; i >= 0; i--) {
+    if (days[i].count > 0) streak++;
+    else break;
+  }
+
+  // Calculate mood summary
+  const goodDays = days.filter(d => d.mood === 'good' || d.mood === 'great').length;
+  const neutralDays = days.filter(d => d.mood === 'neutral' || d.mood === 'bad').length;
+  const emptyDays = days.filter(d => !d.mood).length;
+  const homeT = t.home as any;
+
+  const selectedDayEntries = selectedDateKey ? entries.filter(e => e.date === selectedDateKey) : [];
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.dialogScrim}>
         <View style={styles.dialogCard}>
-          <Text style={styles.dialogTitle}>{t.home.moodCalendarTitle}</Text>
-          <Text style={styles.dialogText}>{t.home.moodCalendarDesc}</Text>
-          <View style={styles.moodCalendarGrid}>
-            {days.map((day) => (
-              <View key={day.dateKey} style={styles.moodDayCell}>
-                <Text style={styles.moodDayName}>{day.dayLabel}</Text>
-                <Text style={styles.moodDateText}>{day.dateLabel}</Text>
-                <View style={[styles.moodDotLarge, { opacity: day.count ? 1 : 0.25 }]} />
-                <Text style={styles.moodCellText}>{day.mood ? `${moodEmoji[day.mood]} ${t.mood[day.mood]}` : t.home.emptyMood}</Text>
-                <Text style={styles.moodCountText}>{t.home.entryCount(day.count)}</Text>
-              </View>
-            ))}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={styles.dialogTitle}>{t.home.moodCalendarTitle}</Text>
+            <Pressable onPress={onClose} style={{ padding: 4 }}>
+              <Ionicons name="close" size={22} color={palette.muted} />
+            </Pressable>
           </View>
-          <Pressable style={styles.saveButton} onPress={onClose}>
+          <Text style={styles.dialogText}>
+            {homeT.moodSummary ? homeT.moodSummary(goodDays, neutralDays, emptyDays) : t.home.moodCalendarDesc}
+          </Text>
+          {streak >= 3 && homeT.streakMessage && (
+            <View style={{
+              backgroundColor: palette.primaryContainer,
+              borderRadius: 12,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              marginTop: 10,
+              alignSelf: 'flex-start',
+            }}>
+              <Text style={{ color: palette.primary, fontSize: 13, fontWeight: '700' }}>
+                {homeT.streakMessage(streak)}
+              </Text>
+            </View>
+          )}
+          <View style={styles.moodCalendarGrid}>
+            {days.map((day) => {
+              const isSelected = selectedDateKey === day.dateKey;
+              return (
+                <Pressable
+                  key={day.dateKey}
+                  style={[
+                    styles.moodDayCell,
+                    isSelected && {
+                      borderColor: palette.primary,
+                      borderWidth: 2,
+                      backgroundColor: 'rgba(3, 31, 65, 0.05)',
+                      borderRadius: 12,
+                      padding: 4,
+                    }
+                  ]}
+                  onPress={() => setSelectedDateKey(day.dateKey)}
+                >
+                  <Text style={styles.moodDayName}>{day.dayLabel}</Text>
+                  <Text style={styles.moodDateText}>{day.dateLabel}</Text>
+                  <View style={[
+                    styles.moodDotLarge,
+                    {
+                      backgroundColor: day.mood ? moodColors[day.mood] || palette.primary : palette.outline,
+                      opacity: day.count ? 1 : 0.3,
+                    },
+                  ]} />
+                  <Text style={[styles.moodCellText, { fontSize: day.mood ? 12 : 11 }]}>
+                    {day.mood ? `${moodEmoji[day.mood]} ${t.mood[day.mood]}` : t.home.emptyMood}
+                  </Text>
+                  <Text style={styles.moodCountText}>{t.home.entryCount(day.count)}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Selected Day Preview Section */}
+          <View style={{
+            marginTop: 16,
+            padding: 12,
+            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: 'rgba(3, 31, 65, 0.08)',
+            width: '100%',
+            gap: 8,
+          }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: palette.primary }}>
+              {selectedDateKey ? `${t.language === 'en' ? 'Day' : 'Ngày'} ${selectedDateKey.split('-').reverse().join('/')}` : ''}
+            </Text>
+            {selectedDayEntries.length > 0 ? (
+              <ScrollView style={{ maxHeight: 100 }} nestedScrollEnabled>
+                {selectedDayEntries.map((e) => (
+                  <View key={e.id} style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingVertical: 6,
+                    borderBottomWidth: 1,
+                    borderBottomColor: 'rgba(3, 31, 65, 0.04)'
+                  }}>
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <Text style={{ fontSize: 12, color: palette.ink, fontWeight: '500' }} numberOfLines={1}>
+                        {e.time} • {e.text || (t.language === 'en' ? 'No text' : 'Không có nội dung')}
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 13 }}>{moodEmoji[e.mood]}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            ) : (
+              <Text style={{ fontSize: 12, color: palette.muted, fontStyle: 'italic', marginVertical: 4 }}>
+                {t.language === 'en' ? 'No entries for this day.' : 'Chưa ghi nhật ký ngày này.'}
+              </Text>
+            )}
+
+            {selectedDayEntries.length > 0 ? (
+              <Pressable
+                style={{
+                  backgroundColor: palette.primary,
+                  borderRadius: 10,
+                  paddingVertical: 8,
+                  alignItems: 'center',
+                  marginTop: 4,
+                }}
+                onPress={() => {
+                  if (selectedDateKey && onSelectDate) {
+                    onSelectDate(selectedDateKey);
+                    onClose();
+                  }
+                }}
+              >
+                <Text style={{ color: palette.white, fontSize: 12, fontWeight: '700' }}>
+                  {t.language === 'en' ? 'View Day Details' : 'Xem chi tiết ngày này'}
+                </Text>
+              </Pressable>
+            ) : (
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                <Pressable
+                  style={{
+                    flex: 1,
+                    backgroundColor: 'rgba(3, 31, 65, 0.08)',
+                    borderRadius: 10,
+                    paddingVertical: 8,
+                    alignItems: 'center',
+                  }}
+                  onPress={() => {
+                    if (selectedDateKey && onSelectDate) {
+                      onSelectDate(selectedDateKey);
+                      onClose();
+                    }
+                  }}
+                >
+                  <Text style={{ color: palette.primary, fontSize: 12, fontWeight: '600' }}>
+                    {t.language === 'en' ? 'Go to Day Tab' : 'Đi tới Tab Ngày'}
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+
+          <Pressable style={[styles.saveButton, { marginTop: 12 }]} onPress={onClose}>
             <Text style={styles.saveButtonText}>{t.common.close}</Text>
           </Pressable>
         </View>
@@ -303,3 +529,60 @@ function DailyInsightDialog({ visible, entries, onClose, t }: { visible: boolean
     </Modal>
   );
 }
+
+const localStyles = StyleSheet.create({
+  emptyTilePlaceholder: {
+    flex: 1,
+    height: 140,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: palette.outline,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+  },
+  emptyTileText: {
+    color: palette.onSurface,
+    opacity: 0.6,
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 6,
+  },
+  miniPeaceTile: {
+    flex: 1,
+    height: 140,
+    borderRadius: 20,
+    backgroundColor: palette.primaryContainer,
+    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: palette.outline,
+  },
+  miniPeacePercent: {
+    color: palette.onSurface,
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: -1,
+    marginVertical: 4,
+  },
+  miniPeaceKicker: {
+    color: palette.onSurface,
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    opacity: 0.7,
+  },
+  miniPeaceDesc: {
+    color: palette.onSurface,
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+    opacity: 0.8,
+  },
+});
+

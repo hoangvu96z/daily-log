@@ -3,6 +3,7 @@ import { Entry, Settings, TabKey, WeeklyReel } from '../types';
 import { defaultSettings } from '../data/mockData';
 import { deleteAllEntries, deleteEntry, getAllEntries, getAllReels, insertEntry, loadSettings, saveSetting, updateEntryStatus } from './database';
 import { hasPinCode } from './secureStore';
+import { generateSeedEntries, isSeedEntry } from '../data/seedEntries';
 
 // === Store Interface ===
 interface JournalState {
@@ -75,6 +76,17 @@ export const useJournalStore = create<JournalState>((set) => ({
           .map((entry) => deleteEntry(entry.id)),
       );
     }
+
+    // Seed: if DB is completely empty, inject demo entries for first-run experience
+    const lang = settings.language || 'vi';
+    if (entries.length === 0) {
+      const seeds = generateSeedEntries(lang);
+      for (const seed of seeds) {
+        await insertEntry(seed);
+      }
+      entries.push(...seeds);
+    }
+
     const onboardingFlag = (settings as any).onboardingComplete === true;
     set({
       entries,
@@ -88,9 +100,18 @@ export const useJournalStore = create<JournalState>((set) => ({
   // Entries — start empty, no mock data
   entries: [],
   addEntry: async (entry) => {
+    // When user adds first real entry, clean up seed entries
+    const state = useJournalStore.getState();
+    const seedEntries = state.entries.filter(isSeedEntry);
+    if (seedEntries.length > 0) {
+      for (const seed of seedEntries) {
+        await deleteEntry(seed.id);
+      }
+      set((s) => ({ entries: s.entries.filter((e) => !isSeedEntry(e)) }));
+    }
     await insertEntry(entry);
-    set((state) => ({
-      entries: [...state.entries, entry].sort((a, b) => a.time.localeCompare(b.time)),
+    set((s) => ({
+      entries: [...s.entries, entry].sort((a, b) => a.time.localeCompare(b.time)),
     }));
   },
   saveSuggestion: async (id) => {

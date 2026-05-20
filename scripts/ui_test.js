@@ -7,7 +7,7 @@
  * 2. Connects to the local development server (http://localhost:8081).
  * 3. Bypasses the Onboarding screen by clicking "Bỏ qua" (Skip).
  * 4. Asserts the Home Screen renders and calculates the Serenity/Peace index.
- * 5. Clicks the "Lịch tâm trạng" (Mood Calendar) button and verifies the Modal renders.
+ * 5. Clicks the "Lịch cảm xúc" (Mood Calendar) button and verifies the Modal renders.
  * 6. Interacts with Bottom Tab items: clicks Day (Ngày), Reel, and Me tabs.
  * 7. Asserts Me Screen renders settings items (Backup, Notifications).
  */
@@ -56,6 +56,33 @@ async function runUITests() {
     await page.goto('http://localhost:8081', { waitUntil: 'networkidle2', timeout: 30000 });
     console.log(`${colors.green}Successfully loaded web app page!${colors.reset}\n`);
 
+    // Helper function to robustly click elements by text natively in browser context
+    async function clickByText(textToClick, fallbackText) {
+      return page.evaluate((txt, fb) => {
+        const query = (str) => {
+          if (!str) return null;
+          const elements = Array.from(document.querySelectorAll('div, span, p, button, a'));
+          // Sort elements by child count ascending (leaf elements first)
+          const sorted = elements.sort((a, b) => (a.children.length) - (b.children.length));
+          return sorted.find(el => {
+            const elText = el.innerText ? el.innerText.trim() : '';
+            return elText === str || (elText.includes(str) && el.children.length <= 1);
+          });
+        };
+        
+        let target = query(txt);
+        if (!target && fb) {
+          target = query(fb);
+        }
+        
+        if (target) {
+          target.click();
+          return true;
+        }
+        return false;
+      }, textToClick, fallbackText);
+    }
+
     // --- Onboarding Bypass ---
     console.log(`${colors.bold}0. Checking for Onboarding Flow...${colors.reset}`);
     await page.waitForSelector('body', { timeout: 5000 });
@@ -64,18 +91,8 @@ async function runUITests() {
     if (pageText.includes('Bỏ qua') || pageText.includes('Skip') || pageText.includes('Chào mừng') || pageText.includes('Nhật ký')) {
       console.log(`${colors.yellow}Onboarding screen detected. Bypassing onboarding...${colors.reset}`);
       
-      const elements = await page.$$('div');
-      let skipBtn = null;
-      for (const el of elements) {
-        const text = await page.evaluate(e => e.innerText, el);
-        if (text && text.trim() === 'Bỏ qua') {
-          skipBtn = el;
-          break;
-        }
-      }
-
-      if (skipBtn) {
-        await skipBtn.click();
+      const skipped = await clickByText('Bỏ qua', 'Skip');
+      if (skipped) {
         console.log(`${colors.green}Clicked Skip/Bỏ qua button successfully!${colors.reset}`);
         await new Promise(r => setTimeout(r, 3000)); // Wait for transition & hydration
         pageText = await page.evaluate(() => document.body.innerText);
@@ -98,35 +115,21 @@ async function runUITests() {
 
     // --- Test 3: Interact with Mood Calendar Modal ---
     console.log(`\n${colors.bold}3. Opening Mood Calendar Modal Dialog...${colors.reset}`);
-    // Find button containing "Lịch cảm xúc" or "Mood Calendar"
-    const buttons = await page.$$('div');
-    let targetBtn = null;
-    
-    for (const btn of buttons) {
-      const text = await page.evaluate(el => el.innerText, btn);
-      if (text && (text.includes('Lịch cảm xúc') || text.includes('Mood Calendar'))) {
-        targetBtn = btn;
-        break;
-      }
-    }
-    
-    if (targetBtn) {
-      await targetBtn.click();
-      await new Promise(r => setTimeout(r, 800)); // Wait for modal animation
+    const opened = await clickByText('Lịch cảm xúc', 'Mood Calendar');
+    if (opened) {
+      await new Promise(r => setTimeout(r, 1200)); // Wait for modal animation
       
       const modalText = await page.evaluate(() => document.body.innerText);
       const isModalVisible = modalText.includes('7 ngày qua') || modalText.includes('Past 7 Days') || modalText.includes('Tâm trạng') || modalText.includes('cảm xúc');
       assert("Mood calendar modal dialog should be successfully opened and visible", isModalVisible);
       
       // Close the modal
-      const closeButtons = await page.$$('div');
-      for (const cb of closeButtons) {
-        const text = await page.evaluate(el => el.innerText, cb);
-        if (text && (text.includes('Đóng') || text.includes('Close'))) {
-          await cb.click();
-          await new Promise(r => setTimeout(r, 600)); // Wait for modal animation to close
-          break;
-        }
+      const closed = await clickByText('Đóng', 'Close');
+      if (closed) {
+        await new Promise(r => setTimeout(r, 800)); // Wait for modal animation to close
+        console.log(`${colors.green}Closed Mood Calendar modal successfully!${colors.reset}`);
+      } else {
+        console.log(`${colors.yellow}Could not find Close button to close Mood Calendar.${colors.reset}`);
       }
     } else {
       assert("Mood calendar button found and clicked", false);
@@ -134,20 +137,9 @@ async function runUITests() {
 
     // --- Test 4: Navigate to Day Tab ---
     console.log(`\n${colors.bold}4. Navigating to 'Ngày' (Day) Tab...${colors.reset}`);
-    const tabs = await page.$$('div');
-    let dayTab = null;
-    
-    for (const tab of tabs) {
-      const text = await page.evaluate(el => el.innerText, tab);
-      if (text && (text.trim() === 'Ngày' || text.trim() === 'Day' || text.trim() === 'Timeline')) {
-        dayTab = tab;
-        break;
-      }
-    }
-    
-    if (dayTab) {
-      await dayTab.click();
-      await new Promise(r => setTimeout(r, 800));
+    const dayClicked = await clickByText('Ngày', 'Day');
+    if (dayClicked) {
+      await new Promise(r => setTimeout(r, 1000));
       const dayPageText = await page.evaluate(() => document.body.innerText);
       const hasTimeline = dayPageText.includes('Dòng thời gian') || dayPageText.includes('Timeline') || dayPageText.includes('ngày');
       assert("Day Screen timeline layout should be rendered successfully", hasTimeline);
@@ -157,23 +149,12 @@ async function runUITests() {
 
     // --- Test 5: Navigate to Me Tab ---
     console.log(`\n${colors.bold}5. Navigating to 'Me' (Settings) Tab...${colors.reset}`);
-    const meTabs = await page.$$('div');
-    let meTab = null;
-    
-    for (const tab of meTabs) {
-      const text = await page.evaluate(el => el.innerText, tab);
-      if (text && (text.trim() === 'Me' || text.trim() === 'Tôi' || text.trim() === 'Settings')) {
-        meTab = tab;
-        break;
-      }
-    }
-    
-    if (meTab) {
-      await meTab.click();
-      await new Promise(r => setTimeout(r, 800));
+    const meClicked = await clickByText('Me', 'Tôi');
+    if (meClicked) {
+      await new Promise(r => setTimeout(r, 1000));
       const mePageText = await page.evaluate(() => document.body.innerText);
       
-      const hasSettings = mePageText.includes('Thiết lập') || mePageText.includes('Settings') || mePageText.includes('Thông báo') || mePageText.includes('Notifications') || mePageText.includes('Sao lưu') || mePageText.includes('Backup');
+      const hasSettings = mePageText.includes('Thiết lập') || mePageText.includes('Settings') || mePageText.includes('Thông báo') || mePageText.includes('Notifications') || mePageText.includes('Sao lưu') || mePageText.includes('Backup') || mePageText.includes('Quyền riêng tư') || mePageText.includes('Privacy');
       assert("Me Screen setting options should render in viewport", hasSettings);
     } else {
       assert("Me tab button found and clicked", false);

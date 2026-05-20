@@ -46,6 +46,7 @@ export type Settings = {
   accentColor?: AccentColor;
   wallpaperUri?: string;
   language: 'vi' | 'en';
+  isPremium: boolean;
   // Note: pinCodeHash is stored in expo-secure-store, NOT here
 };
 
