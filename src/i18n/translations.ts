@@ -15,6 +15,7 @@ const vi = {
     loading: 'Đang mở nhật ký riêng...',
     entry: 'entry',
     moments: 'khoảnh khắc',
+    ok: 'OK',
   },
 
   // --- Tab Bar ---
@@ -80,6 +81,8 @@ const vi = {
     noMoments: 'Chưa có khoảnh khắc nào',
     noReelsTitle: 'Chưa có reel nào',
     noReelsDesc: 'Khi bạn có đủ khoảnh khắc trong tuần, reel sẽ tự động được tạo.',
+    playAll: 'Phát toàn bộ',
+    savedMomentsCount: (count: number) => `${count} khoảnh khắc đã lưu`,
   },
 
   // --- Add Moment Sheet ---
@@ -120,6 +123,10 @@ const vi = {
     photosAndVideo: 'Ảnh & video',
     location: 'Vị trí',
     calendar: 'Lịch',
+    autoTracking: 'Tự động ghi nhận (Auto-Tracking)',
+    autoTrackingDesc: 'Tự động tạo gợi ý nhật ký từ ảnh, vị trí và sự kiện.',
+    bgFetchWarningTitle: 'Background Fetch bị hạn chế',
+    bgFetchWarningText: 'Background Fetch bị tắt hoặc hạn chế trên thiết bị này. Tính năng Tự động ghi nhận sẽ chỉ chạy khi bạn mở ứng dụng.',
     backupTitle: 'Sao lưu & khôi phục',
     backupSubtitle: 'Backup iCloud/Drive, khôi phục khi đổi máy',
     deleteAllTitle: 'Xóa toàn bộ nhật ký',
@@ -171,12 +178,47 @@ const vi = {
     permissionDenied: 'bị từ chối',
     permissionUnavailable: 'không hỗ trợ',
     permissionUnknown: 'chưa hỏi',
+    comingSoon: 'Sắp ra mắt',
+    backupAlertText: 'Tính năng Backup & Restore sẽ được thêm vào phiên bản tiếp theo.',
+    pinEnabledState: 'Đang bật PIN',
+    pinDisabledState: 'Đã tạo PIN, đang tắt',
+    usePinLock: 'Dùng PIN để khóa app',
+    notificationsEnabledSubtitle: 'Đang bật — nhắc nhở hàng ngày',
+    notifPermissionAlertTitle: 'Cần quyền thông báo',
+    notifPermissionAlertText: 'Vào Cài đặt máy → Thông báo → Bật cho ứng dụng này.',
+    chooseThemeTitle: 'Chọn giao diện',
+    chooseThemeDesc: 'Đổi theme ngay và lưu vào cài đặt trên máy.',
+    notifDialogTitle: 'Thông báo nhắc nhở',
+    notifDialogDesc: 'Bật để nhận nhắc nhở hàng ngày lúc 21:00 và tóm tắt tuần mỗi Chủ nhật 20:00.',
+    enableNotifications: 'Bật thông báo',
+    disableNotifications: 'Tắt thông báo',
   },
 
   // --- Biometric Auth ---
   auth: {
     unlockPrompt: 'Mở khóa nhật ký',
     cancelLabel: 'Hủy',
+  },
+
+  // --- PIN Code ---
+  pin: {
+    changeTitle: 'Đổi mã PIN',
+    createTitle: 'Tạo mã PIN',
+    confirmHelper: 'Nhập lại PIN một lần nữa để xác nhận.',
+    createHelper: 'Chọn 4-6 số dễ nhớ với bạn, nhưng khó đoán với người khác.',
+    validationError: 'PIN cần gồm 4-6 chữ số.',
+    mismatchError: 'PIN chưa khớp. Thử lại từ đầu.',
+    confirmHeading: 'Xác nhận PIN',
+    createHeading: 'PIN riêng cho nhật ký',
+    saveButton: 'Lưu PIN',
+    continueButton: 'Tiếp tục',
+    turnOff: 'Tắt PIN',
+    incorrectPin: 'PIN chưa đúng.',
+    enterPin: 'Nhập PIN',
+    unlockDesc: 'Mở khóa nhật ký riêng của bạn.',
+    unlockButton: 'Mở khóa',
+    useBiometrics: 'Dùng Face ID / vân tay',
+    usePinCode: 'Dùng mã PIN',
   },
 
   // --- AI Service (mock suggestions) ---
@@ -212,9 +254,14 @@ const vi = {
     getStarted: 'Bắt đầu',
   },
 
-  // --- Calendar stub ---
+  // --- Calendar ---
   calendar: {
     stubText: 'Lịch: hoàn thành một việc quan trọng',
+    defaultEventText: 'Mốc từ lịch',
+    calendarPickerTitle: 'Chọn mốc từ lịch',
+    calendarPickerDescHasEvents: 'Chọn một event hôm nay để tự điền giờ và nội dung.',
+    calendarPickerDescNoEvents: 'Hôm nay chưa có event nào trong lịch.',
+    manualInput: 'Tự nhập',
   },
 
   permissions: {
@@ -235,6 +282,7 @@ const en: typeof vi = {
     loading: 'Opening your private diary...',
     entry: 'entry',
     moments: 'moments',
+    ok: 'OK',
   },
 
   tabs: {
@@ -295,6 +343,8 @@ const en: typeof vi = {
     noMoments: 'No moments yet',
     noReelsTitle: 'No reels yet',
     noReelsDesc: 'When you have enough moments this week, a weekly reel will be automatically generated.',
+    playAll: 'Play all',
+    savedMomentsCount: (count: number) => `${count} saved ${count === 1 ? 'moment' : 'moments'}`,
   },
 
   addMoment: {
@@ -331,6 +381,10 @@ const en: typeof vi = {
     photosAndVideo: 'Photos & Video',
     location: 'Location',
     calendar: 'Calendar',
+    autoTracking: 'Auto-Tracking',
+    autoTrackingDesc: 'Automatically generate diary suggestions from photos, location, and calendar events.',
+    bgFetchWarningTitle: 'Background Fetch Restricted',
+    bgFetchWarningText: 'Background Fetch is disabled or restricted on this device. Auto-Tracking will only run when you open the app.',
     backupTitle: 'Backup & Restore',
     backupSubtitle: 'Backup to iCloud/Drive, restore on new device',
     deleteAllTitle: 'Delete All Diary Data',
@@ -372,16 +426,49 @@ const en: typeof vi = {
     deleteDialogTitle: 'Delete all diary data?',
     deleteDialogText: 'Type DELETE to confirm. Local data will be permanently removed from this device.',
     deleteConfirmWord: 'DELETE',
-
     permissionGranted: 'granted',
     permissionDenied: 'denied',
     permissionUnavailable: 'not supported',
     permissionUnknown: 'not asked',
+    comingSoon: 'Coming Soon',
+    backupAlertText: 'Backup & Restore features will be added in the next version.',
+    pinEnabledState: 'PIN enabled',
+    pinDisabledState: 'PIN set, but disabled',
+    usePinLock: 'Use PIN for app lock',
+    notificationsEnabledSubtitle: 'Enabled — daily reminders',
+    notifPermissionAlertTitle: 'Notification Permission Required',
+    notifPermissionAlertText: 'Go to System Settings → Notifications → Enable for this app.',
+    chooseThemeTitle: 'Choose Appearance',
+    chooseThemeDesc: 'Change theme immediately and save to device preferences.',
+    notifDialogTitle: 'Reminder Notifications',
+    notifDialogDesc: 'Turn on to receive daily reminders at 21:00 and weekly summary every Sunday at 20:00.',
+    enableNotifications: 'Enable Notifications',
+    disableNotifications: 'Disable Notifications',
   },
 
   auth: {
     unlockPrompt: 'Unlock your diary',
     cancelLabel: 'Cancel',
+  },
+
+  pin: {
+    changeTitle: 'Change PIN',
+    createTitle: 'Create PIN',
+    confirmHelper: 'Enter PIN once more to confirm.',
+    createHelper: 'Choose a 4-6 digit code that is easy to remember but hard for others to guess.',
+    validationError: 'PIN must be 4-6 digits.',
+    mismatchError: 'PIN code mismatch. Start over.',
+    confirmHeading: 'Confirm PIN',
+    createHeading: 'App Lock PIN',
+    saveButton: 'Save PIN',
+    continueButton: 'Continue',
+    turnOff: 'Turn off PIN',
+    incorrectPin: 'Incorrect PIN.',
+    enterPin: 'Enter PIN',
+    unlockDesc: 'Unlock your private diary.',
+    unlockButton: 'Unlock',
+    useBiometrics: 'Use Face ID / Fingerprint',
+    usePinCode: 'Use PIN code',
   },
 
   ai: {
@@ -416,6 +503,11 @@ const en: typeof vi = {
 
   calendar: {
     stubText: 'Calendar: completed an important task',
+    defaultEventText: 'Calendar event',
+    calendarPickerTitle: 'Select Calendar Event',
+    calendarPickerDescHasEvents: 'Select an event today to pre-fill time and notes.',
+    calendarPickerDescNoEvents: 'No events found on your calendar for today.',
+    manualInput: 'Manual input',
   },
 
   permissions: {

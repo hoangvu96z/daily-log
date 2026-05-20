@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { verifyPin } from '../memory/secureStore';
 import { palette } from '../theme/palette';
+import { useTranslation } from '../i18n/translations';
 
 export function PinUnlockScreen({
   onUnlock,
@@ -13,6 +14,7 @@ export function PinUnlockScreen({
   onUseBiometric?: () => void;
   showBiometric?: boolean;
 }) {
+  const { t } = useTranslation();
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
 
@@ -23,7 +25,7 @@ export function PinUnlockScreen({
       setPin('');
       onUnlock();
     } else {
-      setError('PIN chưa đúng.');
+      setError(t.pin.incorrectPin);
       setPin('');
     }
   };
@@ -33,8 +35,8 @@ export function PinUnlockScreen({
       <View style={s.logo}>
         <Ionicons name="lock-closed-outline" size={32} color={palette.primary} />
       </View>
-      <Text style={s.title}>Nhập PIN</Text>
-      <Text style={s.subtitle}>Mở khóa nhật ký riêng của bạn.</Text>
+      <Text style={s.title}>{t.pin.enterPin}</Text>
+      <Text style={s.subtitle}>{t.pin.unlockDesc}</Text>
       <TextInput
         value={pin}
         onChangeText={(value) => {
@@ -55,12 +57,12 @@ export function PinUnlockScreen({
       />
       {error ? <Text style={s.error}>{error}</Text> : null}
       <Pressable style={s.primaryButton} onPress={() => submit()}>
-        <Text style={s.primaryText}>Mở khóa</Text>
+        <Text style={s.primaryText}>{t.pin.unlockButton}</Text>
       </Pressable>
       {showBiometric && onUseBiometric && (
         <Pressable style={s.altButton} onPress={onUseBiometric}>
           <Ionicons name="finger-print-outline" size={18} color={palette.primary} />
-          <Text style={s.altText}>Dùng Face ID / vân tay</Text>
+          <Text style={s.altText}>{t.pin.useBiometrics}</Text>
         </Pressable>
       )}
     </View>

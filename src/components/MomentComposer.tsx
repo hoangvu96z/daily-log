@@ -8,6 +8,7 @@ import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { ComposerDraft, Entry, Mood } from '../types';
 import { ImagePlaceholder } from './ImagePlaceholder';
+import { uuidv4 } from '../skills/autoTracker';
 
 export function MomentComposer({
   visible,
@@ -56,7 +57,7 @@ export function MomentComposer({
   const save = () => {
     const now = new Date();
     onSave({
-      id: Date.now().toString(),
+      id: uuidv4(),
       date: draft.prefillDate || now.toISOString().slice(0, 10),
       time: draft.prefillTime || now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false }),
       mood,

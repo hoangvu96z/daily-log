@@ -95,8 +95,8 @@ export function ReelScreen({
                   <Ionicons name="play" size={18} color={palette.white} />
                 </View>
                 <View>
-                  <Text style={playAllTitle}>Phát toàn bộ</Text>
-                  <Text style={playAllSub}>{savedCount} khoảnh khắc đã lưu</Text>
+                  <Text style={playAllTitle}>{t.reel.playAll}</Text>
+                  <Text style={playAllSub}>{t.reel.savedMomentsCount(savedCount)}</Text>
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={18} color={palette.green} />

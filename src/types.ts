@@ -34,6 +34,7 @@ export type Settings = {
   allowLocation: boolean;
   allowUsage: boolean;
   allowCalendar: boolean;
+  autoTrackingEnabled: boolean;
   photoPermissionStatus?: PermissionState;
   locationPermissionStatus?: PermissionState;
   calendarPermissionStatus?: PermissionState;

@@ -13,7 +13,7 @@ import { Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import * as Location from 'expo-location';
 /** Cross-platform UUID v4 — works on web, iOS, and Android without external package. */
-function uuidv4(): string {
+export function uuidv4(): string {
   // crypto.randomUUID() is available in React Native 0.70+ and modern browsers
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -54,15 +54,15 @@ interface Cluster {
 
 // === Task Definition ===
 
-TaskManager.defineTask(TASK_NAME, async () => {
+export async function runAutoTrackerOnce(): Promise<void> {
+  console.log('[AutoTracker] runAutoTrackerOnce executed at', new Date().toISOString());
+
+  // 1 & 2: Collect Signals
+  const signals: Signal[] = [];
+
+  // Photos from the last 24 hours
   try {
-    console.log('[AutoTracker] Background task executed at', new Date().toISOString());
-
-    // 1 & 2: Collect Signals
-    const signals: Signal[] = [];
-
-    // Photos from the last 24 hours
-    const { status: mediaStatus } = await MediaLibrary.requestPermissionsAsync();
+    const { status: mediaStatus } = await MediaLibrary.getPermissionsAsync();
     if (mediaStatus === 'granted') {
       const yesterday = Date.now() - 24 * 60 * 60 * 1000;
       const recentPhotos = await MediaLibrary.getAssetsAsync({
@@ -80,138 +80,146 @@ TaskManager.defineTask(TASK_NAME, async () => {
         });
       }
     }
+  } catch (e) {
+    console.warn('[AutoTracker] Could not get media assets:', e);
+  }
 
-    // Current Location
-    let hasLocationPerm = false;
+  // Current Location
+  let hasLocationPerm = false;
+  try {
+    const fg = await Location.getForegroundPermissionsAsync();
+    const bg = await Location.getBackgroundPermissionsAsync();
+    hasLocationPerm = fg.granted || bg.granted;
+  } catch (e) {
+    // ignore
+  }
+
+  if (hasLocationPerm) {
     try {
-      const fg = await Location.getForegroundPermissionsAsync();
-      const bg = await Location.getBackgroundPermissionsAsync();
-      hasLocationPerm = fg.granted || bg.granted;
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      signals.push({
+        type: 'location',
+        timestamp: loc.timestamp,
+        data: loc,
+      });
     } catch (e) {
-      // ignore
+      console.warn('[AutoTracker] Could not get location:', e);
     }
+  }
 
-    if (hasLocationPerm) {
-      try {
-        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        signals.push({
-          type: 'location',
-          timestamp: loc.timestamp,
-          data: loc,
-        });
-      } catch (e) {
-        console.warn('[AutoTracker] Could not get location:', e);
-      }
-    }
+  // 3. Group into clusters (30-60 min windows)
+  signals.sort((a, b) => a.timestamp - b.timestamp);
 
-    // 3. Group into clusters (30-60 min windows)
-    signals.sort((a, b) => a.timestamp - b.timestamp);
+  const clusters: Cluster[] = [];
+  let currentCluster: Cluster | null = null;
+  const CLUSTER_WINDOW_MS = 45 * 60 * 1000; // 45 minutes
 
-    const clusters: Cluster[] = [];
-    let currentCluster: Cluster | null = null;
-    const CLUSTER_WINDOW_MS = 45 * 60 * 1000; // 45 minutes
-
-    for (const signal of signals) {
-      if (!currentCluster) {
+  for (const signal of signals) {
+    if (!currentCluster) {
+      currentCluster = {
+        startTime: signal.timestamp,
+        endTime: signal.timestamp,
+        signals: [signal],
+      };
+    } else {
+      if (signal.timestamp - currentCluster.endTime <= CLUSTER_WINDOW_MS) {
+        currentCluster.endTime = signal.timestamp;
+        currentCluster.signals.push(signal);
+      } else {
+        clusters.push(currentCluster);
         currentCluster = {
           startTime: signal.timestamp,
           endTime: signal.timestamp,
           signals: [signal],
         };
-      } else {
-        if (signal.timestamp - currentCluster.endTime <= CLUSTER_WINDOW_MS) {
-          currentCluster.endTime = signal.timestamp;
-          currentCluster.signals.push(signal);
-        } else {
-          clusters.push(currentCluster);
-          currentCluster = {
-            startTime: signal.timestamp,
-            endTime: signal.timestamp,
-            signals: [signal],
-          };
-        }
       }
     }
-    if (currentCluster) {
-      clusters.push(currentCluster);
-    }
+  }
+  if (currentCluster) {
+    clusters.push(currentCluster);
+  }
 
-    // 4. Deduplicate — skip clusters that already have an entry
-    const allEntries = await getAllEntries();
+  // 4. Deduplicate — skip clusters that already have an entry
+  const allEntries = await getAllEntries();
+  
+  for (const cluster of clusters) {
+    const avgTime = (cluster.startTime + cluster.endTime) / 2;
+    const clusterDate = new Date(avgTime);
+    const dateStr = clusterDate.toISOString().split('T')[0];
+    const timeStr = clusterDate.toTimeString().substring(0, 5); // HH:mm
     
-    for (const cluster of clusters) {
-      const avgTime = (cluster.startTime + cluster.endTime) / 2;
-      const clusterDate = new Date(avgTime);
-      const dateStr = clusterDate.toISOString().split('T')[0];
-      const timeStr = clusterDate.toTimeString().substring(0, 5); // HH:mm
+    const hasDuplicate = allEntries.some(entry => {
+      if (entry.date !== dateStr) return false;
+      const [h, m] = entry.time.split(':').map(Number);
+      const entryTimeDate = new Date(clusterDate);
+      entryTimeDate.setHours(h, m, 0, 0);
       
-      const hasDuplicate = allEntries.some(entry => {
-        if (entry.date !== dateStr) return false;
-        const [h, m] = entry.time.split(':').map(Number);
-        const entryTimeDate = new Date(clusterDate);
-        entryTimeDate.setHours(h, m, 0, 0);
-        
-        const diffHours = Math.abs(entryTimeDate.getTime() - avgTime) / (1000 * 60 * 60);
-        return diffHours < 1.5; // Within 1.5 hours
-      });
+      const diffHours = Math.abs(entryTimeDate.getTime() - avgTime) / (1000 * 60 * 60);
+      return diffHours < 1.5; // Within 1.5 hours
+    });
 
-      if (hasDuplicate) {
-        console.log(`[AutoTracker] Skipping cluster at ${dateStr} ${timeStr} due to existing entry`);
-        continue;
-      }
-
-      // 5. Generate Entry with status='suggested', mood='neutral'
-      const photos = cluster.signals.filter(s => s.type === 'photo');
-      const locs = cluster.signals.filter(s => s.type === 'location');
-
-      const mainPhoto = photos.length > 0 ? photos[Math.floor(photos.length / 2)].data : null;
-      const mainLoc = locs.length > 0 ? locs[0].data : null;
-
-      let locationName: string | undefined = undefined;
-      if (mainLoc) {
-        try {
-          const geocode = await Location.reverseGeocodeAsync({
-            latitude: mainLoc.coords.latitude,
-            longitude: mainLoc.coords.longitude,
-          });
-          if (geocode && geocode.length > 0) {
-            const place = geocode[0];
-            locationName = place.name || place.street || place.city || undefined;
-          }
-        } catch (e) {
-          console.warn('[AutoTracker] Reverse geocode failed:', e);
-        }
-      }
-
-      const suggestionText = await aiService.generateSuggestion({
-        mode: mainPhoto ? 'photo' : 'note',
-        mood: 'neutral',
-        time: timeStr,
-        locationName,
-      });
-
-      const newEntry: Entry = {
-        id: uuidv4(),
-        date: dateStr,
-        time: timeStr,
-        mood: 'neutral',
-        source: 'auto',
-        status: 'suggested',
-        text: suggestionText,
-        aiSuggestion: suggestionText,
-        imageLocalId: mainPhoto ? mainPhoto.id : undefined,
-        imageUri: mainPhoto ? mainPhoto.uri : undefined,
-        locationName,
-        locationLat: mainLoc ? mainLoc.coords.latitude : undefined,
-        locationLon: mainLoc ? mainLoc.coords.longitude : undefined,
-        isHighlight: false,
-      };
-
-      // 6. Save to SQLite via src/memory/database.ts
-      await insertEntry(newEntry);
-      console.log(`[AutoTracker] Created suggested entry for ${dateStr} ${timeStr}`);
+    if (hasDuplicate) {
+      console.log(`[AutoTracker] Skipping cluster at ${dateStr} ${timeStr} due to existing entry`);
+      continue;
     }
 
+    // 5. Generate Entry with status='suggested', mood='neutral'
+    const photos = cluster.signals.filter(s => s.type === 'photo');
+    const locs = cluster.signals.filter(s => s.type === 'location');
+
+    const mainPhoto = photos.length > 0 ? photos[Math.floor(photos.length / 2)].data : null;
+    const mainLoc = locs.length > 0 ? locs[0].data : null;
+
+    let locationName: string | undefined = undefined;
+    if (mainLoc) {
+      try {
+        const geocode = await Location.reverseGeocodeAsync({
+          latitude: mainLoc.coords.latitude,
+          longitude: mainLoc.coords.longitude,
+        });
+        if (geocode && geocode.length > 0) {
+          const place = geocode[0];
+          locationName = place.name || place.street || place.city || undefined;
+        }
+      } catch (e) {
+        console.warn('[AutoTracker] Reverse geocode failed:', e);
+      }
+    }
+
+    const suggestionText = await aiService.generateSuggestion({
+      mode: mainPhoto ? 'photo' : 'note',
+      mood: 'neutral',
+      time: timeStr,
+      locationName,
+    });
+
+    const newEntry: Entry = {
+      id: uuidv4(),
+      date: dateStr,
+      time: timeStr,
+      mood: 'neutral',
+      source: 'auto',
+      status: 'suggested',
+      text: suggestionText,
+      aiSuggestion: suggestionText,
+      imageLocalId: mainPhoto ? mainPhoto.id : undefined,
+      imageUri: mainPhoto ? mainPhoto.uri : undefined,
+      locationName,
+      locationLat: mainLoc ? mainLoc.coords.latitude : undefined,
+      locationLon: mainLoc ? mainLoc.coords.longitude : undefined,
+      isHighlight: false,
+    };
+
+    // 6. Save to SQLite via src/memory/database.ts
+    await insertEntry(newEntry);
+    console.log(`[AutoTracker] Created suggested entry for ${dateStr} ${timeStr}`);
+  }
+}
+
+TaskManager.defineTask(TASK_NAME, async () => {
+  try {
+    console.log('[AutoTracker] Background task executed at', new Date().toISOString());
+    await runAutoTrackerOnce();
     return BackgroundFetch.BackgroundFetchResult.NewData;
   } catch (error) {
     console.error('[AutoTracker] Background task failed:', error);

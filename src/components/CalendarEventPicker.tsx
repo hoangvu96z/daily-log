@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { CalendarEventDraft } from '../types';
+import { useTranslation } from '../i18n/translations';
 
 export function CalendarEventPicker({
   visible,
@@ -18,13 +19,14 @@ export function CalendarEventPicker({
   onSelect: (event: CalendarEventDraft) => void;
   onCreateBlank: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.dialogScrim}>
         <View style={styles.dialogCard}>
-          <Text style={styles.dialogTitle}>Chọn mốc từ lịch</Text>
+          <Text style={styles.dialogTitle}>{t.calendar.calendarPickerTitle}</Text>
           <Text style={styles.dialogText}>
-            {events.length ? 'Chọn một event hôm nay để tự điền giờ và nội dung.' : 'Hôm nay chưa có event nào trong lịch.'}
+            {events.length ? t.calendar.calendarPickerDescHasEvents : t.calendar.calendarPickerDescNoEvents}
           </Text>
           <ScrollView style={styles.calendarEventList} contentContainerStyle={styles.calendarEventListContent}>
             {events.map((event) => (
@@ -45,10 +47,10 @@ export function CalendarEventPicker({
           </ScrollView>
           <View style={styles.dialogActions}>
             <Pressable style={styles.dialogSecondary} onPress={onClose}>
-              <Text style={styles.dialogSecondaryText}>Hủy</Text>
+              <Text style={styles.dialogSecondaryText}>{t.common.cancel}</Text>
             </Pressable>
             <Pressable style={styles.dialogSecondary} onPress={onCreateBlank}>
-              <Text style={styles.dialogSecondaryText}>Tự nhập</Text>
+              <Text style={styles.dialogSecondaryText}>{t.calendar.manualInput}</Text>
             </Pressable>
           </View>
         </View>

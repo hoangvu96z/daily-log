@@ -4,25 +4,27 @@ import { Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from 'reac
 import { useJournalStore } from '../memory/store';
 import { removePinHash, savePin } from '../memory/secureStore';
 import { palette } from '../theme/palette';
+import { useTranslation } from '../i18n/translations';
 
 type PinStep = 'enter' | 'confirm';
 
 export function PinSetupScreen({ navigation }: { navigation: any }) {
+  const { t } = useTranslation();
   const { settings, updateSettings } = useJournalStore();
   const [step, setStep] = useState<PinStep>('enter');
   const [firstPin, setFirstPin] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
 
-  const title = settings.pinSet ? 'Đổi mã PIN' : 'Tạo mã PIN';
+  const title = settings.pinSet ? t.pin.changeTitle : t.pin.createTitle;
   const helper = useMemo(() => {
-    if (step === 'confirm') return 'Nhập lại PIN một lần nữa để xác nhận.';
-    return 'Chọn 4-6 số dễ nhớ với bạn, nhưng khó đoán với người khác.';
-  }, [step]);
+    if (step === 'confirm') return t.pin.confirmHelper;
+    return t.pin.createHelper;
+  }, [step, t]);
 
   const submit = async () => {
     if (!/^\d{4,6}$/.test(pin)) {
-      setError('PIN cần gồm 4-6 chữ số.');
+      setError(t.pin.validationError);
       return;
     }
 
@@ -35,7 +37,7 @@ export function PinSetupScreen({ navigation }: { navigation: any }) {
     }
 
     if (pin !== firstPin) {
-      setError('PIN chưa khớp. Thử lại từ đầu.');
+      setError(t.pin.mismatchError);
       setFirstPin('');
       setPin('');
       setStep('enter');
@@ -69,7 +71,7 @@ export function PinSetupScreen({ navigation }: { navigation: any }) {
         <View style={s.pinIcon}>
           <Ionicons name="keypad-outline" size={36} color={palette.primary} />
         </View>
-        <Text style={s.heading}>{step === 'confirm' ? 'Xác nhận PIN' : 'PIN riêng cho nhật ký'}</Text>
+        <Text style={s.heading}>{step === 'confirm' ? t.pin.confirmHeading : t.pin.createHeading}</Text>
         <Text style={s.helper}>{helper}</Text>
 
         <TextInput
@@ -90,12 +92,12 @@ export function PinSetupScreen({ navigation }: { navigation: any }) {
         {error ? <Text style={s.error}>{error}</Text> : null}
 
         <Pressable style={s.primaryButton} onPress={submit}>
-          <Text style={s.primaryText}>{step === 'confirm' ? 'Lưu PIN' : 'Tiếp tục'}</Text>
+          <Text style={s.primaryText}>{step === 'confirm' ? t.pin.saveButton : t.pin.continueButton}</Text>
         </Pressable>
 
         {settings.pinSet && (
           <Pressable style={s.dangerButton} onPress={disablePin}>
-            <Text style={s.dangerText}>Tắt PIN</Text>
+            <Text style={s.dangerText}>{t.pin.turnOff}</Text>
           </Pressable>
         )}
       </View>

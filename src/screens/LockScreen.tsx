@@ -108,6 +108,13 @@ export function LockScreen({ onUnlock, allowPinFallback }: LockScreenProps) {
     }
   }, [authState, pulseAnim, fadeAnim, onUnlock, triggerShake]);
 
+  // Auto-trigger biometric prompt on first mount
+  useEffect(() => {
+    const timer = setTimeout(() => handleAuthenticate(), 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (pinMode) {
     return (
       <PinUnlockScreen
@@ -120,13 +127,6 @@ export function LockScreen({ onUnlock, allowPinFallback }: LockScreenProps) {
       />
     );
   }
-
-  // Auto-trigger biometric prompt on first mount
-  useEffect(() => {
-    const timer = setTimeout(() => handleAuthenticate(), 400);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // ── Derived state strings ─────────────────────────────────────────────────
   const statusLabel = (() => {
@@ -201,7 +201,7 @@ export function LockScreen({ onUnlock, allowPinFallback }: LockScreenProps) {
       {allowPinFallback && (
         <Pressable onPress={() => setPinMode(true)} style={s.pinFallbackButton}>
           <Ionicons name="keypad-outline" size={16} color={palette.primary} />
-          <Text style={s.pinFallbackText}>Dùng mã PIN</Text>
+          <Text style={s.pinFallbackText}>{t.pin.usePinCode}</Text>
         </Pressable>
       )}
 

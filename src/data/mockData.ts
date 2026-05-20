@@ -5,6 +5,7 @@ export const defaultSettings: Settings = {
   allowLocation: false,
   allowUsage: false,
   allowCalendar: false,
+  autoTrackingEnabled: false,
   faceIDEnabled: false,
   pinEnabled: false,
   pinSet: false,

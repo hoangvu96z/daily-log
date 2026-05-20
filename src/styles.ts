@@ -752,15 +752,16 @@ const lightStyles = StyleSheet.create({
   },
   moodRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 9,
+    gap: 8,
   },
   moodOption: {
+    flex: 1,
+    minWidth: 0,
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderColor: 'rgba(3, 31, 65, 0.08)',
     borderRadius: 16,
     borderWidth: 1,
-    paddingHorizontal: 12,
+    paddingHorizontal: 4,
     paddingVertical: 10,
     alignItems: 'center',
     gap: 4,
@@ -774,8 +775,9 @@ const lightStyles = StyleSheet.create({
   },
   moodOptionText: {
     color: lightPalette.onSurfaceVariant,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
+    textAlign: 'center',
   },
   moodOptionTextSelected: {
     color: lightPalette.primary,
@@ -1708,15 +1710,16 @@ const darkStyles = StyleSheet.create({
   },
   moodRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 9,
+    gap: 8,
   },
   moodOption: {
+    flex: 1,
+    minWidth: 0,
     backgroundColor: 'rgba(28, 37, 65, 0.6)',
     borderColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 16,
     borderWidth: 1,
-    paddingHorizontal: 12,
+    paddingHorizontal: 4,
     paddingVertical: 10,
     alignItems: 'center',
     gap: 4,
@@ -1730,8 +1733,9 @@ const darkStyles = StyleSheet.create({
   },
   moodOptionText: {
     color: darkPalette.onSurfaceVariant,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
+    textAlign: 'center',
   },
   moodOptionTextSelected: {
     color: darkPalette.primary,

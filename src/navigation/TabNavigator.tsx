@@ -13,10 +13,12 @@ import { pickMomentImage } from '../services/imagePicker';
 import { calendarEventToDraft, getTodayCalendarEvents } from '../skills/calendar';
 import { requestLocationAccess } from '../skills/permissions';
 import { CalendarEventDraft, ComposerDraft, ComposerMode, Entry } from '../types';
+import { useTranslation } from '../i18n/translations';
 
 const Tab = createBottomTabNavigator();
 
 export function TabNavigator() {
+  const { t } = useTranslation();
   const {
     entries,
     reels,
@@ -57,7 +59,7 @@ export function TabNavigator() {
         return;
       }
 
-      nextDraft.calendarText = 'Mốc từ lịch';
+      nextDraft.calendarText = t.calendar.defaultEventText;
     }
 
     if (settings.allowLocation) {
@@ -153,7 +155,7 @@ export function TabNavigator() {
         onClose={() => setCalendarPickerVisible(false)}
         onCreateBlank={() => {
           setCalendarPickerVisible(false);
-          setComposerDraft({ mode: 'calendar', calendarText: 'Mốc từ lịch' });
+          setComposerDraft({ mode: 'calendar', calendarText: t.calendar.defaultEventText });
           setComposerVisible(true);
         }}
         onSelect={(event) => {

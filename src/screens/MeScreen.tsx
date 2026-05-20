@@ -16,6 +16,8 @@ import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { AccentColor, Settings, ThemeMode } from '../types';
 import { pickMomentImage } from '../services/imagePicker';
+import { registerAutoTracker, unregisterAutoTracker, runAutoTrackerOnce, getAutoTrackerStatus } from '../skills/autoTracker';
+import * as BackgroundFetch from 'expo-background-fetch';
 
 export function MeScreen({
   navigation,
@@ -81,6 +83,60 @@ export function MeScreen({
     }));
   };
 
+  const toggleAutoTracking = async (value: boolean) => {
+    if (!value) {
+      await unregisterAutoTracker();
+      onChangeSettings((current) => ({ ...current, autoTrackingEnabled: false }));
+      return;
+    }
+
+    const photoStatus = await requestPhotoAccess();
+    const locationResult = await requestLocationAccess();
+    const calendarStatus = await requestCalendarAccess();
+
+    const allowed = photoStatus === 'granted' || locationResult.status === 'granted' || calendarStatus === 'granted';
+    if (!allowed) {
+      Alert.alert(
+        t.settings.notifPermissionAlertTitle || 'Permission Required',
+        t.settings.notifPermissionAlertText || 'Please enable permissions to use Auto-Tracking.',
+        [{ text: t.common.ok }]
+      );
+      return;
+    }
+
+    onChangeSettings((current) => ({
+      ...current,
+      allowPhotos: photoStatus === 'granted',
+      photoPermissionStatus: photoStatus,
+      allowLocation: locationResult.status === 'granted',
+      locationPermissionStatus: locationResult.status,
+      allowCalendar: calendarStatus === 'granted',
+      calendarPermissionStatus: calendarStatus,
+      autoTrackingEnabled: true,
+    }));
+
+    await registerAutoTracker();
+
+    try {
+      const status = await getAutoTrackerStatus();
+      if (status === BackgroundFetch.BackgroundFetchStatus.Restricted || status === BackgroundFetch.BackgroundFetchStatus.Denied) {
+        Alert.alert(
+          t.settings.bgFetchWarningTitle,
+          t.settings.bgFetchWarningText,
+          [{ text: t.common.ok }]
+        );
+      }
+    } catch (e) {
+      console.warn('[AutoTracker] Could not check Background Fetch status:', e);
+    }
+
+    try {
+      await runAutoTrackerOnce();
+    } catch (e) {
+      console.warn('[AutoTracker] Initial foreground run failed:', e);
+    }
+  };
+
   const confirmDelete = async () => {
     if (deleteText.trim().toUpperCase() !== t.settings.deleteConfirmWord) {
       return;
@@ -110,13 +166,19 @@ export function MeScreen({
           value={settings.allowCalendar}
           onValueChange={toggleCalendar}
         />
+        <ToggleRow
+          title={t.settings.autoTracking}
+          subtitle={t.settings.autoTrackingDesc}
+          value={settings.autoTrackingEnabled}
+          onValueChange={toggleAutoTracking}
+        />
         <SettingsRow
           icon="cloud-outline"
           title={t.settings.backupTitle}
           subtitle={t.settings.backupSubtitle}
           comingSoon
           onPress={() =>
-            Alert.alert('Sắp ra mắt', 'Tính năng Backup & Restore sẽ được thêm vào phiên bản tiếp theo.', [{ text: 'OK' }])
+            Alert.alert(t.settings.comingSoon, t.settings.backupAlertText, [{ text: t.common.ok }])
           }
         />
         <SettingsRow
@@ -136,12 +198,12 @@ export function MeScreen({
         <SettingsRow
           icon="keypad-outline"
           title={t.settings.pinTitle}
-          subtitle={settings.pinSet ? (settings.pinEnabled ? 'Đang bật PIN' : 'Đã tạo PIN, đang tắt') : t.settings.pinSubtitle}
+          subtitle={settings.pinSet ? (settings.pinEnabled ? t.settings.pinEnabledState : t.settings.pinDisabledState) : t.settings.pinSubtitle}
           onPress={() => navigation?.navigate?.('PinSetup')}
         />
         {settings.pinSet && (
           <ToggleRow
-            title="Dùng PIN để khóa app"
+            title={t.settings.usePinLock}
             value={Boolean(settings.pinEnabled)}
             onValueChange={(value) => updateSetting('pinEnabled', value)}
           />
@@ -151,7 +213,7 @@ export function MeScreen({
         <SettingsRow
           icon="notifications-outline"
           title={t.settings.notifications}
-          subtitle={notifEnabled ? 'Đang bật — nhắc nhở hàng ngày' : t.settings.notificationsSubtitle}
+          subtitle={notifEnabled ? t.settings.notificationsEnabledSubtitle : t.settings.notificationsSubtitle}
           onPress={() => setNotifVisible(true)}
         />
         <SettingsRow
@@ -239,7 +301,7 @@ export function MeScreen({
         onEnable={async () => {
           const status = await requestNotificationPermission();
           if (status !== 'granted') {
-            Alert.alert('Cần quyền thông báo', 'Vào Cài đặt máy → Thông báo → Bật cho ứng dụng này.', [{ text: 'OK' }]);
+            Alert.alert(t.settings.notifPermissionAlertTitle, t.settings.notifPermissionAlertText, [{ text: t.common.ok }]);
             return;
           }
           await scheduleDailyReminder(21, 0);
@@ -302,10 +364,23 @@ function SettingsRow({
   );
 }
 
-function ToggleRow({ title, value, onValueChange }: { title: string; value: boolean; onValueChange: (value: boolean) => void }) {
+function ToggleRow({
+  title,
+  subtitle,
+  value,
+  onValueChange,
+}: {
+  title: string;
+  subtitle?: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+}) {
   return (
     <View style={styles.toggleRow}>
-      <Text style={styles.settingsTitle}>{title}</Text>
+      <View style={{ flex: 1, paddingRight: 10 }}>
+        <Text style={styles.settingsTitle}>{title}</Text>
+        {subtitle ? <Text style={styles.settingsSubtitle}>{subtitle}</Text> : null}
+      </View>
       <Switch value={value} onValueChange={onValueChange} trackColor={{ true: palette.greenSoft, false: '#d7dbd6' }} />
     </View>
   );
@@ -367,6 +442,7 @@ function ThemeDialog({
   onPick: (theme: ThemeMode) => void;
   labels: Record<ThemeMode, string>;
 }) {
+  const { t } = useTranslation();
   const options: Array<{ key: ThemeMode; icon: keyof typeof Ionicons.glyphMap }> = [
     { key: 'system', icon: 'phone-portrait-outline' },
     { key: 'light', icon: 'sunny-outline' },
@@ -377,8 +453,8 @@ function ThemeDialog({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.dialogScrim}>
         <View style={styles.dialogCard}>
-          <Text style={styles.dialogTitle}>Chọn giao diện</Text>
-          <Text style={styles.dialogText}>Đổi theme ngay và lưu vào cài đặt trên máy.</Text>
+          <Text style={styles.dialogTitle}>{t.settings.chooseThemeTitle}</Text>
+          <Text style={styles.dialogText}>{t.settings.chooseThemeDesc}</Text>
           <View style={styles.themeOptionList}>
             {options.map((option) => (
               <Pressable
@@ -393,7 +469,7 @@ function ThemeDialog({
             ))}
           </View>
           <Pressable style={styles.dialogSecondary} onPress={onCancel}>
-            <Text style={styles.dialogSecondaryText}>Đóng</Text>
+            <Text style={styles.dialogSecondaryText}>{t.common.close}</Text>
           </Pressable>
         </View>
       </View>
@@ -448,7 +524,7 @@ function AccentColorDialog({
             ))}
           </View>
           <Pressable style={styles.dialogSecondary} onPress={onCancel}>
-            <Text style={styles.dialogSecondaryText}>Đóng</Text>
+            <Text style={styles.dialogSecondaryText}>{t.common.close}</Text>
           </Pressable>
         </View>
       </View>
@@ -535,21 +611,20 @@ function NotificationsDialog({
   onEnable: () => void;
   onDisable: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.dialogScrim}>
         <View style={styles.dialogCard}>
-          <Text style={styles.dialogTitle}>Thông báo nhắc nhở</Text>
-          <Text style={styles.dialogText}>
-            Bật để nhận nhắc nhở hàng ngày lúc 21:00 và tóm tắt tuần mỗi Chủ nhật 20:00.
-          </Text>
+          <Text style={styles.dialogTitle}>{t.settings.notifDialogTitle}</Text>
+          <Text style={styles.dialogText}>{t.settings.notifDialogDesc}</Text>
           <View style={styles.themeOptionList}>
             <Pressable
               style={[styles.themeOption, !enabled && styles.themeOptionActive]}
               onPress={onEnable}
             >
               <Ionicons name="notifications-outline" size={20} color={palette.primary} />
-              <Text style={styles.themeOptionText}>Bật thông báo</Text>
+              <Text style={styles.themeOptionText}>{t.settings.enableNotifications}</Text>
               {!enabled && <Ionicons name="checkmark-circle" size={20} color={palette.primary} />}
             </Pressable>
             <Pressable
@@ -557,12 +632,12 @@ function NotificationsDialog({
               onPress={onDisable}
             >
               <Ionicons name="notifications-off-outline" size={20} color={palette.primary} />
-              <Text style={styles.themeOptionText}>Tắt thông báo</Text>
+              <Text style={styles.themeOptionText}>{t.settings.disableNotifications}</Text>
               {enabled && <Ionicons name="checkmark-circle" size={20} color={palette.primary} />}
             </Pressable>
           </View>
           <Pressable style={styles.dialogSecondary} onPress={onClose}>
-            <Text style={styles.dialogSecondaryText}>Đóng</Text>
+            <Text style={styles.dialogSecondaryText}>{t.common.close}</Text>
           </Pressable>
         </View>
       </View>
