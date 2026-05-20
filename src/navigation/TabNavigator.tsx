@@ -63,6 +63,8 @@ export function TabNavigator() {
     if (settings.allowLocation) {
       const locationResult = await requestLocationAccess();
       nextDraft.locationName = locationResult.locationName;
+      nextDraft.locationLat = locationResult.locationLat;
+      nextDraft.locationLon = locationResult.locationLon;
       await updateSettings('locationPermissionStatus', locationResult.status);
       await updateSettings('allowLocation', locationResult.status === 'granted');
     }

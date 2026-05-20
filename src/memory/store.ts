@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Entry, Settings, TabKey, WeeklyReel } from '../types';
 import { defaultSettings } from '../data/mockData';
 import { deleteAllEntries, deleteEntry, getAllEntries, getAllReels, insertEntry, loadSettings, saveSetting, updateEntryStatus } from './database';
+import { hasPinCode } from './secureStore';
 
 // === Store Interface ===
 interface JournalState {
@@ -59,10 +60,11 @@ export const useJournalStore = create<JournalState>((set) => ({
 
   // Initialization
   initStore: async () => {
-    const [loadedEntries, settings, reels] = await Promise.all([
+    const [loadedEntries, settings, reels, pinSet] = await Promise.all([
       getAllEntries(),
       loadSettings(),
       getAllReels(),
+      hasPinCode(),
     ]);
     const legacyDemoIds = new Set(['1', '2', '3', '4', '5']);
     const entries = loadedEntries.filter((entry) => !legacyDemoIds.has(entry.id));
@@ -76,7 +78,7 @@ export const useJournalStore = create<JournalState>((set) => ({
     const onboardingFlag = (settings as any).onboardingComplete === true;
     set({
       entries,
-      settings,
+      settings: { ...settings, pinSet, pinEnabled: pinSet ? settings.pinEnabled : false },
       reels,
       onboardingComplete: onboardingFlag,
       hydrated: true,

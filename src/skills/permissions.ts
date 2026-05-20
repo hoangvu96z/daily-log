@@ -38,11 +38,18 @@ export async function requestLocationAccess(): Promise<{
       accuracy: Location.Accuracy.Balanced,
     });
 
-    // TODO: Use reverse geocoding for human-readable location name
-    // const [place] = await Location.reverseGeocodeAsync(position.coords);
-    // const locationName = place ? `${place.name || place.street}, ${place.city}` : undefined;
-
-    const locationName = `${position.coords.latitude.toFixed(3)}, ${position.coords.longitude.toFixed(3)}`;
+    let locationName: string | undefined;
+    try {
+      const [place] = await Location.reverseGeocodeAsync(position.coords);
+      if (place) {
+        locationName = place.name || place.street || place.city || undefined;
+        if (place.city && locationName && locationName !== place.city) {
+          locationName = `${locationName}, ${place.city}`;
+        }
+      }
+    } catch {
+      locationName = `${position.coords.latitude.toFixed(3)}, ${position.coords.longitude.toFixed(3)}`;
+    }
 
     return {
       status: 'granted',

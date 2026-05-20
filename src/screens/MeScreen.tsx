@@ -290,8 +290,8 @@ function SettingsRow({
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Text style={[styles.settingsTitle, danger && styles.dangerText]}>{title}</Text>
           {comingSoon && (
-            <View style={comingSoonBadgeStyle}>
-              <Text style={comingSoonTextStyle}>Soon</Text>
+            <View style={styles.comingSoonBadge}>
+              <Text style={styles.comingSoonText}>Soon</Text>
             </View>
           )}
         </View>
@@ -301,19 +301,6 @@ function SettingsRow({
     </Pressable>
   );
 }
-
-const comingSoonBadgeStyle: any = {
-  backgroundColor: 'rgba(46,79,50,0.1)',
-  borderRadius: 8,
-  paddingHorizontal: 6,
-  paddingVertical: 1,
-};
-
-const comingSoonTextStyle: any = {
-  fontSize: 10,
-  color: palette.green,
-  fontFamily: 'PlusJakartaSans_500Medium',
-};
 
 function ToggleRow({ title, value, onValueChange }: { title: string; value: boolean; onValueChange: (value: boolean) => void }) {
   return (

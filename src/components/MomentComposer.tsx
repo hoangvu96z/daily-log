@@ -65,6 +65,8 @@ export function MomentComposer({
       imageLocalId: imageUri ? 'picked-photo' : undefined,
       imageUri,
       locationName: draft.locationName,
+      locationLat: draft.locationLat,
+      locationLon: draft.locationLon,
       source: 'manual',
       status: 'saved',
       isHighlight: true,

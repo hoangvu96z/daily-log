@@ -65,6 +65,8 @@ export type ComposerDraft = {
   mode: ComposerMode;
   imageUri?: string;
   locationName?: string;
+  locationLat?: number;
+  locationLon?: number;
   calendarText?: string;
   calendarEventId?: string;
   prefillDate?: string;

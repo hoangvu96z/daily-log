@@ -139,15 +139,15 @@
 - [x] Notification settings → implement push notification scheduling
 
 ### 4.3. Data Integrity
-- [ ] Ensure `locationLat/Lon` are saved when creating entries manually
-- [ ] Add `pinCodeHash` flow to Settings type (read from SecureStore on boot)
+- [x] Ensure `locationLat/Lon` are saved when creating entries manually
+- [x] Add `pinCodeHash` flow to Settings type (read from SecureStore on boot)
 
 ### 4.4. Cleanup
-- [ ] Remove legacy `src/hooks/useJournalStore.ts` (after Zustand migration complete)
-- [ ] Remove legacy `src/services/aiSuggestion.ts` (replaced by `src/skills/aiService.ts`)
+- [x] Remove legacy `src/hooks/useJournalStore.ts` (after Zustand migration complete)
+- [x] Remove legacy `src/services/aiSuggestion.ts` (replaced by `src/skills/aiService.ts`)
 - [x] Remove legacy `src/services/permissions.ts` (replaced by `src/skills/permissions.ts`)
-- [ ] Remove `@react-native-async-storage/async-storage` from `package.json`
-- [ ] Verify TypeScript strict mode passes
+- [x] Remove `@react-native-async-storage/async-storage` from `package.json`
+- [x] Verify TypeScript strict mode passes
 
 ---
 

@@ -598,6 +598,17 @@ const lightStyles = StyleSheet.create({
   dangerText: {
     color: lightPalette.red,
   },
+  comingSoonBadge: {
+    backgroundColor: 'rgba(3, 31, 65, 0.08)',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  comingSoonText: {
+    fontSize: 10,
+    color: lightPalette.primary,
+    fontWeight: '600',
+  },
   toggleRow: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -1543,6 +1554,17 @@ const darkStyles = StyleSheet.create({
   dangerText: {
     color: '#ff8888',
   },
+  comingSoonBadge: {
+    backgroundColor: 'rgba(91, 192, 190, 0.15)',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  comingSoonText: {
+    fontSize: 10,
+    color: darkPalette.primary,
+    fontWeight: '600',
+  },
   toggleRow: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -2039,15 +2061,15 @@ export const styles = new Proxy({} as typeof lightStyles, {
             flat[key] = palette.greenSoft;
           }
           // Replace backgrounds
-          else if (lowerVal === '#f6faff' || lowerVal === '#0b132b') {
+          else if (key !== 'color' && (lowerVal === '#f6faff' || lowerVal === '#0b132b')) {
             flat[key] = palette.background;
           }
           // Replace slate surfaces
-          else if (lowerVal === '#ffffff' || lowerVal === '#1c2541') {
+          else if (key !== 'color' && (lowerVal === '#ffffff' || lowerVal === '#1c2541')) {
             flat[key] = palette.slate;
           }
           // Replace cream
-          else if (lowerVal === '#ffffff' || lowerVal === 'rgba(28, 37, 65, 0.7)') {
+          else if (key !== 'color' && (lowerVal === '#ffffff' || lowerVal === 'rgba(28, 37, 65, 0.7)')) {
             flat[key] = palette.cream;
           }
           // Replace glow values
