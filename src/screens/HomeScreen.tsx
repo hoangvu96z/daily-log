@@ -32,10 +32,14 @@ export function HomeScreen({
   entries,
   onOpenDay,
   onSelectDate,
+  isPremium,
+  onUpgrade,
 }: {
   entries: Entry[];
   onOpenDay: () => void;
   onSelectDate?: (date: string) => void;
+  isPremium?: boolean;
+  onUpgrade?: () => void;
 }) {
   const { t, lang, locale } = useTranslation();
   const [calendarVisible, setCalendarVisible] = useState(false);
@@ -272,6 +276,8 @@ export function HomeScreen({
         onSelectDate={onSelectDate}
         t={t}
         locale={locale}
+        isPremium={isPremium}
+        onUpgrade={() => { setCalendarVisible(false); onUpgrade?.(); }}
       />
       <DailyInsightDialog visible={insightVisible} entries={entries} onClose={() => setInsightVisible(false)} t={t} />
     </ScrollView>
@@ -285,6 +291,8 @@ function MoodCalendar({
   onSelectDate,
   t,
   locale,
+  isPremium,
+  onUpgrade,
 }: {
   visible: boolean;
   entries: Entry[];
@@ -292,200 +300,299 @@ function MoodCalendar({
   onSelectDate?: (date: string) => void;
   t: any;
   locale: string;
+  isPremium?: boolean;
+  onUpgrade?: () => void;
 }) {
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const [mode, setMode] = useState<'7day' | '30day'>('7day');
 
   useEffect(() => {
     if (visible) {
       setSelectedDateKey(new Date().toISOString().slice(0, 10));
+      setMode(isPremium ? '30day' : '7day');
     }
-  }, [visible]);
+  }, [visible, isPremium]);
 
   const moodColors: Record<string, string> = {
     very_bad: '#E53935',
-    bad: '#FB8C00',
-    neutral: '#9E9E9E',
-    good: '#43A047',
-    great: '#7E57C2',
+    bad:      '#FB8C00',
+    neutral:  '#9E9E9E',
+    good:     '#43A047',
+    great:    '#7E57C2',
   };
 
-  const days = Array.from({ length: 7 }, (_, index) => {
+  const dayCount = mode === '30day' ? 30 : 7;
+  const days = Array.from({ length: dayCount }, (_, i) => {
     const date = new Date();
-    date.setDate(date.getDate() - (6 - index));
+    date.setDate(date.getDate() - (dayCount - 1 - i));
     const dateKey = date.toISOString().slice(0, 10);
-    const dayEntries = entries.filter((entry) => entry.date === dateKey);
-    const lastMood = dayEntries[dayEntries.length - 1]?.mood;
+    const dayEntries = entries.filter(e => e.date === dateKey && e.status === 'saved');
+    const dominantMood = dayEntries.length > 0 ? mostFrequent(dayEntries.map(e => e.mood)) : null;
     return {
       dateKey,
       dayLabel: new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(date),
-      dateLabel: new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit' }).format(date),
+      dayNum: date.getDate(),
       count: dayEntries.length,
-      mood: lastMood,
+      mood: dominantMood,
+      isToday: dateKey === new Date().toISOString().slice(0, 10),
     };
   });
 
-  // Calculate streak
+  // Streak (consecutive days from today backward)
   let streak = 0;
   for (let i = days.length - 1; i >= 0; i--) {
     if (days[i].count > 0) streak++;
     else break;
   }
 
-  // Calculate mood summary
-  const goodDays = days.filter(d => d.mood === 'good' || d.mood === 'great').length;
-  const neutralDays = days.filter(d => d.mood === 'neutral' || d.mood === 'bad').length;
-  const emptyDays = days.filter(d => !d.mood).length;
+  const recentDays  = days.slice(-7);
+  const goodDays    = recentDays.filter(d => d.mood === 'good' || d.mood === 'great').length;
+  const neutralDays = recentDays.filter(d => d.mood === 'neutral' || d.mood === 'bad').length;
+  const emptyDays   = recentDays.filter(d => !d.mood).length;
   const homeT = t.home as any;
 
-  const selectedDayEntries = selectedDateKey ? entries.filter(e => e.date === selectedDateKey) : [];
+  // On-this-day (year ago)
+  const yearAgo = new Date();
+  yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+  const yearAgoKey     = yearAgo.toISOString().slice(0, 10);
+  const yearAgoEntries = entries.filter(e => e.date === yearAgoKey && e.status === 'saved');
+
+  const selectedDayEntries = selectedDateKey
+    ? entries.filter(e => e.date === selectedDateKey && e.status === 'saved')
+    : [];
+
+  // 30-day: split into week rows
+  const weekRows: typeof days[] = [];
+  if (mode === '30day') {
+    for (let i = 0; i < days.length; i += 7) weekRows.push(days.slice(i, i + 7));
+  }
+
+  const isVi = locale.startsWith('vi');
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.dialogScrim}>
-        <View style={styles.dialogCard}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={styles.dialogTitle}>{t.home.moodCalendarTitle}</Text>
+        <View style={[styles.dialogCard, { width: '94%', maxHeight: '92%', paddingVertical: 20 }]}>
+
+          {/* Header */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={styles.dialogTitle}>{t.home.moodCalendarTitle}</Text>
+              {isPremium && (
+                <View style={{ backgroundColor: palette.primary, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}>
+                  <Text style={{ color: palette.white, fontSize: 9, fontWeight: '800' }}>PREMIUM</Text>
+                </View>
+              )}
+            </View>
             <Pressable onPress={onClose} style={{ padding: 4 }}>
               <Ionicons name="close" size={22} color={palette.muted} />
             </Pressable>
           </View>
-          <Text style={styles.dialogText}>
+
+          <Text style={[styles.dialogText, { marginBottom: 8 }]}>
             {homeT.moodSummary ? homeT.moodSummary(goodDays, neutralDays, emptyDays) : t.home.moodCalendarDesc}
           </Text>
+
           {streak >= 3 && homeT.streakMessage && (
-            <View style={{
-              backgroundColor: palette.primaryContainer,
-              borderRadius: 12,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              marginTop: 10,
-              alignSelf: 'flex-start',
-            }}>
-              <Text style={{ color: palette.primary, fontSize: 13, fontWeight: '700' }}>
+            <View style={{ backgroundColor: palette.primaryContainer, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 10, alignSelf: 'flex-start' }}>
+              <Text style={{ color: palette.primary, fontSize: 12, fontWeight: '700' }}>
                 {homeT.streakMessage(streak)}
               </Text>
             </View>
           )}
-          <View style={styles.moodCalendarGrid}>
-            {days.map((day) => {
-              const isSelected = selectedDateKey === day.dateKey;
+
+          {/* Mode toggle */}
+          <View style={{ flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 12, padding: 3, marginBottom: 14, alignSelf: 'center' }}>
+            {(['7day', '30day'] as const).map((m) => {
+              const label  = m === '7day' ? (isVi ? '7 ngày' : '7 days') : (isVi ? '30 ngày' : '30 days');
+              const isActive = mode === m;
+              const locked   = m === '30day' && !isPremium;
               return (
                 <Pressable
-                  key={day.dateKey}
-                  style={[
-                    styles.moodDayCell,
-                    isSelected && {
-                      borderColor: palette.primary,
-                      borderWidth: 2,
-                      backgroundColor: 'rgba(3, 31, 65, 0.05)',
-                      borderRadius: 12,
-                      padding: 4,
-                    }
-                  ]}
-                  onPress={() => setSelectedDateKey(day.dateKey)}
+                  key={m}
+                  style={{
+                    paddingHorizontal: 18, paddingVertical: 7,
+                    borderRadius: 10,
+                    backgroundColor: isActive ? palette.primary : 'transparent',
+                    flexDirection: 'row', alignItems: 'center', gap: 4,
+                  }}
+                  onPress={() => {
+                    if (locked) { onUpgrade?.(); return; }
+                    setMode(m);
+                  }}
                 >
-                  <Text style={styles.moodDayName}>{day.dayLabel}</Text>
-                  <Text style={styles.moodDateText}>{day.dateLabel}</Text>
-                  <View style={[
-                    styles.moodDotLarge,
-                    {
-                      backgroundColor: day.mood ? moodColors[day.mood] || palette.primary : palette.outline,
-                      opacity: day.count ? 1 : 0.3,
-                    },
-                  ]} />
-                  <Text style={[styles.moodCellText, { fontSize: day.mood ? 12 : 11 }]}>
-                    {day.mood ? `${moodEmoji[day.mood]} ${t.mood[day.mood]}` : t.home.emptyMood}
-                  </Text>
-                  <Text style={styles.moodCountText}>{t.home.entryCount(day.count)}</Text>
+                  {locked && <Ionicons name="lock-closed" size={11} color={isActive ? palette.white : palette.muted} />}
+                  <Text style={{ color: isActive ? palette.white : palette.muted, fontSize: 12, fontWeight: '700' }}>{label}</Text>
                 </Pressable>
               );
             })}
           </View>
 
-          {/* Selected Day Preview Section */}
-          <View style={{
-            marginTop: 16,
-            padding: 12,
-            backgroundColor: 'rgba(255, 255, 255, 0.7)',
-            borderRadius: 14,
-            borderWidth: 1,
-            borderColor: 'rgba(3, 31, 65, 0.08)',
-            width: '100%',
-            gap: 8,
-          }}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: palette.primary }}>
-              {selectedDateKey ? `${t.language === 'en' ? 'Day' : 'Ngày'} ${selectedDateKey.split('-').reverse().join('/')}` : ''}
-            </Text>
-            {selectedDayEntries.length > 0 ? (
-              <ScrollView style={{ maxHeight: 100 }} nestedScrollEnabled>
-                {selectedDayEntries.map((e) => (
-                  <View key={e.id} style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingVertical: 6,
-                    borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(3, 31, 65, 0.04)'
-                  }}>
-                    <View style={{ flex: 1, marginRight: 8 }}>
-                      <Text style={{ fontSize: 12, color: palette.ink, fontWeight: '500' }} numberOfLines={1}>
-                        {e.time} • {e.text || (t.language === 'en' ? 'No text' : 'Không có nội dung')}
+          <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 430 }} nestedScrollEnabled>
+
+            {/* Grid */}
+            {mode === '7day' ? (
+              <View style={styles.moodCalendarGrid}>
+                {days.map((day) => {
+                  const isSelected = selectedDateKey === day.dateKey;
+                  const intensity  = Math.min(1, 0.4 + day.count * 0.2);
+                  return (
+                    <Pressable
+                      key={day.dateKey}
+                      style={[
+                        styles.moodDayCell,
+                        isSelected && { borderColor: palette.primary, borderWidth: 2, backgroundColor: 'rgba(3,31,65,0.05)', borderRadius: 12, padding: 4 },
+                      ]}
+                      onPress={() => setSelectedDateKey(day.dateKey)}
+                    >
+                      <Text style={styles.moodDayName}>{day.dayLabel}</Text>
+                      <Text style={styles.moodDateText}>{day.dayNum}</Text>
+                      <View style={[
+                        styles.moodDotLarge,
+                        { backgroundColor: day.mood ? moodColors[day.mood] : palette.outline, opacity: day.count ? intensity : 0.25 },
+                      ]} />
+                      <Text style={[styles.moodCellText, { fontSize: day.mood ? 12 : 11 }]}>
+                        {day.mood ? `${moodEmoji[day.mood as keyof typeof moodEmoji]} ${t.mood[day.mood]}` : t.home.emptyMood}
                       </Text>
+                      <Text style={styles.moodCountText}>{t.home.entryCount(day.count)}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : (
+              <View style={{ gap: 5, marginBottom: 8 }}>
+                <View style={{ flexDirection: 'row', gap: 4, marginBottom: 2 }}>
+                  {(isVi ? ['T2','T3','T4','T5','T6','T7','CN'] : ['M','T','W','T','F','S','S']).map((d, i) => (
+                    <View key={i} style={{ flex: 1, alignItems: 'center' }}>
+                      <Text style={{ fontSize: 10, color: palette.muted, fontWeight: '600' }}>{d}</Text>
                     </View>
-                    <Text style={{ fontSize: 13 }}>{moodEmoji[e.mood]}</Text>
+                  ))}
+                </View>
+                {weekRows.map((week, wIdx) => (
+                  <View key={wIdx} style={{ flexDirection: 'row', gap: 4 }}>
+                    {week.map((day) => {
+                      const isSelected = selectedDateKey === day.dateKey;
+                      const count      = day.count;
+                      const intensity  = count === 0 ? 0 : count === 1 ? 0.35 : count === 2 ? 0.6 : 0.9;
+                      const baseHex    = day.mood ? moodColors[day.mood] : null;
+                      const alpha      = Math.round(intensity * 255).toString(16).padStart(2, '0');
+                      const bgColor    = baseHex
+                        ? `${baseHex}${alpha}`
+                        : day.isToday ? palette.primaryContainer : 'rgba(0,0,0,0.06)';
+                      return (
+                        <Pressable
+                          key={day.dateKey}
+                          style={{
+                            flex: 1, aspectRatio: 1, borderRadius: 8,
+                            backgroundColor: bgColor,
+                            alignItems: 'center', justifyContent: 'center',
+                            borderWidth: isSelected ? 2 : day.isToday ? 1.5 : 0,
+                            borderColor: isSelected ? palette.primary : day.isToday ? palette.primary : 'transparent',
+                          }}
+                          onPress={() => setSelectedDateKey(day.dateKey)}
+                        >
+                          <Text style={{ fontSize: 11, fontWeight: isSelected || day.isToday ? '800' : '500', color: count > 0 ? palette.white : palette.muted }}>
+                            {day.dayNum}
+                          </Text>
+                          {count > 1 && (
+                            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.85)', marginTop: 1 }} />
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                    {week.length < 7 && Array.from({ length: 7 - week.length }).map((_, i) => (
+                      <View key={`p${i}`} style={{ flex: 1 }} />
+                    ))}
                   </View>
                 ))}
-              </ScrollView>
-            ) : (
-              <Text style={{ fontSize: 12, color: palette.muted, fontStyle: 'italic', marginVertical: 4 }}>
-                {t.language === 'en' ? 'No entries for this day.' : 'Chưa ghi nhật ký ngày này.'}
-              </Text>
+              </View>
             )}
 
-            {selectedDayEntries.length > 0 ? (
-              <Pressable
-                style={{
-                  backgroundColor: palette.primary,
-                  borderRadius: 10,
-                  paddingVertical: 8,
-                  alignItems: 'center',
-                  marginTop: 4,
-                }}
-                onPress={() => {
-                  if (selectedDateKey && onSelectDate) {
-                    onSelectDate(selectedDateKey);
-                    onClose();
-                  }
-                }}
-              >
-                <Text style={{ color: palette.white, fontSize: 12, fontWeight: '700' }}>
-                  {t.language === 'en' ? 'View Day Details' : 'Xem chi tiết ngày này'}
+            {/* Selected day detail */}
+            {selectedDateKey && (
+              <View style={{ marginTop: 14, padding: 12, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(3,31,65,0.08)', gap: 8 }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: palette.primary }}>
+                  {isVi ? 'Ngày' : 'Day'} {selectedDateKey.split('-').reverse().join('/')}
                 </Text>
-              </Pressable>
-            ) : (
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                {selectedDayEntries.length > 0 ? (
+                  <ScrollView style={{ maxHeight: 110 }} nestedScrollEnabled>
+                    {selectedDayEntries.map((e) => (
+                      <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: 'rgba(3,31,65,0.04)' }}>
+                        <View style={{ flex: 1, marginRight: 8 }}>
+                          <Text style={{ fontSize: 12, color: palette.ink, fontWeight: '500' }} numberOfLines={1}>
+                            {e.time} • {e.text || (isVi ? 'Không có nội dung' : 'No text')}
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 14 }}>{moodEmoji[e.mood]}</Text>
+                      </View>
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <Text style={{ fontSize: 12, color: palette.muted, fontStyle: 'italic' }}>
+                    {isVi ? 'Chưa ghi nhật ký ngày này.' : 'No entries for this day.'}
+                  </Text>
+                )}
                 <Pressable
-                  style={{
-                    flex: 1,
-                    backgroundColor: 'rgba(3, 31, 65, 0.08)',
-                    borderRadius: 10,
-                    paddingVertical: 8,
-                    alignItems: 'center',
-                  }}
-                  onPress={() => {
-                    if (selectedDateKey && onSelectDate) {
-                      onSelectDate(selectedDateKey);
-                      onClose();
-                    }
-                  }}
+                  style={{ backgroundColor: selectedDayEntries.length > 0 ? palette.primary : 'rgba(3,31,65,0.08)', borderRadius: 10, paddingVertical: 8, alignItems: 'center' }}
+                  onPress={() => { if (selectedDateKey && onSelectDate) { onSelectDate(selectedDateKey); onClose(); } }}
                 >
-                  <Text style={{ color: palette.primary, fontSize: 12, fontWeight: '600' }}>
-                    {t.language === 'en' ? 'Go to Day Tab' : 'Đi tới Tab Ngày'}
+                  <Text style={{ color: selectedDayEntries.length > 0 ? palette.white : palette.primary, fontSize: 12, fontWeight: '700' }}>
+                    {selectedDayEntries.length > 0
+                      ? (isVi ? 'Xem chi tiết ngày này' : 'View Day Details')
+                      : (isVi ? 'Đi tới Tab Ngày' : 'Go to Day Tab')}
                   </Text>
                 </Pressable>
               </View>
             )}
-          </View>
+
+            {/* On-this-day year ago */}
+            {yearAgoEntries.length > 0 && (
+              <View style={{ marginTop: 14, padding: 12, backgroundColor: palette.primaryContainer, borderRadius: 14, gap: 6 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontSize: 13 }}>🕰️</Text>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: palette.primary }}>
+                    {isVi ? 'Năm ngoái hôm này' : 'One year ago today'}
+                  </Text>
+                </View>
+                {yearAgoEntries.slice(0, 2).map((e) => (
+                  <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ fontSize: 13 }}>{moodEmoji[e.mood]}</Text>
+                    <Text style={{ fontSize: 12, color: palette.ink, flex: 1 }} numberOfLines={2}>
+                      {e.text || (isVi ? 'Khoảnh khắc không có nội dung' : 'Moment without text')}
+                    </Text>
+                  </View>
+                ))}
+                <Pressable onPress={() => { onSelectDate?.(yearAgoKey); onClose(); }}>
+                  <Text style={{ fontSize: 11, color: palette.primary, fontWeight: '600', textDecorationLine: 'underline' }}>
+                    {isVi ? `Xem ${yearAgoEntries.length} khoảnh khắc ngày đó →` : `View ${yearAgoEntries.length} moment(s) →`}
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+
+            {/* Premium upsell (non-premium, 7day mode) */}
+            {!isPremium && mode === '7day' && (
+              <Pressable
+                style={{ marginTop: 14, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: palette.primary, borderStyle: 'dashed', flexDirection: 'row', alignItems: 'center', gap: 10 }}
+                onPress={onUpgrade}
+              >
+                <Ionicons name="lock-closed-outline" size={18} color={palette.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: palette.primary }}>
+                    {isVi ? 'Mở khóa 30 ngày' : 'Unlock 30-day view'}
+                  </Text>
+                  <Text style={{ fontSize: 11, color: palette.muted, marginTop: 2 }}>
+                    {isVi ? 'Heatmap 30 ngày + on-this-day năm trước' : '30-day heatmap & on-this-day insights'}
+                  </Text>
+                </View>
+                <View style={{ backgroundColor: palette.primary, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}>
+                  <Text style={{ color: palette.white, fontSize: 11, fontWeight: '800' }}>
+                    {isVi ? 'Nâng cấp' : 'Upgrade'}
+                  </Text>
+                </View>
+              </Pressable>
+            )}
+          </ScrollView>
 
           <Pressable style={[styles.saveButton, { marginTop: 12 }]} onPress={onClose}>
             <Text style={styles.saveButtonText}>{t.common.close}</Text>
@@ -496,6 +603,14 @@ function MoodCalendar({
   );
 }
 
+function mostFrequent<T>(arr: T[]): T | null {
+  if (arr.length === 0) return null;
+  const freq = new Map<T, number>();
+  arr.forEach(v => freq.set(v, (freq.get(v) ?? 0) + 1));
+  let best: T = arr[0]; let max = 0;
+  freq.forEach((count, key) => { if (count > max) { max = count; best = key; } });
+  return best;
+}
 function DailyInsightDialog({ visible, entries, onClose, t }: { visible: boolean; entries: Entry[]; onClose: () => void; t: any }) {
   const homeT = t.home as any;
   return (

@@ -1,17 +1,31 @@
-import React, { useState } from 'react';
+/**
+ * PaywallModal — Premium upgrade / restore screen.
+ *
+ * Wired to SubscriptionService so purchase & restore calls go through
+ * the real (or simulated) IAP backend.
+ * Drop RevenueCat into subscription.ts → this component needs no changes.
+ */
+
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Modal,
   Pressable,
   ScrollView,
   Text,
   View,
-  ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { palette } from '../theme/palette';
 import { styles } from '../styles';
 import { useTranslation } from '../i18n/translations';
+import {
+  DEFAULT_PLANS,
+  PlanId,
+  SubscriptionPlan,
+  SubscriptionService,
+} from '../services/subscription';
 
 interface PaywallModalProps {
   visible: boolean;
@@ -19,244 +33,213 @@ interface PaywallModalProps {
   onSuccess: () => void;
 }
 
+// ─── Feature list ──────────────────────────────────────────────────────────────
+
+const FEATURES: Array<{ icon: 'sparkles-outline' | 'images-outline' | 'color-wand-outline' | 'cloud-upload-outline' | 'calendar-outline'; titleKey: string; descKey: string }> = [
+  { icon: 'sparkles-outline',    titleKey: 'paywallFeature1Title', descKey: 'paywallFeature1Desc' },
+  { icon: 'images-outline',      titleKey: 'paywallFeature2Title', descKey: 'paywallFeature2Desc' },
+  { icon: 'color-wand-outline',  titleKey: 'paywallFeature3Title', descKey: 'paywallFeature3Desc' },
+  { icon: 'cloud-upload-outline',titleKey: 'paywallFeature4Title', descKey: 'paywallFeature4Desc' },
+  { icon: 'calendar-outline',    titleKey: 'paywallFeature5Title', descKey: 'paywallFeature5Desc' },
+];
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export function PaywallModal({ visible, onClose, onSuccess }: PaywallModalProps) {
   const { t, lang } = useTranslation();
-  const [selectedPlan, setSelectedPlan] = useState<'month' | 'year' | 'lifetime'>('lifetime');
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>('lifetime');
   const [loading, setLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<'purchase' | 'restore' | null>(null);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>(DEFAULT_PLANS);
 
   const setT = t.settings as any;
+  const isVi = lang === 'vi';
 
-  const features = [
-    {
-      icon: 'sparkles-outline' as const,
-      title: setT.paywallFeature1Title,
-      desc: setT.paywallFeature1Desc,
-    },
-    {
-      icon: 'images-outline' as const,
-      title: setT.paywallFeature2Title,
-      desc: setT.paywallFeature2Desc,
-    },
-    {
-      icon: 'color-wand-outline' as const,
-      title: setT.paywallFeature3Title,
-      desc: setT.paywallFeature3Desc,
-    },
-    {
-      icon: 'cloud-upload-outline' as const,
-      title: setT.paywallFeature4Title,
-      desc: setT.paywallFeature4Desc,
-    },
-  ];
+  // Fetch live plan prices when modal opens
+  useEffect(() => {
+    if (!visible) return;
+    SubscriptionService.shared()
+      .getAvailablePlans()
+      .then(setPlans)
+      .catch(() => setPlans(DEFAULT_PLANS));
+  }, [visible]);
 
-  const handlePurchase = () => {
+  const handlePurchase = useCallback(async () => {
     setLoading(true);
-    setTimeout(() => {
+    setLoadingAction('purchase');
+    try {
+      const result = await SubscriptionService.shared().purchase(selectedPlan);
+      if (result.success) {
+        Alert.alert(
+          isVi ? 'Nâng cấp thành công 🎉' : 'Upgrade Successful 🎉',
+          isVi
+            ? 'Chào mừng bạn đến với Daily Log Premium! Các tính năng đã được mở khóa.'
+            : 'Welcome to Daily Log Premium! All features have been unlocked.',
+          [{ text: 'OK', onPress: () => { onSuccess(); onClose(); } }],
+        );
+      } else if (!result.cancelled) {
+        Alert.alert(
+          isVi ? 'Lỗi thanh toán' : 'Payment Error',
+          result.error ?? (isVi ? 'Đã xảy ra lỗi. Vui lòng thử lại.' : 'Something went wrong. Please try again.'),
+          [{ text: 'OK' }],
+        );
+      }
+    } catch (err: any) {
+      Alert.alert(isVi ? 'Lỗi' : 'Error', err?.message ?? 'Unknown error', [{ text: 'OK' }]);
+    } finally {
       setLoading(false);
-      Alert.alert(
-        lang === 'vi' ? 'Nâng cấp thành công' : 'Upgrade Successful',
-        lang === 'vi'
-          ? 'Chào mừng bạn đến với Daily Log Premium! Các tính năng đã được mở khóa.'
-          : 'Welcome to Daily Log Premium! All features have been unlocked.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              onSuccess();
-              onClose();
-            },
-          },
-        ]
-      );
-    }, 1800);
-  };
+      setLoadingAction(null);
+    }
+  }, [selectedPlan, isVi, onSuccess, onClose]);
 
-  const handleRestore = () => {
+  const handleRestore = useCallback(async () => {
     setLoading(true);
-    setTimeout(() => {
+    setLoadingAction('restore');
+    try {
+      const result = await SubscriptionService.shared().restorePurchases();
+      if (result.success) {
+        Alert.alert(
+          isVi ? 'Khôi phục thành công ✅' : 'Restore Successful ✅',
+          isVi ? 'Đã khôi phục giao dịch Premium của bạn.' : 'Your Premium purchase has been successfully restored.',
+          [{ text: 'OK', onPress: () => { onSuccess(); onClose(); } }],
+        );
+      } else {
+        Alert.alert(
+          isVi ? 'Không tìm thấy giao dịch' : 'No Purchase Found',
+          result.error ?? (isVi ? 'Không có giao dịch nào để khôi phục.' : 'No previous purchase found to restore.'),
+          [{ text: 'OK' }],
+        );
+      }
+    } catch (err: any) {
+      Alert.alert(isVi ? 'Lỗi' : 'Error', err?.message ?? 'Unknown error', [{ text: 'OK' }]);
+    } finally {
       setLoading(false);
-      Alert.alert(
-        lang === 'vi' ? 'Khôi phục thành công' : 'Restore Successful',
-        lang === 'vi'
-          ? 'Đã khôi phục giao dịch Premium của bạn.'
-          : 'Your Premium purchase has been successfully restored.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              onSuccess();
-              onClose();
-            },
-          },
-        ]
-      );
-    }, 1200);
-  };
+      setLoadingAction(null);
+    }
+  }, [isVi, onSuccess, onClose]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.dialogScrim}>
-        <View style={[styles.dialogCard, { width: '92%', maxHeight: '90%', paddingVertical: 22, paddingHorizontal: 20 }]}>
-          {/* Header */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <View style={[
+          styles.dialogCard,
+          { width: '92%', maxHeight: '92%', paddingVertical: 22, paddingHorizontal: 20 },
+        ]}>
+          {/* ── Header ─────────────────────────────────────── */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Ionicons name="gift" size={22} color="#f59e0b" />
-              <Text style={{ fontSize: 18, fontWeight: '800', color: palette.ink }}>{setT.paywallTitle}</Text>
+              <Text style={{ fontSize: 18, fontWeight: '800', color: palette.ink }}>
+                {setT.paywallTitle}
+              </Text>
             </View>
-            <Pressable onPress={onClose} style={{ padding: 4 }}>
+            <Pressable onPress={onClose} style={{ padding: 4 }} hitSlop={8}>
               <Ionicons name="close" size={24} color={palette.muted} />
             </Pressable>
           </View>
 
-          <Text style={{ fontSize: 13, color: palette.muted, textAlign: 'center', marginBottom: 18 }}>
+          <Text style={{ fontSize: 13, color: palette.muted, textAlign: 'center', marginBottom: 16 }}>
             {setT.paywallSubtitle}
           </Text>
 
-          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1, maxHeight: 380 }}>
-            {/* Features list */}
-            <View style={{ gap: 14, marginBottom: 20 }}>
-              {features.map((feat, idx) => (
-                <View key={idx} style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
-                  <View style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                    backgroundColor: palette.primaryContainer,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginTop: 1
-                  }}>
-                    <Ionicons name={feat.icon} size={16} color={palette.primary} />
+          <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
+            {/* ── Features ───────────────────────────────── */}
+            <View style={{ gap: 12, marginBottom: 20 }}>
+              {FEATURES.map((feat, idx) => {
+                const title = setT[feat.titleKey] ?? '';
+                const desc  = setT[feat.descKey]  ?? '';
+                if (!title) return null;
+                return (
+                  <View key={idx} style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
+                    <View style={{
+                      width: 32, height: 32, borderRadius: 16,
+                      backgroundColor: palette.primaryContainer,
+                      justifyContent: 'center', alignItems: 'center', marginTop: 1,
+                    }}>
+                      <Ionicons name={feat.icon} size={16} color={palette.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: palette.ink, marginBottom: 2 }}>
+                        {title}
+                      </Text>
+                      <Text style={{ fontSize: 11.5, color: palette.muted, lineHeight: 16 }}>
+                        {desc}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: palette.ink, marginBottom: 2 }}>
-                      {feat.title}
-                    </Text>
-                    <Text style={{ fontSize: 11.5, color: palette.muted, lineHeight: 16 }}>
-                      {feat.desc}
-                    </Text>
-                  </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
 
-            {/* Plans */}
+            {/* ── Plan cards ─────────────────────────────── */}
             <View style={{ gap: 10, marginBottom: 16 }}>
-              {/* Lifetime Plan */}
-              <Pressable
-                style={{
-                  borderWidth: 2,
-                  borderColor: selectedPlan === 'lifetime' ? palette.primary : '#e1e8e3',
-                  borderRadius: 14,
-                  padding: 12,
-                  backgroundColor: selectedPlan === 'lifetime' ? palette.paper : '#f7faf8',
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  position: 'relative'
-                }}
-                onPress={() => setSelectedPlan('lifetime')}
-              >
-                <View style={{
-                  position: 'absolute',
-                  top: -9,
-                  right: 12,
-                  backgroundColor: palette.coral,
-                  paddingHorizontal: 8,
-                  paddingVertical: 1,
-                  borderRadius: 8
-                }}>
-                  <Text style={{ color: palette.white, fontSize: 9, fontWeight: '800', textTransform: 'uppercase' }}>
-                    {setT.paywallBestValue}
-                  </Text>
-                </View>
-                <View style={{ gap: 2 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: palette.ink }}>
-                    {setT.paywallOptionLifetime}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: palette.muted }}>
-                    {lang === 'vi' ? 'Thanh toán một lần' : 'One-time purchase'}
-                  </Text>
-                </View>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: palette.primary }}>
-                  {lang === 'vi' ? '199.000 đ' : '$9.99'}
-                </Text>
-              </Pressable>
-
-              {/* Yearly Plan */}
-              <Pressable
-                style={{
-                  borderWidth: 2,
-                  borderColor: selectedPlan === 'year' ? palette.primary : '#e1e8e3',
-                  borderRadius: 14,
-                  padding: 12,
-                  backgroundColor: selectedPlan === 'year' ? palette.paper : '#f7faf8',
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-                onPress={() => setSelectedPlan('year')}
-              >
-                <View style={{ gap: 2 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: palette.ink }}>
-                    {setT.paywallOptionYear}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: palette.muted }}>
-                    {lang === 'vi' ? 'Tiết kiệm 55%' : 'Save 55%'}
-                  </Text>
-                </View>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: palette.primary }}>
-                  {lang === 'vi' ? '99.000 đ/năm' : '$4.99/yr'}
-                </Text>
-              </Pressable>
-
-              {/* Monthly Plan */}
-              <Pressable
-                style={{
-                  borderWidth: 2,
-                  borderColor: selectedPlan === 'month' ? palette.primary : '#e1e8e3',
-                  borderRadius: 14,
-                  padding: 12,
-                  backgroundColor: selectedPlan === 'month' ? palette.paper : '#f7faf8',
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-                onPress={() => setSelectedPlan('month')}
-              >
-                <View style={{ gap: 2 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: palette.ink }}>
-                    {setT.paywallOptionMonth}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: palette.muted }}>
-                    {lang === 'vi' ? 'Hủy bất cứ lúc nào' : 'Cancel anytime'}
-                  </Text>
-                </View>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: palette.primary }}>
-                  {lang === 'vi' ? '19.000 đ/tháng' : '$0.99/mo'}
-                </Text>
-              </Pressable>
+              {plans.map((plan) => {
+                const isSelected = selectedPlan === plan.id;
+                return (
+                  <Pressable
+                    key={plan.id}
+                    style={{
+                      borderWidth: 2,
+                      borderColor: isSelected ? palette.primary : '#e1e8e3',
+                      borderRadius: 14,
+                      padding: 13,
+                      backgroundColor: isSelected ? palette.primaryContainer : '#f7faf8',
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      position: 'relative',
+                    }}
+                    onPress={() => setSelectedPlan(plan.id)}
+                  >
+                    {/* Best-value badge */}
+                    {plan.isHighlighted && (
+                      <View style={{
+                        position: 'absolute', top: -9, right: 12,
+                        backgroundColor: palette.coral,
+                        paddingHorizontal: 8, paddingVertical: 1, borderRadius: 8,
+                      }}>
+                        <Text style={{ color: palette.white, fontSize: 9, fontWeight: '800', textTransform: 'uppercase' }}>
+                          {setT.paywallBestValue ?? 'Best Value'}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={{ gap: 2 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: palette.ink }}>
+                        {plan.title}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: palette.muted }}>
+                        {plan.description}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end', gap: 2 }}>
+                      <Text style={{ fontSize: 15, fontWeight: '800', color: palette.primary }}>
+                        {plan.priceString}
+                      </Text>
+                      {isSelected && (
+                        <Ionicons name="checkmark-circle" size={16} color={palette.primary} />
+                      )}
+                    </View>
+                  </Pressable>
+                );
+              })}
             </View>
           </ScrollView>
 
-          {/* Action button */}
+          {/* ── Actions ──────────────────────────────────── */}
           <View style={{ width: '100%', gap: 8, marginTop: 10 }}>
+            {/* Primary CTA */}
             <Pressable
               style={{
                 backgroundColor: palette.primary,
-                borderRadius: 14,
-                paddingVertical: 14,
-                alignItems: 'center',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                gap: 8,
-                width: '100%',
-                opacity: loading ? 0.8 : 1
+                borderRadius: 14, paddingVertical: 14,
+                alignItems: 'center', flexDirection: 'row',
+                justifyContent: 'center', gap: 8,
+                opacity: loading ? 0.75 : 1,
               }}
               onPress={handlePurchase}
               disabled={loading}
             >
-              {loading ? (
+              {loadingAction === 'purchase' ? (
                 <ActivityIndicator size="small" color={palette.white} />
               ) : (
                 <>
@@ -268,16 +251,19 @@ export function PaywallModal({ visible, onClose, onSuccess }: PaywallModalProps)
               )}
             </Pressable>
 
+            {/* Restore */}
             <Pressable
-              style={{ paddingVertical: 8, alignItems: 'center' }}
+              style={{ paddingVertical: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 4 }}
               onPress={handleRestore}
               disabled={loading}
             >
+              {loadingAction === 'restore' && <ActivityIndicator size="small" color={palette.muted} />}
               <Text style={{ color: palette.muted, fontSize: 12, fontWeight: '600', textDecorationLine: 'underline' }}>
                 {setT.paywallRestore}
               </Text>
             </Pressable>
 
+            {/* Legal footer */}
             <Text style={{ fontSize: 10, color: palette.muted, textAlign: 'center', lineHeight: 14 }}>
               {setT.paywallFooter}
             </Text>

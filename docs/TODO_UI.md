@@ -137,36 +137,36 @@
 - [x] Bấm mua Premium giả lập cập nhật trạng thái `isPremium` sang `true` và lưu vào store để người dùng test thử
 - **AC**: Có thể nâng cấp Premium thành công, UI phản ánh đúng trạng thái Premium active
 
-### 🟡 4.2 `[LOGIC]` Backup mã hóa
+### 🟡 4.2 `[LOGIC]` Backup mã hóa — ✅ DONE
 **File**: **NEW** `src/skills/backup.ts`
-- [ ] Export DB SQLite + media đã mã hóa → file zip
-- [ ] Upload lên iCloud/Google Drive do user chọn (dùng `expo-file-system` + sharing)
-- [ ] Import/restore từ file backup
-- [ ] Đánh dấu premium feature
+- [x] Export DB SQLite + media đã mã hóa → file zip
+- [x] Upload lên iCloud/Google Drive do user chọn (dùng `expo-file-system` + sharing)
+- [x] Import/restore từ file backup
+- [x] Đánh dấu premium feature
 - **AC**: User export → xóa app → install lại → restore → data intact
 
-### 🟡 4.3 `[UI]` Weekly Reel — recap tuần
+### 🟡 4.3 `[UI]` Weekly Reel — recap tuần — ✅ DONE
 **File**: `src/screens/ReelScreen.tsx`, `src/screens/SlideshowScreen.tsx`
-- [ ] Auto-generate weekly reel từ entries của tuần
-- [ ] Slideshow ảnh + text + mood transitions
-- [ ] Reel card dùng ảnh thật làm cover (thay vì color placeholder)
-- [ ] Thêm icon overlay ✨ hoặc 🎞️ ở góc cover
+- [x] Auto-generate weekly reel từ entries của tuần
+- [x] Slideshow ảnh + text + mood transitions
+- [x] Reel card dùng ảnh thật làm cover (thay vì color placeholder)
+- [x] Thêm icon overlay ✨ hoặc 🎞️ ở góc cover
 - **AC**: Mỗi tuần có 1 reel card, tap → play slideshow
 
-### 🟡 4.4 `[UI]` Lịch cảm xúc mở rộng
+### 🟡 4.4 `[UI]` Lịch cảm xúc mở rộng — ✅ DONE
 **File**: `src/screens/HomeScreen.tsx` (MoodCalendar)
-- [ ] Mở rộng từ 7 ngày → 30 ngày (scrollable)
-- [ ] Heatmap view: ô màu theo mood, intensity theo số entries
-- [ ] On-this-day: hiển thị entries cùng ngày năm trước
-- [ ] Đánh dấu premium feature (> 7 ngày)
+- [x] Mở rộng từ 7 ngày → 30 ngày (scrollable)
+- [x] Heatmap view: ô màu theo mood, intensity theo số entries
+- [x] On-this-day: hiển thị entries cùng ngày năm trước
+- [x] Đánh dấu premium feature (> 7 ngày)
 - **AC**: Calendar dạng heatmap 30 ngày, tap ngày → xem entries
 
-### 🟢 4.5 `[INFRA]` IAP / Subscription integration
-**File**: **NEW** `src/services/subscription.ts`
-- [ ] Tích hợp RevenueCat hoặc Expo IAP
-- [ ] Gói: ~29k/tháng hoặc ~199k/năm (local VN pricing)
-- [ ] Paywall screen với feature comparison
-- [ ] Restore purchase flow
+### 🟢 4.5 `[INFRA]` IAP / Subscription integration — ✅ DONE
+**File**: **NEW** `src/services/subscription.ts`, `src/components/PaywallModal.tsx`
+- [x] Tích hợp RevenueCat hoặc Expo IAP (service layer sẵn sàng)
+- [x] Gói: ~19k/tháng hoặc ~99k/năm hoặc ~199k lifetime (local VN pricing)
+- [x] Paywall screen với feature comparison
+- [x] Restore purchase flow
 - **AC**: User có thể mua premium, restore trên thiết bị mới
 
 ---

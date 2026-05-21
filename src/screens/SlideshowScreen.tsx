@@ -3,6 +3,7 @@
  *
  * Features:
  * - Auto-advances every 4 seconds
+ * - Mood-aware background gradient (no photo → colour tinted by mood)
  * - Fades between slides (calm, journal-like)
  * - Shows: photo → mood chip → entry text per slide
  * - Tap to advance, swipe to dismiss
@@ -33,10 +34,30 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { moodEmoji } from '../data/mockData';
-import { Entry } from '../types';
+import { Entry, Mood } from '../types';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const SLIDE_DURATION_MS = 4000;
+
+// ─── Mood → gradient colour ───────────────────────────────────────────────────
+
+const moodGradientBg: Record<Mood, string> = {
+  very_bad: '#1a0a0a',
+  bad:      '#0f1218',
+  neutral:  '#0a1a12',
+  good:     '#071a0e',
+  great:    '#051510',
+};
+
+const moodAccent: Record<Mood, string> = {
+  very_bad: 'rgba(186,26,26,0.25)',
+  bad:      'rgba(60,80,120,0.25)',
+  neutral:  'rgba(30,80,60,0.25)',
+  good:     'rgba(50,140,90,0.25)',
+  great:    'rgba(100,200,160,0.25)',
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 interface SlideshowScreenProps {
   visible: boolean;
@@ -94,6 +115,7 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
   if (slidableEntries.length === 0) return null;
 
   const entry = slidableEntries[currentIndex];
+  const mood = entry.mood ?? 'neutral';
 
   const progressStyle = useAnimatedStyle(() => ({
     width: `${progressValue.value * 100}%`,
@@ -112,12 +134,26 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
         onPressOut={() => setPaused(false)}
       >
         <View style={ss.container}>
-          {/* Background Photo */}
+          {/* Background: real photo or mood-gradient */}
           {entry.imageUri ? (
-            <Image source={{ uri: entry.imageUri }} style={ss.bgImage} resizeMode="cover" />
+            <Animated.View
+              key={`bg-${slideKey}`}
+              entering={FadeIn.duration(600)}
+              style={StyleSheet.absoluteFill}
+            >
+              <Image source={{ uri: entry.imageUri }} style={ss.bgImage} resizeMode="cover" />
+            </Animated.View>
           ) : (
-            <View style={ss.bgGradient} />
+            <Animated.View
+              key={`bg-grad-${slideKey}`}
+              entering={FadeIn.duration(700)}
+              style={[ss.bgGradient, { backgroundColor: moodGradientBg[mood] }]}
+            >
+              {/* Accent colour blob for visual interest */}
+              <View style={[ss.moodBlob, { backgroundColor: moodAccent[mood] }]} />
+            </Animated.View>
           )}
+
           {/* Dark overlay */}
           <View style={ss.overlay} />
 
@@ -153,9 +189,9 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
             >
               {/* Mood chip */}
               <View style={ss.moodChipRow}>
-                <View style={ss.moodChip}>
+                <View style={[ss.moodChip, { borderColor: moodAccent[mood] }]}>
                   <Text style={ss.moodChipText}>
-                    {moodEmoji[entry.mood]}  {entry.mood.replace('_', ' ')}
+                    {moodEmoji[mood]}  {mood.replace('_', ' ')}
                   </Text>
                 </View>
                 <Text style={ss.timeText}>{entry.time}</Text>
@@ -175,6 +211,13 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
                   <Text style={ss.locationText}>{entry.locationName}</Text>
                 </View>
               ) : null}
+
+              {/* ✨ sparkle on great/good mood */}
+              {(mood === 'great' || mood === 'good') && (
+                <View style={ss.sparkleWrap}>
+                  <Text style={ss.sparkle}>✨</Text>
+                </View>
+              )}
             </Animated.View>
 
             {/* Footer: counter + pause hint */}
@@ -195,6 +238,8 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const ss = StyleSheet.create({
   container: {
     flex: 1,
@@ -205,11 +250,20 @@ const ss = StyleSheet.create({
   },
   bgGradient: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0a1a12',
+    overflow: 'hidden',
+  },
+  moodBlob: {
+    position: 'absolute',
+    bottom: -SCREEN_H * 0.15,
+    left: -SCREEN_W * 0.15,
+    width: SCREEN_W * 1.3,
+    height: SCREEN_W * 1.3,
+    borderRadius: SCREEN_W * 0.65,
+    opacity: 0.8,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.52)',
+    backgroundColor: 'rgba(0,0,0,0.50)',
   },
   safeArea: {
     flex: 1,
@@ -302,6 +356,15 @@ const ss = StyleSheet.create({
     color: 'rgba(255,255,255,0.55)',
     fontSize: 13,
     fontFamily: 'PlusJakartaSans_400Regular',
+  },
+  sparkleWrap: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+  },
+  sparkle: {
+    fontSize: 22,
+    opacity: 0.75,
   },
   // Footer
   footer: {

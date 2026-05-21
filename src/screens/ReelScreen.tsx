@@ -2,8 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useRef, useState } from 'react';
 import {
   Animated as RNAnimated,
+  Image,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -51,6 +53,17 @@ export function ReelScreen({
       (e) => e.date >= reel.startDate && e.date <= reel.endDate,
     );
     openSlideshow(reelEntries, reel.weekId);
+  };
+
+  /** Pick the first entry with an image for a given reel */
+  const getCoverEntry = (reel: WeeklyReel): Entry | undefined => {
+    return entries.find(
+      (e) =>
+        e.date >= reel.startDate &&
+        e.date <= reel.endDate &&
+        e.status === 'saved' &&
+        e.imageUri,
+    );
   };
 
   return (
@@ -107,22 +120,45 @@ export function ReelScreen({
         {/* Tuần của bạn */}
         <Text style={styles.sectionTitle}>{t.reel.yourWeek}</Text>
         {reels.length > 0 ? (
-          reels.map((reel, idx) => (
-            <AnimatedCard key={reel.weekId} delay={120 + idx * 60}>
-              <Pressable style={styles.reelCard} onPress={() => openReelSlideshow(reel)}>
-                <View style={[styles.videoThumb, { backgroundColor: reel.coverTone }]}>
-                  <Ionicons name="play" size={28} color={palette.white} />
-                </View>
-                <View style={styles.reelMeta}>
-                  <Text style={styles.reelTitle}>{reel.weekId}</Text>
-                  <Text style={styles.reelDate}>{reel.dateRange}</Text>
-                </View>
-                <View style={styles.countChip}>
-                  <Text style={styles.countChipText}>{t.reel.momentCount(reel.entryCount)}</Text>
-                </View>
-              </Pressable>
-            </AnimatedCard>
-          ))
+          reels.map((reel, idx) => {
+            const coverEntry = getCoverEntry(reel);
+            return (
+              <AnimatedCard key={reel.weekId} delay={120 + idx * 60}>
+                <Pressable style={styles.reelCard} onPress={() => openReelSlideshow(reel)}>
+                  {/* Thumbnail: real image or colour fallback */}
+                  <View style={ss.thumbWrap}>
+                    {coverEntry?.imageUri ? (
+                      <Image
+                        source={{ uri: coverEntry.imageUri }}
+                        style={ss.thumbImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={[ss.thumbPlaceholder, { backgroundColor: reel.coverTone }]} />
+                    )}
+                    {/* Dark overlay */}
+                    <View style={ss.thumbOverlay} />
+                    {/* 🎞️ icon in corner */}
+                    <View style={ss.thumbIconWrap}>
+                      <Text style={ss.thumbIcon}>🎞️</Text>
+                    </View>
+                    {/* Play button */}
+                    <View style={ss.thumbPlayBtn}>
+                      <Ionicons name="play" size={16} color={palette.white} />
+                    </View>
+                  </View>
+
+                  <View style={styles.reelMeta}>
+                    <Text style={styles.reelTitle}>{reel.weekId}</Text>
+                    <Text style={styles.reelDate}>{reel.dateRange}</Text>
+                  </View>
+                  <View style={styles.countChip}>
+                    <Text style={styles.countChipText}>{t.reel.momentCount(reel.entryCount)}</Text>
+                  </View>
+                </Pressable>
+              </AnimatedCard>
+            );
+          })
         ) : (
           <AnimatedCard delay={120}>
             <View style={styles.emptyState}>
@@ -153,7 +189,50 @@ function AnimatedCard({ children, delay = 0 }: { children: React.ReactNode; dela
   );
 }
 
-// Inline styles for the "Play all" card
+// ─── Local styles ─────────────────────────────────────────────────────────────
+
+const ss = StyleSheet.create({
+  thumbWrap: {
+    width: 104,
+    aspectRatio: 16 / 9,
+    borderRadius: 16,
+    overflow: 'hidden',
+    position: 'relative',
+    backgroundColor: '#d8e5ed',
+  },
+  thumbImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  thumbPlaceholder: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  thumbOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.22)',
+  },
+  thumbIconWrap: {
+    position: 'absolute',
+    top: 4,
+    right: 5,
+  },
+  thumbIcon: {
+    fontSize: 11,
+  },
+  thumbPlayBtn: {
+    position: 'absolute',
+    bottom: 5,
+    left: 5,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
+
+// ─── Inline styles for the "Play all" card ────────────────────────────────────
+
 const playAllCardStyle: any = {
   flexDirection: 'row',
   alignItems: 'center',

@@ -19,6 +19,8 @@ import { pickMomentImage } from '../services/imagePicker';
 import { PaywallModal } from '../components/PaywallModal';
 import * as BackgroundFetch from 'expo-background-fetch';
 import { getAutoTrackerStatus, registerAutoTracker, runAutoTrackerOnce, unregisterAutoTracker } from '../skills/autoTracker';
+import { exportBackup, exportBackupWeb, importBackup, importBackupWeb } from '../skills/backup';
+import { Platform } from 'react-native';
 
 export function MeScreen({
   navigation,
@@ -43,6 +45,8 @@ export function MeScreen({
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [privacyVisible, setPrivacyVisible] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
+  const [backupVisible, setBackupVisible] = useState(false);
+  const [backupWorking, setBackupWorking] = useState(false);
 
   const updateSetting = <K extends keyof Settings>(key: K, value: Settings[K]) => {
     onChangeSettings((current) => ({ ...current, [key]: value }));
@@ -282,12 +286,14 @@ export function MeScreen({
         <SettingsRow
           icon="cloud-outline"
           title={t.settings.backupTitle}
-          subtitle={t.settings.backupSubtitle}
+          subtitle={settings.isPremium
+            ? (lang === 'vi' ? 'Xuất / nhập file backup mã hoá' : 'Export / import encrypted backup')
+            : t.settings.backupSubtitle}
           onPress={() => {
             if (!settings.isPremium) {
               setPaywallVisible(true);
             } else {
-              Alert.alert('Sắp ra mắt', 'Tính năng Backup & Restore sẽ được thêm vào phiên bản tiếp theo.', [{ text: 'OK' }]);
+              setBackupVisible(true);
             }
           }}
         />
@@ -431,6 +437,54 @@ export function MeScreen({
         visible={paywallVisible}
         onClose={() => setPaywallVisible(false)}
         onSuccess={() => updateSetting('isPremium', true)}
+      />
+      <BackupDialog
+        visible={backupVisible}
+        working={backupWorking}
+        lang={lang}
+        onClose={() => setBackupVisible(false)}
+        onExport={async () => {
+          setBackupWorking(true);
+          const result = Platform.OS === 'web' ? await exportBackupWeb() : await exportBackup();
+          setBackupWorking(false);
+          setBackupVisible(false);
+          if (result.success) {
+            Alert.alert(
+              lang === 'vi' ? 'Xuất thành công' : 'Export successful',
+              lang === 'vi'
+                ? `Đã xuất ${result.entryCount ?? 0} entry vào file backup.`
+                : `Exported ${result.entryCount ?? 0} entries to backup file.`,
+              [{ text: 'OK' }],
+            );
+          } else {
+            Alert.alert(
+              lang === 'vi' ? 'Lỗi xuất backup' : 'Export error',
+              result.error ?? 'Unknown error',
+              [{ text: 'OK' }],
+            );
+          }
+        }}
+        onImport={async () => {
+          setBackupWorking(true);
+          const result = Platform.OS === 'web' ? await importBackupWeb() : await importBackup();
+          setBackupWorking(false);
+          setBackupVisible(false);
+          if (result.success) {
+            Alert.alert(
+              lang === 'vi' ? 'Khôi phục thành công' : 'Restore successful',
+              lang === 'vi'
+                ? `Đã khôi phục ${result.entryCount ?? 0} entry từ file backup.\nVui lòng khởi động lại ứng dụng để thấy dữ liệu mới.`
+                : `Restored ${result.entryCount ?? 0} entries from backup.\nPlease restart the app to see the restored data.`,
+              [{ text: 'OK' }],
+            );
+          } else if (result.error && result.error !== 'No file selected') {
+            Alert.alert(
+              lang === 'vi' ? 'Lỗi khôi phục' : 'Restore error',
+              result.error,
+              [{ text: 'OK' }],
+            );
+          }
+        }}
       />
     </ScrollView>
   );
@@ -836,6 +890,119 @@ function NotificationsDialog({
           </View>
           <Pressable style={styles.dialogSecondary} onPress={onClose}>
             <Text style={styles.dialogSecondaryText}>{t.common.close}</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function BackupDialog({
+  visible,
+  working,
+  lang,
+  onClose,
+  onExport,
+  onImport,
+}: {
+  visible: boolean;
+  working: boolean;
+  lang: string;
+  onClose: () => void;
+  onExport: () => void;
+  onImport: () => void;
+}) {
+  const isVi = lang === 'vi';
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.dialogScrim}>
+        <View style={styles.dialogCard}>
+          {/* Header */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <View style={{
+              width: 36, height: 36, borderRadius: 18,
+              backgroundColor: palette.primaryContainer,
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Ionicons name="cloud-outline" size={20} color={palette.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.dialogTitle}>
+                  {isVi ? 'Sao lưu & Khôi phục' : 'Backup & Restore'}
+                </Text>
+                <View style={{
+                  backgroundColor: palette.primary,
+                  borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2,
+                }}>
+                  <Text style={{ color: palette.white, fontSize: 9, fontWeight: '800' }}>
+                    PREMIUM
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <Text style={[styles.dialogText, { marginBottom: 16 }]}>
+            {isVi
+              ? 'File backup được mã hoá nhẹ để bảo vệ dữ liệu riêng tư của bạn.'
+              : 'Backup files are obfuscated to protect your private data.'}
+          </Text>
+
+          <View style={styles.themeOptionList}>
+            {/* Export */}
+            <Pressable
+              style={[styles.themeOption, { opacity: working ? 0.5 : 1 }]}
+              onPress={working ? undefined : onExport}
+            >
+              <Ionicons name="cloud-upload-outline" size={20} color={palette.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.themeOptionText}>
+                  {isVi ? 'Xuất backup' : 'Export backup'}
+                </Text>
+                <Text style={{ fontSize: 11, color: palette.muted, marginTop: 1 }}>
+                  {isVi ? 'Lưu file .dailylog → iCloud / Drive / AirDrop' : 'Save .dailylog → iCloud / Drive / AirDrop'}
+                </Text>
+              </View>
+              {working && <Ionicons name="reload-outline" size={16} color={palette.primary} />}
+            </Pressable>
+
+            {/* Import */}
+            <Pressable
+              style={[styles.themeOption, { opacity: working ? 0.5 : 1 }]}
+              onPress={working ? undefined : onImport}
+            >
+              <Ionicons name="cloud-download-outline" size={20} color={palette.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.themeOptionText}>
+                  {isVi ? 'Nhập & khôi phục' : 'Import & restore'}
+                </Text>
+                <Text style={{ fontSize: 11, color: palette.muted, marginTop: 1 }}>
+                  {isVi ? 'Chọn file .dailylog để khôi phục dữ liệu' : 'Pick a .dailylog file to restore data'}
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+
+          {/* Warning */}
+          <View style={{
+            flexDirection: 'row', gap: 8, alignItems: 'flex-start',
+            backgroundColor: 'rgba(186,26,26,0.06)', borderRadius: 12,
+            padding: 12, marginTop: 8, marginBottom: 12,
+            borderWidth: 1, borderColor: 'rgba(186,26,26,0.12)',
+          }}>
+            <Ionicons name="warning-outline" size={16} color={palette.red} style={{ marginTop: 1 }} />
+            <Text style={{ fontSize: 12, color: palette.red, flex: 1, lineHeight: 17 }}>
+              {isVi
+                ? 'Khôi phục sẽ thay thế toàn bộ dữ liệu hiện tại. Hãy xuất backup trước nếu cần.'
+                : 'Restoring will replace all current data. Export a backup first if needed.'}
+            </Text>
+          </View>
+
+          <Pressable style={styles.dialogSecondary} onPress={onClose}>
+            <Text style={styles.dialogSecondaryText}>
+              {isVi ? 'Đóng' : 'Close'}
+            </Text>
           </Pressable>
         </View>
       </View>

@@ -21,6 +21,7 @@ import { requestLocationAccess } from '../skills/permissions';
 import { CalendarEventDraft, ComposerDraft, ComposerMode, Entry } from '../types';
 import { palette } from '../theme/palette';
 import { styles } from '../styles';
+import { PaywallModal } from '../components/PaywallModal';
 
 const Tab = createBottomTabNavigator();
 
@@ -43,6 +44,7 @@ export function TabNavigator() {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEventDraft[]>([]);
   const [composerDraft, setComposerDraft] = useState<ComposerDraft>({ mode: 'note' });
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [paywallVisible, setPaywallVisible] = useState(false);
 
   const [permissionType, setPermissionType] = useState<'photos' | 'calendar' | null>(null);
   const [pendingMode, setPendingMode] = useState<ComposerMode | null>(null);
@@ -179,6 +181,8 @@ export function TabNavigator() {
             <HomeScreen
               {...props}
               entries={entries}
+              isPremium={settings.isPremium}
+              onUpgrade={() => setPaywallVisible(true)}
               onOpenDay={() => {
                 setSelectedDate(yesterdayDate);
                 props.navigation.navigate('day');
@@ -262,6 +266,11 @@ export function TabNavigator() {
         onDeny={handleDenyPermission}
         details={getPermissionDetails()}
         t={t}
+      />
+      <PaywallModal
+        visible={paywallVisible}
+        onClose={() => setPaywallVisible(false)}
+        onSuccess={() => updateSettings('isPremium', true)}
       />
     </>
   );

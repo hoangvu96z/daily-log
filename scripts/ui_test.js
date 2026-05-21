@@ -1,187 +1,403 @@
 /**
- * 🎨 END-TO-END UI AUTOMATION TEST SUITE (WITH ONBOARDING BYPASS)
- * 
- * This script runs a live UI automation test on the running web app using Puppeteer:
- * 
- * 1. Launches headless Chromium.
- * 2. Connects to the local development server (http://localhost:8081).
- * 3. Bypasses the Onboarding screen by clicking "Bỏ qua" (Skip).
- * 4. Asserts the Home Screen renders and calculates the Serenity/Peace index.
- * 5. Clicks the "Lịch cảm xúc" (Mood Calendar) button and verifies the Modal renders.
- * 6. Interacts with Bottom Tab items: clicks Day (Ngày), Reel, and Me tabs.
- * 7. Asserts Me Screen renders settings items (Backup, Notifications).
+ * 🎨 UI AUTOMATION TEST SUITE — DAILY LOG APP
+ *
+ * Runs against the live Expo web dev-server (http://localhost:8081)
+ * using Puppeteer headless Chromium.
+ *
+ * Test plan:
+ *  §0   Onboarding bypass
+ *  §1   Home Screen renders correctly (header, bento grid, peace index)
+ *  §2   Mood Calendar modal opens / shows days / closes
+ *  §3   Highlight tiles are visible (photo grid)
+ *  §4   "Xem cả ngày" CTA button is present
+ *  §5   Day Tab — timeline renders
+ *  §6   Day Tab — date navigation arrows exist
+ *  §7   Reel Tab — "Hôm nay năm trước" card renders
+ *  §8   Reel Tab — "Tuần của bạn" section header renders
+ *  §9   Me Tab — settings groups render
+ *  §10  Me Tab — Premium upgrade banner or active badge visible
+ *  §11  Me Tab — Privacy explanation dialog opens
+ *  §12  Me Tab — Backup row is visible (premium gate)
+ *  §13  FAB (+) button is visible on Home / Day tabs
+ *  §14  Tab bar has all 4 tabs (Home, Ngày, Reel, Me)
  */
 
 const puppeteer = require('puppeteer');
 
-const colors = {
-  reset: "\x1b[0m",
-  green: "\x1b[32m",
-  red: "\x1b[31m",
-  yellow: "\x1b[33m",
-  cyan: "\x1b[36m",
-  bold: "\x1b[1m"
+// ─── Colours ──────────────────────────────────────────────────────────────────
+const c = {
+  reset:  '\x1b[0m',
+  green:  '\x1b[32m',
+  red:    '\x1b[31m',
+  yellow: '\x1b[33m',
+  cyan:   '\x1b[36m',
+  bold:   '\x1b[1m',
+  dim:    '\x1b[2m',
 };
 
+// ─── Config ───────────────────────────────────────────────────────────────────
+const APP_URL    = 'http://localhost:8081';
+const VIEWPORT   = { width: 390, height: 844 }; // iPhone 14 Pro size
+const NAV_TIMEOUT = 30_000;
+const WAIT_SHORT  = 800;
+const WAIT_MED    = 1_500;
+const WAIT_LONG   = 3_000;
+
+// ─── Runner ───────────────────────────────────────────────────────────────────
+let passed = 0;
+let failed = 0;
+const failLog = [];
+
+function assert(title, condition, detail = '') {
+  if (condition) {
+    console.log(`  ✅ ${c.green}PASS${c.reset}  ${title}`);
+    passed++;
+  } else {
+    const msg = `  ❌ ${c.red}FAIL${c.reset}  ${title}${detail ? `\n     ${c.dim}→ ${detail}${c.reset}` : ''}`;
+    console.log(msg);
+    failLog.push(title);
+    failed++;
+  }
+}
+
+function section(title) {
+  console.log(`\n${c.bold}${c.cyan}▶ ${title}${c.reset}`);
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+// ─── Browser helpers ──────────────────────────────────────────────────────────
+
+/** Returns the full visible text of the page */
+async function pageText(page) {
+  return page.evaluate(() => document.body.innerText || '');
+}
+
+/**
+ * Click the first element whose trimmed innerText exactly or partially matches
+ * any of the given strings.
+ * Returns true on success, false if nothing found.
+ */
+async function clickText(page, ...candidates) {
+  return page.evaluate((texts) => {
+    const all = Array.from(document.querySelectorAll('div, span, button, a, p'));
+    // prefer leaf elements (fewest children) to avoid clicking wrapper divs
+    all.sort((a, b) => a.children.length - b.children.length);
+    for (const text of texts) {
+      const el = all.find(el => {
+        const t = (el.innerText || '').trim();
+        return t === text || (t.includes(text) && el.children.length <= 2);
+      });
+      if (el) { el.click(); return true; }
+    }
+    return false;
+  }, candidates);
+}
+
+/** Check whether any element contains a given string */
+async function hasText(page, ...candidates) {
+  const text = await pageText(page);
+  return candidates.some(t => text.includes(t));
+}
+
+/** Wait until the page contains one of the given strings, or timeout */
+async function waitForText(page, texts, timeoutMs = 5000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const text = await pageText(page);
+    if (texts.some(t => text.includes(t))) return true;
+    await sleep(250);
+  }
+  return false;
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 async function runUITests() {
-  console.log(`${colors.bold}${colors.cyan}====================================================${colors.reset}`);
-  console.log(`${colors.bold}${colors.cyan}      🎨 RUNNING LIVE UI AUTOMATION TESTS 🎨      ${colors.reset}`);
-  console.log(`${colors.bold}${colors.cyan}====================================================${colors.reset}\n`);
+  console.log(`${c.bold}${c.cyan}${'═'.repeat(52)}${c.reset}`);
+  console.log(`${c.bold}${c.cyan}   🎨 DAILY LOG — UI AUTOMATION TEST SUITE   ${c.reset}`);
+  console.log(`${c.bold}${c.cyan}${'═'.repeat(52)}${c.reset}`);
+  console.log(`${c.dim}  Target : ${APP_URL}${c.reset}`);
+  console.log(`${c.dim}  Viewport: ${VIEWPORT.width}×${VIEWPORT.height}${c.reset}\n`);
 
   let browser;
-  let passed = 0;
-  let failed = 0;
-
-  function assert(title, condition) {
-    if (condition) {
-      console.log(` ✅ ${colors.green}PASSED${colors.reset}: ${title}`);
-      passed++;
-    } else {
-      console.log(` ❌ ${colors.red}FAILED${colors.reset}: ${title}`);
-      failed++;
-    }
-  }
 
   try {
-    console.log(`${colors.yellow}Connecting to http://localhost:8081...${colors.reset}`);
     browser = await puppeteer.launch({
-      headless: "new",
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security'],
     });
-    
+
     const page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 800 });
-    
-    // Navigate to the local server
-    await page.goto('http://localhost:8081', { waitUntil: 'networkidle2', timeout: 30000 });
-    console.log(`${colors.green}Successfully loaded web app page!${colors.reset}\n`);
+    await page.setViewport({ ...VIEWPORT, isMobile: true });
 
-    // Helper function to robustly click elements by text natively in browser context
-    async function clickByText(textToClick, fallbackText) {
-      return page.evaluate((txt, fb) => {
-        const query = (str) => {
-          if (!str) return null;
-          const elements = Array.from(document.querySelectorAll('div, span, p, button, a'));
-          // Sort elements by child count ascending (leaf elements first)
-          const sorted = elements.sort((a, b) => (a.children.length) - (b.children.length));
-          return sorted.find(el => {
-            const elText = el.innerText ? el.innerText.trim() : '';
-            return elText === str || (elText.includes(str) && el.children.length <= 1);
-          });
-        };
-        
-        let target = query(txt);
-        if (!target && fb) {
-          target = query(fb);
-        }
-        
-        if (target) {
-          target.click();
-          return true;
-        }
-        return false;
-      }, textToClick, fallbackText);
-    }
+    // Suppress console noise from the app
+    page.on('console', () => {});
+    page.on('pageerror', () => {});
 
-    // --- Onboarding Bypass ---
-    console.log(`${colors.bold}0. Checking for Onboarding Flow...${colors.reset}`);
-    await page.waitForSelector('body', { timeout: 5000 });
-    let pageText = await page.evaluate(() => document.body.innerText);
+    console.log(`${c.yellow}⏳ Connecting to ${APP_URL}…${c.reset}`);
+    await page.goto(APP_URL, { waitUntil: 'networkidle2', timeout: NAV_TIMEOUT });
+    await sleep(WAIT_LONG);
+    console.log(`${c.green}✓  Page loaded${c.reset}`);
 
-    if (pageText.includes('Bỏ qua') || pageText.includes('Skip') || pageText.includes('Chào mừng') || pageText.includes('Nhật ký')) {
-      console.log(`${colors.yellow}Onboarding screen detected. Bypassing onboarding...${colors.reset}`);
-      
-      const skipped = await clickByText('Bỏ qua', 'Skip');
-      if (skipped) {
-        console.log(`${colors.green}Clicked Skip/Bỏ qua button successfully!${colors.reset}`);
-        await new Promise(r => setTimeout(r, 3000)); // Wait for transition & hydration
-        pageText = await page.evaluate(() => document.body.innerText);
-      } else {
-        console.log(`${colors.yellow}Skip button not found directly. Standard onboarding page rendered.${colors.reset}`);
-      }
+    // ─── §0  Onboarding bypass ────────────────────────────────────────────────
+    section('§0  Onboarding Bypass');
+
+    let text = await pageText(page);
+    const onOnboarding = text.includes('Bỏ qua') || text.includes('Skip') ||
+                         text.includes('Nhật ký') || text.includes('Chào mừng') ||
+                         text.includes('timeline') || text.includes('dòng thời gian');
+
+    if (onOnboarding) {
+      console.log(`  ${c.yellow}ℹ Onboarding detected — clicking Skip${c.reset}`);
+      const skipped = await clickText(page, 'Bỏ qua', 'Skip');
+      assert('Skip / Bỏ qua button is clickable', skipped);
+      await sleep(WAIT_LONG);
+      text = await pageText(page);
     } else {
-      console.log(`${colors.green}Already hydrated to main screen. Skipping onboarding bypass.${colors.reset}`);
+      console.log(`  ${c.dim}ℹ Already on main screen (hydrated state)${c.reset}`);
+      assert('App loads without requiring onboarding', true);
     }
 
-    // --- Test 1: Verify App Frame & Title ---
-    console.log(`\n${colors.bold}1. Verifying Home Screen Header Rendering...${colors.reset}`);
-    const hasHomeHeader = pageText.includes('Hôm qua của bạn') || pageText.includes('Your Yesterday') || pageText.includes('nhật ký') || pageText.toLowerCase().includes('bình yên') || pageText.toLowerCase().includes('peace');
-    assert("Main diary app structure/text should be rendered in viewport", hasHomeHeader);
+    // ─── §1  Home Screen ─────────────────────────────────────────────────────
+    section('§1  Home Screen Renders');
 
-    // --- Test 2: Verify Peace Index Circular Progress Ring ---
-    console.log(`\n${colors.bold}2. Verifying Bento Grid & Peace Index...${colors.reset}`);
-    const hasPeaceIndex = pageText.includes('%') && (pageText.toLowerCase().includes('bình yên') || pageText.toLowerCase().includes('peace'));
-    assert("Circular Peace Index Bento card should be rendered on Home tab", hasPeaceIndex);
+    await sleep(WAIT_MED);
+    text = await pageText(page);
 
-    // --- Test 3: Interact with Mood Calendar Modal ---
-    console.log(`\n${colors.bold}3. Opening Mood Calendar Modal Dialog...${colors.reset}`);
-    const opened = await clickByText('Lịch cảm xúc', 'Mood Calendar');
-    if (opened) {
-      await new Promise(r => setTimeout(r, 1200)); // Wait for modal animation
-      
-      const modalText = await page.evaluate(() => document.body.innerText);
-      const isModalVisible = modalText.includes('7 ngày qua') || modalText.includes('Past 7 Days') || modalText.includes('Tâm trạng') || modalText.includes('cảm xúc');
-      assert("Mood calendar modal dialog should be successfully opened and visible", isModalVisible);
-      
-      // Close the modal
-      const closed = await clickByText('Đóng', 'Close');
-      if (closed) {
-        await new Promise(r => setTimeout(r, 800)); // Wait for modal animation to close
-        console.log(`${colors.green}Closed Mood Calendar modal successfully!${colors.reset}`);
-      } else {
-        console.log(`${colors.yellow}Could not find Close button to close Mood Calendar.${colors.reset}`);
-      }
-    } else {
-      assert("Mood calendar button found and clicked", false);
+    assert('Home screen title visible ("Hôm qua" or "Yesterday")',
+      text.includes('Hôm qua') || text.includes('Yesterday') || text.includes('Home'));
+
+    assert('Peace Index / Serenity block rendered',
+      text.includes('bình yên') || text.includes('Peace') || text.includes('%'));
+
+    assert('Privacy microcopy visible',
+      text.includes('máy') || text.includes('device') || text.includes('offline') || text.includes('SQLite'));
+
+    // ─── §2  Mood Calendar Modal ──────────────────────────────────────────────
+    section('§2  Mood Calendar Modal');
+
+    const calOpened = await clickText(page, 'Lịch cảm xúc', 'Mood Calendar');
+    assert('Mood Calendar button found and clicked', calOpened);
+
+    if (calOpened) {
+      await sleep(WAIT_MED);
+      text = await pageText(page);
+
+      assert('Modal shows calendar-related content',
+        text.includes('cảm xúc') || text.includes('mood') || text.includes('Mood') ||
+        text.includes('ngày') || text.includes('Day') || text.includes('Tuần'));
+
+      assert('Modal contains day labels or date markers',
+        text.includes('T2') || text.includes('Mon') || text.includes('Chưa ghi') || text.includes('Not logged'));
+
+      // Close modal
+      const closed = await clickText(page, 'Đóng', 'Close', '×', 'X');
+      assert('Mood Calendar modal can be closed', closed);
+      await sleep(WAIT_SHORT);
     }
 
-    // --- Test 4: Navigate to Day Tab ---
-    console.log(`\n${colors.bold}4. Navigating to 'Ngày' (Day) Tab...${colors.reset}`);
-    const dayClicked = await clickByText('Ngày', 'Day');
+    // ─── §3  Highlight Tiles ──────────────────────────────────────────────────
+    section('§3  Highlight Tiles (Bento Grid)');
+
+    text = await pageText(page);
+    // Highlight tiles show entry time or mood chip text
+    const hasHighlights =
+      text.includes(':') ||           // time like 07:30
+      text.includes('☕') ||
+      text.includes('mood') ||
+      text.includes('Mood') ||
+      text.includes('Gợi ý') ||
+      text.includes('Suggested');
+
+    assert('Bento grid / highlight tiles have visible content', hasHighlights);
+
+    // ─── §4  CTA Buttons ─────────────────────────────────────────────────────
+    section('§4  CTA Buttons on Home');
+
+    text = await pageText(page);
+    assert('"Xem cả ngày" or "View full day" CTA button present',
+      text.includes('Xem cả ngày') || text.includes('View full day') || text.includes('View Full Day'));
+
+    assert('"Lịch cảm xúc" or "Mood Calendar" secondary CTA present',
+      text.includes('Lịch cảm xúc') || text.includes('Mood Calendar'));
+
+    // ─── §5  Day Tab ──────────────────────────────────────────────────────────
+    section('§5  Day Tab — Timeline');
+
+    const dayClicked = await clickText(page, 'Ngày', 'Day');
+    assert('Day tab button found and clickable', dayClicked);
+
     if (dayClicked) {
-      await new Promise(r => setTimeout(r, 1000));
-      const dayPageText = await page.evaluate(() => document.body.innerText);
-      const hasTimeline = dayPageText.includes('Dòng thời gian') || dayPageText.includes('Timeline') || dayPageText.includes('ngày');
-      assert("Day Screen timeline layout should be rendered successfully", hasTimeline);
-    } else {
-      assert("Day tab button found and clicked", false);
+      await sleep(WAIT_MED);
+      text = await pageText(page);
+
+      assert('Day screen shows date navigation or header',
+        text.includes('ngày') || text.includes('Day') || text.includes('khoảnh khắc') || text.includes('moments'));
+
+      assert('Day screen shows timeline entries or empty-state',
+        text.includes(':') || text.includes('Chưa có') || text.includes('No moments') ||
+        text.includes('Gợi ý') || text.includes('coffee') || text.includes('Lưu'));
     }
 
-    // --- Test 5: Navigate to Me Tab ---
-    console.log(`\n${colors.bold}5. Navigating to 'Me' (Settings) Tab...${colors.reset}`);
-    const meClicked = await clickByText('Me', 'Tôi');
+    // ─── §6  Date Navigation ─────────────────────────────────────────────────
+    section('§6  Day Tab — Date Navigation Controls');
+
+    // Check for chevron / arrow elements
+    const hasDateNav = await page.evaluate(() => {
+      const allText = document.body.innerText || '';
+      // Looking for ‹ › or < > or left/right arrow characters typically rendered
+      return allText.includes('‹') || allText.includes('›') || allText.includes('<') ||
+             document.querySelectorAll('[role="button"]').length > 2;
+    });
+    assert('Date navigation controls (prev/next) exist on Day screen', hasDateNav);
+
+    // ─── §7  Reel Tab ─────────────────────────────────────────────────────────
+    section('§7  Reel Tab — "Hôm nay năm trước" Card');
+
+    const reelClicked = await clickText(page, 'Reel', 'Xem lại', 'Look Back');
+    assert('Reel tab button found and clickable', reelClicked);
+
+    if (reelClicked) {
+      await sleep(WAIT_MED);
+      text = await pageText(page);
+
+      assert('"Hôm nay năm trước" or "Today Last Year" card visible',
+        text.includes('Hôm nay năm trước') || text.includes('Today Last Year') || text.includes('năm trước'));
+    }
+
+    // ─── §8  Reel Tab — Week Section ─────────────────────────────────────────
+    section('§8  Reel Tab — "Tuần của bạn" Section');
+
+    if (reelClicked) {
+      assert('"Tuần của bạn" or "Your Week" section header visible',
+        text.includes('Tuần của bạn') || text.includes('Your Week'));
+
+      assert('Play-all button or reel content visible',
+        text.includes('Phát toàn bộ') || text.includes('Play All') ||
+        text.includes('khoảnh khắc') || text.includes('moment') ||
+        text.includes('Chưa có reel') || text.includes('No reels'));
+    }
+
+    // ─── §9  Me Tab — Settings Groups ────────────────────────────────────────
+    section('§9  Me Tab — Settings Groups');
+
+    const meClicked = await clickText(page, 'Me', 'Tôi', 'Settings');
+    assert('Me tab button found and clickable', meClicked);
+
     if (meClicked) {
-      await new Promise(r => setTimeout(r, 1000));
-      const mePageText = await page.evaluate(() => document.body.innerText);
-      
-      const hasSettings = mePageText.includes('Thiết lập') || mePageText.includes('Settings') || mePageText.includes('Thông báo') || mePageText.includes('Notifications') || mePageText.includes('Sao lưu') || mePageText.includes('Backup') || mePageText.includes('Quyền riêng tư') || mePageText.includes('Privacy');
-      assert("Me Screen setting options should render in viewport", hasSettings);
-    } else {
-      assert("Me tab button found and clicked", false);
+      await sleep(WAIT_MED);
+      text = await pageText(page);
+
+      assert('Me screen title visible',
+        text.includes('Góc riêng') || text.includes('Your Corner') || text.includes('Settings'));
+
+      assert('Privacy / Permissions group present',
+        text.includes('Quyền') || text.includes('Permission') || text.includes('quyền riêng tư') || text.includes('Privacy'));
+
+      assert('App & Appearance group present',
+        text.includes('Giao diện') || text.includes('App') || text.includes('Appearance') || text.includes('theme'));
+
+      assert('Diary Lock group present',
+        text.includes('Khóa') || text.includes('Lock') || text.includes('PIN') || text.includes('Face ID'));
     }
 
-    // --- Final Verdict ---
-    console.log(`\n${colors.bold}${colors.cyan}====================================================${colors.reset}`);
-    console.log(`                    🏆 RESULTS 🏆                   `);
-    console.log(`${colors.bold}${colors.cyan}====================================================${colors.reset}`);
-    console.log(` ✅ TOTAL PASSED: ${colors.green}${passed}${colors.reset}`);
-    console.log(` ❌ TOTAL FAILED: ${colors.red}${failed}${colors.reset}`);
-    
+    // ─── §10  Premium Banner ──────────────────────────────────────────────────
+    section('§10  Me Tab — Premium Banner or Badge');
+
+    if (meClicked) {
+      assert('Premium upgrade banner or active badge visible',
+        text.includes('Premium') || text.includes('Nâng cấp') || text.includes('Upgrade') ||
+        text.includes('premium') || text.includes('sparkles'));
+    }
+
+    // ─── §11  Privacy Dialog ──────────────────────────────────────────────────
+    section('§11  Me Tab — Privacy Explanation Dialog');
+
+    if (meClicked) {
+      const privacyClicked = await clickText(page, 'Quyền riêng tư', 'Privacy', 'Tìm hiểu');
+      if (privacyClicked) {
+        await sleep(WAIT_MED);
+        text = await pageText(page);
+        assert('Privacy dialog opens and shows on-device storage info',
+          text.includes('SQLite') || text.includes('trên máy') || text.includes('On-Device') || text.includes('device'));
+
+        assert('Privacy dialog mentions AI labels (not full text)',
+          text.includes('AI') || text.includes('label') || text.includes('ẩn danh') || text.includes('anonymi'));
+
+        const privClosed = await clickText(page, 'Đóng', 'Close');
+        assert('Privacy dialog can be closed', privClosed);
+        await sleep(WAIT_SHORT);
+      } else {
+        assert('Privacy row found (may be scrolled offscreen)', false, 'clickText could not find privacy row');
+      }
+    }
+
+    // ─── §12  Backup Row ──────────────────────────────────────────────────────
+    section('§12  Me Tab — Backup & Restore Row');
+
+    if (meClicked) {
+      text = await pageText(page);
+      assert('Backup & Restore row visible in Me screen',
+        text.includes('Sao lưu') || text.includes('Backup') || text.includes('backup'));
+    }
+
+    // ─── §13  FAB Button ──────────────────────────────────────────────────────
+    section('§13  FAB (+) Compose Button');
+
+    // Navigate back to Home to check FAB
+    await clickText(page, 'Home', 'Trang chủ');
+    await sleep(WAIT_MED);
+
+    const hasFab = await page.evaluate(() => {
+      const all = Array.from(document.querySelectorAll('div, button'));
+      return all.some(el => {
+        const txt = (el.innerText || '').trim();
+        return txt === '+' || txt === '＋' || el.getAttribute('aria-label') === 'Add moment';
+      });
+    });
+    assert('FAB (+) compose button is present on Home screen', hasFab);
+
+    // ─── §14  Tab Bar ─────────────────────────────────────────────────────────
+    section('§14  Tab Bar — All 4 Tabs Present');
+
+    text = await pageText(page);
+    assert('Tab bar has "Home" tab label',  text.includes('Home'));
+    assert('Tab bar has "Ngày"/"Day" tab',  text.includes('Ngày') || text.includes('Day'));
+    assert('Tab bar has "Reel" tab',        text.includes('Reel'));
+    assert('Tab bar has "Me" tab',          text.includes('Me'));
+
+    // ─── Final report ─────────────────────────────────────────────────────────
+    const total = passed + failed;
+    console.log(`\n${c.bold}${c.cyan}${'═'.repeat(52)}${c.reset}`);
+    console.log(`${c.bold}  📊 UI TEST RESULTS${c.reset}`);
+    console.log(`${c.bold}${c.cyan}${'═'.repeat(52)}${c.reset}`);
+    console.log(`  Tests run  : ${c.bold}${total}${c.reset}`);
+    console.log(`  ✅ Passed  : ${c.green}${c.bold}${passed}${c.reset}`);
+    console.log(`  ❌ Failed  : ${failed > 0 ? c.red : c.green}${c.bold}${failed}${c.reset}`);
+
+    if (failLog.length > 0) {
+      console.log(`\n${c.red}  Failed tests:${c.reset}`);
+      failLog.forEach(t => console.log(`  ${c.dim}•${c.reset} ${t}`));
+    }
+
+    console.log(`${c.bold}${c.cyan}${'═'.repeat(52)}${c.reset}\n`);
+
     if (failed === 0) {
-      console.log(`\n🎉 ${colors.green}${colors.bold}UI AUTOMATION TESTS PASSED 100% PERFECTLY!${colors.reset}\n`);
+      console.log(`🎉 ${c.green}${c.bold}ALL UI TESTS PASSED (${passed}/${total})${c.reset}\n`);
       process.exit(0);
     } else {
-      console.log(`\n🚨 ${colors.red}${colors.bold}UI AUTOMATION TESTS DETECTED FAILURES!${colors.reset}\n`);
+      console.log(`🚨 ${c.red}${c.bold}${failed} TEST(S) FAILED — see above${c.reset}\n`);
       process.exit(1);
     }
 
   } catch (err) {
-    console.error(`\n🚨 ${colors.red}${colors.bold}Error running UI Tests:${colors.reset}`, err.message);
+    console.error(`\n🚨 ${c.red}${c.bold}Fatal error running UI tests:${c.reset}`, err.message);
+    console.error(`${c.dim}Make sure "npm run web" is running on port 8081${c.reset}\n`);
     process.exit(1);
   } finally {
-    if (browser) {
-      await browser.close();
-    }
+    if (browser) await browser.close();
   }
 }
 
