@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Text } from '../components/AppText';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { CalendarEventDraft } from '../types';

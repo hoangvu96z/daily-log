@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
-import { Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, SafeAreaView, StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '../components/AppText';
 import { useJournalStore } from '../memory/store';
 import { removePinHash, savePin } from '../memory/secureStore';
 import { palette } from '../theme/palette';

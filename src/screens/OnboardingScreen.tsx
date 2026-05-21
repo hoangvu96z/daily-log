@@ -1,16 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useRef, useState } from 'react';
-import {
-  Animated,
+import { Animated,
   Dimensions,
   FlatList,
   Image,
   Pressable,
   StyleSheet,
-  Text,
   View,
-  ViewToken,
-} from 'react-native';
+  ViewToken } from 'react-native';
+import { Text } from '../components/AppText';
 import { useTranslation } from '../i18n/translations';
 import { useJournalStore } from '../memory/store';
 import { palette } from '../theme/palette';

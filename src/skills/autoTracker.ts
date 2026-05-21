@@ -34,7 +34,7 @@ export function uuidv4(): string {
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
 }
-import { getAllEntries, insertEntry } from '../memory/database';
+import { getAllEntries, insertEntry, saveSetting, loadSettings } from '../memory/database';
 import { Entry } from '../types';
 import { aiService } from './aiService';
 
@@ -64,10 +64,16 @@ export async function runAutoTrackerOnce(): Promise<void> {
   try {
     const { status: mediaStatus } = await MediaLibrary.getPermissionsAsync();
     if (mediaStatus === 'granted') {
+      const settings = await loadSettings();
+      const lastScanTimeStr = settings['last_auto_scan_time'] as string;
+      const lastScanTime = lastScanTimeStr ? Number(lastScanTimeStr) : 0;
+      
       const yesterday = Date.now() - 24 * 60 * 60 * 1000;
+      const createdAfter = Math.max(lastScanTime, yesterday);
+
       const recentPhotos = await MediaLibrary.getAssetsAsync({
         mediaType: 'photo',
-        createdAfter: yesterday,
+        createdAfter,
         first: 50,
         sortBy: ['creationTime'],
       });
@@ -214,15 +220,30 @@ export async function runAutoTrackerOnce(): Promise<void> {
     await insertEntry(newEntry);
     console.log(`[AutoTracker] Created suggested entry for ${dateStr} ${timeStr}`);
   }
+  
+  await saveSetting('last_auto_scan_time', Date.now().toString());
 }
 
 TaskManager.defineTask(TASK_NAME, async () => {
   try {
     console.log('[AutoTracker] Background task executed at', new Date().toISOString());
     await runAutoTrackerOnce();
+    
+    // Log success rate
+    const settings = await loadSettings();
+    const successCount = Number(settings['bgFetch_successCount'] || 0) + 1;
+    await saveSetting('bgFetch_successCount', successCount.toString());
+    await saveSetting('bgFetch_lastRun', new Date().toISOString());
+
     return BackgroundFetch.BackgroundFetchResult.NewData;
   } catch (error) {
     console.error('[AutoTracker] Background task failed:', error);
+    
+    // Log fail rate
+    const settings = await loadSettings();
+    const failCount = Number(settings['bgFetch_failCount'] || 0) + 1;
+    await saveSetting('bgFetch_failCount', failCount.toString());
+
     return BackgroundFetch.BackgroundFetchResult.Failed;
   }
 });
@@ -321,10 +342,16 @@ export async function refreshAutoSuggestions(): Promise<number> {
     // Collect photos from last 48 hours
     const { status: mediaStatus } = await MediaLibrary.getPermissionsAsync();
     if (mediaStatus === 'granted') {
+      const settings = await loadSettings();
+      const lastScanTimeStr = settings['last_auto_scan_time'] as string;
+      const lastScanTime = lastScanTimeStr ? Number(lastScanTimeStr) : 0;
+
       const twoDaysAgo = Date.now() - 48 * 60 * 60 * 1000;
+      const createdAfter = Math.max(lastScanTime, twoDaysAgo);
+
       const recentPhotos = await MediaLibrary.getAssetsAsync({
         mediaType: 'photo',
-        createdAfter: twoDaysAgo,
+        createdAfter,
         first: 50,
         sortBy: ['creationTime'],
       });
@@ -447,6 +474,7 @@ export async function refreshAutoSuggestions(): Promise<number> {
       console.log(`[AutoTracker:Foreground] Created suggestion for ${dateStr} ${timeStr}`);
     }
 
+    await saveSetting('last_auto_scan_time', Date.now().toString());
     return created;
   } catch (error) {
     console.error('[AutoTracker:Foreground] refreshAutoSuggestions failed:', error);

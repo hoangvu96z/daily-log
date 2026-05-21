@@ -1,15 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useRef, useState } from 'react';
-import {
-  Animated as RNAnimated,
+import { Animated as RNAnimated,
   Image,
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+  View } from 'react-native';
+import { Text } from '../components/AppText';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AnimatedCard } from '../components/AnimatedCard';
 import { useTranslation } from '../i18n/translations';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SlideshowScreen } from './SlideshowScreen';
@@ -177,15 +176,6 @@ export function ReelScreen({
         onClose={() => setSlideshowVisible(false)}
       />
     </>
-  );
-}
-
-/** Micro-animation wrapper — slides items in from bottom with fade */
-function AnimatedCard({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  return (
-    <Animated.View entering={FadeInDown.delay(delay).duration(350).springify()}>
-      {children}
-    </Animated.View>
   );
 }
 

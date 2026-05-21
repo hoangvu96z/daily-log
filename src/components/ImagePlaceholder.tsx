@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Image, Text, View } from 'react-native';
+import { Image, View } from 'react-native';
+import { Text } from '../components/AppText';
 import { palette } from '../theme/palette';
 import { styles } from '../styles';
 

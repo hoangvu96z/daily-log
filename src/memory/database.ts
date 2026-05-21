@@ -23,9 +23,10 @@ async function getDB(): Promise<any> {
   return db;
 }
 
-// === Table Initialization ===
-async function initTables(database: any): Promise<void> {
-  await database.execAsync(`
+// === Database Migrations ===
+const MIGRATIONS = [
+  // Migration 1: Initial schema
+  `
     CREATE TABLE IF NOT EXISTS entries (
       id TEXT PRIMARY KEY,
       date TEXT NOT NULL,
@@ -58,7 +59,41 @@ async function initTables(database: any): Promise<void> {
       coverTone TEXT NOT NULL DEFAULT '#cbe4d6',
       entryIds TEXT NOT NULL DEFAULT '[]'
     );
+  `
+  // Add new fields (e.g. tags, sync status) as new migrations here in the future
+];
+
+// === Table Initialization ===
+async function initTables(database: any): Promise<void> {
+  // Create schema_version table if it doesn't exist
+  await database.execAsync(`
+    CREATE TABLE IF NOT EXISTS schema_version (
+      version INTEGER PRIMARY KEY
+    );
   `);
+
+  // Get current version
+  let currentVersion = 0;
+  try {
+    const row = await database.getFirstAsync('SELECT MAX(version) as version FROM schema_version');
+    if (row && row.version != null) {
+      currentVersion = row.version as number;
+    }
+  } catch (error) {
+    console.warn('Could not read schema_version, assuming version 0');
+  }
+
+  // Run pending migrations
+  for (let i = currentVersion; i < MIGRATIONS.length; i++) {
+    console.log(`Running database migration to version ${i + 1}`);
+    try {
+      await database.execAsync(MIGRATIONS[i]);
+      await database.runAsync('INSERT INTO schema_version (version) VALUES (?)', [i + 1]);
+    } catch (e) {
+      console.error(`Migration ${i + 1} failed:`, e);
+      throw e;
+    }
+  }
 }
 
 // === Entry CRUD ===

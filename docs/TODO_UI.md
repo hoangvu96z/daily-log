@@ -173,34 +173,34 @@
 
 ## Phase 5 — Infrastructure & Polish
 
-### 🟡 5.1 `[INFRA]` DB schema migration system
+### 🟢 5.1 `[INFRA]` DB schema migration system
 **File**: `src/memory/database.ts`
-- [ ] Thiết kế migration table: `schema_version`
-- [ ] Viết migration runner chạy khi app khởi động
-- [ ] Chuẩn hóa schema cho Entry, Settings, WeeklyReel
-- [ ] Tránh breaking changes khi thêm fields mới (tags, multi-device sync…)
+- [x] Thiết kế migration table: `schema_version`
+- [x] Viết migration runner chạy khi app khởi động
+- [x] Chuẩn hóa schema cho Entry, Settings, WeeklyReel
+- [x] Tránh breaking changes khi thêm fields mới (tags, multi-device sync…)
 - **AC**: Có thể upgrade DB schema mà không mất data user
 
-### 🟡 5.2 `[INFRA]` Background fetch reliability
+### 🟢 5.2 `[INFRA]` Background fetch reliability
 **File**: `src/skills/autoTracker.ts`
-- [ ] `expo-background-fetch` không reliable trên iOS/Android OEM
-- [ ] Strategy: background fetch là bonus, logic chính chạy khi user mở app
-- [ ] Thêm logic "catch-up" khi app foreground: scan ảnh từ lần cuối scan
-- [ ] Log & monitor background fetch success rate
+- [x] `expo-background-fetch` không reliable trên iOS/Android OEM
+- [x] Strategy: background fetch là bonus, logic chính chạy khi user mở app
+- [x] Thêm logic "catch-up" khi app foreground: scan ảnh từ lần cuối scan
+- [x] Log & monitor background fetch success rate
 - **AC**: Auto-suggestions luôn cập nhật dù background fetch bị OS kill
 
-### 🟡 5.3 `[UI]` Typography audit
+### 🟢 5.3 `[UI]` Typography audit
 **File**: `src/styles.ts`, all screens
-- [ ] Verify `PlusJakartaSans` dùng consistent (không bị fallback system font)
-- [ ] Chuẩn font weights: title=800, subtitle=600, body=400
-- [ ] Check inline styles trong HomeScreen, MeScreen dialogs
+- [x] Verify `PlusJakartaSans` dùng consistent (không bị fallback system font)
+- [x] Chuẩn font weights: title=800, subtitle=600, body=400
+- [x] Check inline styles trong HomeScreen, MeScreen dialogs
 - **AC**: Toàn app dùng đúng font, không có chỗ nào bị system default
 
-### 🟢 5.4 `[UI]` Shared animation component
+### 🟢 5.4 `[UI]` Shared animation component — ✅ DONE
 **File**: **NEW** `src/components/AnimatedCard.tsx`
-- [ ] Extract `AnimatedCard` từ `ReelScreen.tsx`
-- [ ] Variants: `fadeInUp`, `fadeInDown`, `scaleIn`, `slideOutRight`
-- [ ] Dùng chung cho: Home tiles, Day cards, Reel cards
+- [x] Extract `AnimatedCard` từ `ReelScreen.tsx`
+- [x] Variants: `fadeInUp`, `fadeInDown`, `scaleIn`, `slideOutRight`
+- [x] Dùng chung cho: Home tiles, Day cards, Reel cards
 - **AC**: Animation consistent, code DRY
 
 ### 🟢 5.5 `[UI]` Button press animation (Onboarding)

@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, View } from 'react-native';
+import { Text } from '../components/AppText';
+import { AnimatedCard } from '../components/AnimatedCard';
 import { useTranslation } from '../i18n/translations';
 import { ImagePlaceholder } from '../components/ImagePlaceholder';
 import { moodEmoji, moodLabels } from '../data/mockData';
@@ -32,10 +34,10 @@ export function DayScreen({
           <Text style={styles.screenSubtitle}>{t.day.momentsInDay(dayEntries.length)}</Text>
         </View>
         <View style={styles.dateNav}>
-          <Pressable style={styles.iconButton} onPress={() => onChangeDate(shiftDate(selectedDate, -1))}>
+          <Pressable accessibilityRole="button" style={styles.iconButton} onPress={() => onChangeDate(shiftDate(selectedDate, -1))}>
             <Ionicons name="chevron-back" size={21} color={palette.green} />
           </Pressable>
-          <Pressable style={styles.iconButton} onPress={() => onChangeDate(shiftDate(selectedDate, 1))}>
+          <Pressable accessibilityRole="button" style={styles.iconButton} onPress={() => onChangeDate(shiftDate(selectedDate, 1))}>
             <Ionicons name="chevron-forward" size={21} color={palette.green} />
           </Pressable>
         </View>
@@ -48,10 +50,11 @@ export function DayScreen({
             <Text style={styles.emptyText}>{t.day.emptyText}</Text>
           </View>
         )}
-        {dayEntries.map((entry) => (
+        {dayEntries.map((entry, index) => (
           <TimelineCard
             key={entry.id}
             entry={entry}
+            index={index}
             onSave={() => onSaveSuggestion(entry.id)}
             onDiscard={() => onDiscardSuggestion(entry.id)}
             t={t}
@@ -76,7 +79,7 @@ function formatDateTitle(date: string, locale: string) {
   }).format(new Date(`${date}T12:00:00`));
 }
 
-function TimelineCard({ entry, onSave, onDiscard, t }: { entry: Entry; onSave: () => void; onDiscard: () => void; t: any }) {
+function TimelineCard({ entry, index, onSave, onDiscard, t }: { entry: Entry; index: number; onSave: () => void; onDiscard: () => void; t: any }) {
   const suggested = entry.status === 'suggested';
 
   const moodBgColors: Record<string, string> = {
@@ -95,7 +98,7 @@ function TimelineCard({ entry, onSave, onDiscard, t }: { entry: Entry; onSave: (
   };
 
   return (
-    <View style={styles.timelineRow}>
+    <AnimatedCard variant="fadeInDown" delay={index * 80} style={styles.timelineRow}>
       <View style={styles.timelineRail}>
         <Text style={styles.timeText}>{entry.time}</Text>
         <View style={styles.railDot} />
@@ -140,6 +143,6 @@ function TimelineCard({ entry, onSave, onDiscard, t }: { entry: Entry; onSave: (
           )}
         </View>
       </View>
-    </View>
+    </AnimatedCard>
   );
 }

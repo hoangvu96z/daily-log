@@ -7,15 +7,13 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
+import { ActivityIndicator,
   Alert,
   Modal,
   Pressable,
   ScrollView,
-  Text,
-  View,
-} from 'react-native';
+  View } from 'react-native';
+import { Text } from '../components/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { palette } from '../theme/palette';
 import { styles } from '../styles';

@@ -11,8 +11,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Dimensions,
+import { Dimensions,
   Image,
   Modal,
   Platform,
@@ -20,10 +19,9 @@ import {
   SafeAreaView,
   StatusBar,
   StyleSheet,
-  Text,
   TouchableWithoutFeedback,
-  View,
-} from 'react-native';
+  View } from 'react-native';
+import { Text } from '../components/AppText';
 import Animated, {
   FadeIn,
   FadeOut,

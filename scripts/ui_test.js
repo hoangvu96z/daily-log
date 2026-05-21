@@ -264,7 +264,7 @@ async function runUITests() {
       text = await pageText(page);
 
       assert('"Hôm nay năm trước" or "Today Last Year" card visible',
-        text.includes('Hôm nay năm trước') || text.includes('Today Last Year') || text.includes('năm trước'));
+        text.toLowerCase().includes('hôm nay năm trước') || text.toLowerCase().includes('today last year') || text.toLowerCase().includes('năm trước'));
     }
 
     // ─── §8  Reel Tab — Week Section ─────────────────────────────────────────

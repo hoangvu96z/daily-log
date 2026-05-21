@@ -1,13 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Animated,
+import { Animated,
   Easing,
   Pressable,
   StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+  View } from 'react-native';
+import { Text } from '../components/AppText';
 import { useTranslation } from '../i18n/translations';
 import { palette } from '../theme/palette';
 import { authenticateWithBiometrics } from '../skills/permissions';

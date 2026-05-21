@@ -1,7 +1,8 @@
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, View } from 'react-native';
+import { Text } from '../components/AppText';
 import { useTranslation } from '../i18n/translations';
 import { tabItems } from '../data/mockData';
 import { styles } from '../styles';
@@ -46,7 +47,7 @@ export function BottomTabs({ state, descriptors, navigation, onAddPress }: Botto
         })}
       </View>
       
-      <Pressable style={styles.fab} onPress={onAddPress}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Add moment" style={styles.fab} onPress={onAddPress}>
         <Ionicons name="add" size={30} color={palette.paper} />
       </Pressable>
     </>

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
-import { Modal, Pressable, SafeAreaView, ScrollView, Text, TextInput, View, ActivityIndicator } from 'react-native';
+import { Modal, Pressable, SafeAreaView, ScrollView, TextInput, View, ActivityIndicator } from 'react-native';
+import { Text } from '../components/AppText';
 import { moodOptions } from '../data/mockData';
 import { useTranslation } from '../i18n/translations';
 import { pickMomentImage } from '../services/imagePicker';

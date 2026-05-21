@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/AppText';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AnimatedCard } from '../components/AnimatedCard';
 import { useTranslation } from '../i18n/translations';
 import { moodEmoji, moodLabels } from '../data/mockData';
 import { styles } from '../styles';
@@ -124,10 +126,10 @@ export function HomeScreen({
             
             {/* Row 1 */}
             <View style={{ flexDirection: 'row', gap: 12 }}>
-              <Animated.View entering={FadeInDown.delay(100).springify()} style={{ flex: 1 }}>
+              <AnimatedCard delay={100} style={{ flex: 1 }}>
                 <HighlightTile entry={highlights[0]} onPress={onOpenDay} />
-              </Animated.View>
-              <Animated.View entering={FadeInDown.delay(180).springify()} style={{ flex: 1 }}>
+              </AnimatedCard>
+              <AnimatedCard delay={180} style={{ flex: 1 }}>
                 {highlights[1] ? (
                   <HighlightTile entry={highlights[1]} onPress={onOpenDay} />
                 ) : (
@@ -136,12 +138,12 @@ export function HomeScreen({
                     <Text style={localStyles.emptyTileText}>{t.home.emptyYesterday}</Text>
                   </Pressable>
                 )}
-              </Animated.View>
+              </AnimatedCard>
             </View>
             
             {/* Row 2 */}
             <View style={{ flexDirection: 'row', gap: 12 }}>
-              <Animated.View entering={FadeInDown.delay(260).springify()} style={{ flex: 1 }}>
+              <AnimatedCard delay={260} style={{ flex: 1 }}>
                 {highlights[2] ? (
                   <HighlightTile entry={highlights[2]} onPress={onOpenDay} />
                 ) : (
@@ -150,8 +152,8 @@ export function HomeScreen({
                     <Text style={localStyles.emptyTileText}>Gợi ý thêm</Text>
                   </Pressable>
                 )}
-              </Animated.View>
-              <Animated.View entering={FadeInDown.delay(340).springify()} style={{ flex: 1 }}>
+              </AnimatedCard>
+              <AnimatedCard delay={340} style={{ flex: 1 }}>
                 {/* Tile 4: Mini Peace Index */}
                 <View style={localStyles.miniPeaceTile}>
                   <Ionicons name="heart-circle-outline" size={24} color={palette.primary} />
@@ -160,7 +162,7 @@ export function HomeScreen({
                     {lang === 'vi' ? 'Chỉ số bình yên' : 'Peace index'}
                   </Text>
                 </View>
-              </Animated.View>
+              </AnimatedCard>
             </View>
           </View>
         ) : (

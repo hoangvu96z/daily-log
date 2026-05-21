@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, Switch, TextInput, View } from 'react-native';
+import { Text } from '../components/AppText';
 import { useTranslation } from '../i18n/translations';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { requestCalendarAccess } from '../skills/calendar';

@@ -47,6 +47,9 @@ export type Settings = {
   wallpaperUri?: string;
   language: 'vi' | 'en';
   isPremium: boolean;
+  last_auto_scan_time?: string;
+  bgFetch_successCount?: number;
+  bgFetch_failCount?: number;
   // Note: pinCodeHash is stored in expo-secure-store, NOT here
 };
 
