@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState, useEffect } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { Animated as RNAnimated, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/AppText';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AnimatedCard } from '../components/AnimatedCard';
@@ -46,6 +46,20 @@ export function HomeScreen({
   const { t, lang, locale } = useTranslation();
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [insightVisible, setInsightVisible] = useState(false);
+
+  const scrollY = useRef(new RNAnimated.Value(0)).current;
+
+  const headerPaddingTop = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [28, 12],
+    extrapolate: 'clamp',
+  });
+
+  const titleFontSize = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [32, 22],
+    extrapolate: 'clamp',
+  });
 
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
@@ -107,10 +121,17 @@ export function HomeScreen({
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.screenContent}>
+    <RNAnimated.ScrollView
+      contentContainerStyle={[styles.screenContent, { paddingTop: headerPaddingTop }]}
+      onScroll={RNAnimated.event(
+        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+        { useNativeDriver: false }
+      )}
+      scrollEventThrottle={16}
+    >
       {/* Header Section */}
       <View style={styles.header}>
-        <Text style={styles.screenTitle}>{t.home.title}</Text>
+        <RNAnimated.Text style={[styles.screenTitle, { fontSize: titleFontSize }]}>{t.home.title}</RNAnimated.Text>
         <Text style={styles.screenSubtitle}>{t.home.subtitle}</Text>
       </View>
 
@@ -282,11 +303,11 @@ export function HomeScreen({
         onUpgrade={() => { setCalendarVisible(false); onUpgrade?.(); }}
       />
       <DailyInsightDialog visible={insightVisible} entries={entries} onClose={() => setInsightVisible(false)} t={t} />
-    </ScrollView>
+    </RNAnimated.ScrollView>
   );
 }
 
-function MoodCalendar({
+export function MoodCalendar({
   visible,
   entries,
   onClose,

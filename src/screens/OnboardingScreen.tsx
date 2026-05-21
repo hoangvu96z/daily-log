@@ -24,6 +24,8 @@ type Slide = {
   accent: string;
 };
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
   const { t, lang } = useTranslation();
   const { updateSettings } = useJournalStore();
@@ -31,6 +33,21 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
   const [containerWidth, setContainerWidth] = useState(SCREEN_WIDTH);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(buttonScale, {
+      toValue: 0.98,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(buttonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
 
   const slides: Slide[] = useMemo(() => [
     {
@@ -234,13 +251,18 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
           })}
         </View>
 
-        <Pressable style={s.nextButton} onPress={goNext}>
+        <AnimatedPressable 
+          style={[s.nextButton, { transform: [{ scale: buttonScale }] }]} 
+          onPress={goNext}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+        >
           {isLastSlide ? (
             <Text style={s.nextButtonText}>{t.onboarding.getStarted}</Text>
           ) : (
             <Ionicons name="arrow-forward" size={24} color={palette.white} />
           )}
-        </Pressable>
+        </AnimatedPressable>
       </View>
     </View>
   );

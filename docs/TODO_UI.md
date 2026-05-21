@@ -203,23 +203,23 @@
 - [x] Dùng chung cho: Home tiles, Day cards, Reel cards
 - **AC**: Animation consistent, code DRY
 
-### 🟢 5.5 `[UI]` Button press animation (Onboarding)
+### 🟢 5.5 `[UI]` Button press animation (Onboarding) — ✅ DONE
 **File**: `src/screens/OnboardingScreen.tsx`
-- [ ] `Animated.spring` scale 0.98 khi bấm nút Tiếp tục/Bắt đầu
-- [ ] Dùng `Pressable` onPressIn/onPressOut
+- [x] `Animated.spring` scale 0.98 khi bấm nút Tiếp tục/Bắt đầu
+- [x] Dùng `Pressable` onPressIn/onPressOut
 - **AC**: Nút có micro-feedback khi bấm
 
-### 🟢 5.6 `[UI]` Header collapse on scroll (Home)
+### 🟢 5.6 `[UI]` Header collapse on scroll (Home) — ✅ DONE
 **File**: `src/screens/HomeScreen.tsx`
-- [ ] ScrollView onScroll + Animated.interpolate
-- [ ] fontSize: 32→22, paddingTop: 28→12
+- [x] ScrollView onScroll + Animated.interpolate
+- [x] fontSize: 32→22, paddingTop: 28→12
 - **AC**: Scroll xuống → header co lại mượt
 
-### 🟢 5.7 `[UI]` "Thống kê cảm xúc" thay duplicate Calendar trong Me tab
+### 🟢 5.7 `[UI]` "Thống kê cảm xúc" thay duplicate Calendar trong Me tab — ✅ DONE
 **File**: `src/screens/MeScreen.tsx`
-- [ ] Đổi label calendar thành "Thống kê cảm xúc"
-- [ ] Text: "Xem bạn đã lên mood board thế nào"
-- [ ] Tap → mở MoodCalendar modal
+- [] Đổi label calendar thành "Thống kê cảm xúc"
+- [] Text: "Xem bạn đã lên mood board thế nào"
+- [] Tap → mở MoodCalendar modal
 - **AC**: Không duplicate tên "Lịch cảm xúc" ở 2 chỗ
 
 ---

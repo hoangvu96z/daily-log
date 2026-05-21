@@ -226,6 +226,8 @@ const vi = {
 
     // Group 3: App & Appearance
     appGroup: 'App & giao diện',
+    moodStats: 'Thống kê cảm xúc',
+    moodStatsSubtitle: 'Xem bạn đã lên mood board thế nào',
     notifications: 'Thông báo',
     notificationsSubtitle: 'Daily và weekly reminder',
     theme: 'Giao diện',
@@ -576,6 +578,8 @@ const en: typeof vi = {
 
     // Group 3: App & Appearance
     appGroup: 'App & Appearance',
+    moodStats: 'Mood Statistics',
+    moodStatsSubtitle: 'See how your mood board looks',
     notifications: 'Notifications',
     notificationsSubtitle: 'Daily and weekly reminders',
     theme: 'Appearance',

@@ -20,6 +20,8 @@ import { pickMomentImage } from '../services/imagePicker';
 import { PaywallModal } from '../components/PaywallModal';
 import * as BackgroundFetch from 'expo-background-fetch';
 import { getAutoTrackerStatus, registerAutoTracker, runAutoTrackerOnce, unregisterAutoTracker } from '../skills/autoTracker';
+import { MoodCalendar } from './HomeScreen';
+import { Entry } from '../types';
 import { exportBackup, exportBackupWeb, importBackup, importBackupWeb } from '../skills/backup';
 import { Platform } from 'react-native';
 
@@ -28,26 +30,29 @@ export function MeScreen({
   settings,
   onChangeSettings,
   entriesCount,
+  entries = [],
   onResetJournal,
 }: {
   navigation?: any;
   settings: Settings;
   onChangeSettings: React.Dispatch<React.SetStateAction<Settings>>;
   entriesCount: number;
+  entries?: Entry[];
   onResetJournal: () => Promise<void>;
 }) {
-  const { t, lang } = useTranslation();
+  const { t, lang, locale } = useTranslation();
   const [deleteVisible, setDeleteVisible] = useState(false);
   const [themeVisible, setThemeVisible] = useState(false);
   const [deleteText, setDeleteText] = useState('');
   const [accentVisible, setAccentVisible] = useState(false);
   const [wallpaperVisible, setWallpaperVisible] = useState(false);
   const [notifVisible, setNotifVisible] = useState(false);
-  const [notifEnabled, setNotifEnabled] = useState(false);
   const [privacyVisible, setPrivacyVisible] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [backupVisible, setBackupVisible] = useState(false);
+  const [calendarVisible, setCalendarVisible] = useState(false);
   const [backupWorking, setBackupWorking] = useState(false);
+  const [notifEnabled, setNotifEnabled] = useState(false);
 
   const updateSetting = <K extends keyof Settings>(key: K, value: Settings[K]) => {
     onChangeSettings((current) => ({ ...current, [key]: value }));
@@ -314,6 +319,12 @@ export function MeScreen({
       {/* Group 3: App & Appearance */}
       <SettingsCard title={t.settings.appGroup}>
         <SettingsRow
+          icon="calendar-outline"
+          title={(t.settings as any).moodStats}
+          subtitle={(t.settings as any).moodStatsSubtitle}
+          onPress={() => setCalendarVisible(true)}
+        />
+        <SettingsRow
           icon="notifications-outline"
           title={t.settings.notifications}
           subtitle={notifEnabled ? t.settings.notificationsEnabledSubtitle : t.settings.notificationsSubtitle}
@@ -486,6 +497,15 @@ export function MeScreen({
             );
           }
         }}
+      />
+      <MoodCalendar
+        visible={calendarVisible}
+        entries={entries}
+        onClose={() => setCalendarVisible(false)}
+        t={t}
+        locale={locale}
+        isPremium={settings.isPremium}
+        onUpgrade={() => { setCalendarVisible(false); setPaywallVisible(true); }}
       />
     </ScrollView>
   );
