@@ -9,6 +9,8 @@ import { moodEmoji, moodLabels } from '../data/mockData';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { Entry } from '../types';
+import { useFocusEffect } from '@react-navigation/native';
+import { ensureAutoTrackerFreshness } from '../skills/autoTracker';
 
 export function DayScreen({
   entries,
@@ -24,6 +26,13 @@ export function DayScreen({
   onDiscardSuggestion: (id: string) => void;
 }) {
   const { t, locale } = useTranslation();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      ensureAutoTrackerFreshness();
+    }, [])
+  );
+
   const dayEntries = entries.filter((entry) => entry.date === selectedDate);
 
   return (

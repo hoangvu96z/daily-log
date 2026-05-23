@@ -252,6 +252,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
         </View>
 
         <AnimatedPressable 
+          testID="next-button"
           style={[s.nextButton, { transform: [{ scale: buttonScale }] }]} 
           onPress={goNext}
           onPressIn={handlePressIn}

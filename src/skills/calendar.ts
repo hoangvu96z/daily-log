@@ -59,3 +59,24 @@ export function calendarEventToDraft(event: CalendarEventDraft) {
     prefillTime,
   };
 }
+
+export interface CalendarSignal {
+  type: 'calendar';
+  start: Date;
+  end: Date;
+  title: string;
+  locationName?: string;
+}
+
+export async function getCalendarSignals(): Promise<CalendarSignal[]> {
+  const { status, events } = await getTodayCalendarEvents();
+  if (status !== 'granted') return [];
+
+  return events.map(e => ({
+    type: 'calendar',
+    start: new Date(e.startDate),
+    end: e.endDate ? new Date(e.endDate) : new Date(e.startDate),
+    title: e.title,
+    locationName: e.location,
+  }));
+}

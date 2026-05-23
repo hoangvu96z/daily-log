@@ -10,6 +10,8 @@ import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { Entry } from '../types';
 import { HighlightTile } from '../components/HighlightTile';
+import { useFocusEffect } from '@react-navigation/native';
+import { ensureAutoTrackerFreshness } from '../skills/autoTracker';
 
 enum SentimentType {
   POSITIVE = 'positive',
@@ -48,6 +50,12 @@ export function HomeScreen({
   const [insightVisible, setInsightVisible] = useState(false);
 
   const scrollY = useRef(new RNAnimated.Value(0)).current;
+
+  useFocusEffect(
+    React.useCallback(() => {
+      ensureAutoTrackerFreshness();
+    }, [])
+  );
 
   const headerPaddingTop = scrollY.interpolate({
     inputRange: [0, 100],
