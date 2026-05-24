@@ -45,6 +45,7 @@ export function TabNavigator() {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEventDraft[]>([]);
   const [composerDraft, setComposerDraft] = useState<ComposerDraft>({ mode: 'note' });
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [paywallVisible, setPaywallVisible] = useState(false);
 
   const [permissionType, setPermissionType] = useState<'photos' | 'calendar' | null>(null);
@@ -185,11 +186,15 @@ export function TabNavigator() {
               isPremium={settings.isPremium}
               onUpgrade={() => setPaywallVisible(true)}
               onOpenDay={() => {
-                setSelectedDate(yesterdayDate);
                 props.navigation.navigate('day');
               }}
-              onSelectDate={(date) => {
+              onSelectDate={(date, entryId) => {
                 setSelectedDate(date);
+                if (entryId) {
+                  setSelectedEntryId(entryId);
+                } else {
+                  setSelectedEntryId(null);
+                }
                 props.navigation.navigate('day');
               }}
             />
@@ -201,6 +206,7 @@ export function TabNavigator() {
               {...props}
               entries={entries}
               selectedDate={selectedDate}
+              selectedEntryId={selectedEntryId}
               onChangeDate={setSelectedDate}
               onSaveSuggestion={saveSuggestion}
               onDiscardSuggestion={discardSuggestion}

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState, useEffect, useRef } from 'react';
 import { Animated as RNAnimated, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/AppText';
@@ -41,7 +41,7 @@ export function HomeScreen({
 }: {
   entries: Entry[];
   onOpenDay: () => void;
-  onSelectDate?: (date: string) => void;
+  onSelectDate?: (date: string, entryId?: string) => void;
   isPremium?: boolean;
   onUpgrade?: () => void;
 }) {
@@ -69,10 +69,21 @@ export function HomeScreen({
     extrapolate: 'clamp',
   });
 
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayDate = yesterday.toISOString().slice(0, 10);
-  const highlights = entries.filter((entry) => entry.date === yesterdayDate).slice(0, 4);
+  const sortedDates = [...new Set(entries.map(e => e.date))].sort((a, b) => b.localeCompare(a));
+  const displayDate = sortedDates.length > 0 ? sortedDates[0] : new Date().toISOString().slice(0, 10);
+  const highlights = entries
+    .filter((entry) => entry.date === displayDate)
+    .sort((a, b) => b.time.localeCompare(a.time))
+    .slice(0, 4);
+
+  const todayDate = new Date().toISOString().slice(0, 10);
+  const yesterdayDate = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  let dynamicKicker = t.home.kicker;
+  if (displayDate === todayDate) {
+    dynamicKicker = lang === 'vi' ? 'Hôm nay của bạn' : 'Your Today';
+  } else if (displayDate !== yesterdayDate) {
+    dynamicKicker = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(new Date(`${displayDate}T12:00:00`));
+  }
 
   const homeT = t.home as any;
   const activeLang = lang === 'vi' ? 'vi' : 'en';
@@ -149,20 +160,20 @@ export function HomeScreen({
           /* Render 2x2 Bento Grid */
           <View style={{ gap: 12 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-              <Text style={styles.cardKicker}>{t.home.kicker}</Text>
+              <Text style={styles.cardKicker}>{dynamicKicker}</Text>
               <Ionicons name="sparkles-sharp" size={18} color={palette.primary} />
             </View>
             
             {/* Row 1 */}
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <AnimatedCard delay={100} style={{ flex: 1 }}>
-                <HighlightTile entry={highlights[0]} onPress={onOpenDay} />
+                <HighlightTile entry={highlights[0]} onPress={() => { onSelectDate?.(highlights[0].date, highlights[0].id); onOpenDay(); }} />
               </AnimatedCard>
               <AnimatedCard delay={180} style={{ flex: 1 }}>
                 {highlights[1] ? (
-                  <HighlightTile entry={highlights[1]} onPress={onOpenDay} />
+                  <HighlightTile entry={highlights[1]} onPress={() => { onSelectDate?.(highlights[1].date, highlights[1].id); onOpenDay(); }} />
                 ) : (
-                  <Pressable style={localStyles.emptyTilePlaceholder} onPress={onOpenDay}>
+                  <Pressable style={localStyles.emptyTilePlaceholder} onPress={() => { onSelectDate?.(displayDate); onOpenDay(); }}>
                     <Ionicons name="add-circle-outline" size={24} color={palette.primary} style={{ opacity: 0.5 }} />
                     <Text style={localStyles.emptyTileText}>{t.home.emptyYesterday}</Text>
                   </Pressable>
@@ -174,9 +185,9 @@ export function HomeScreen({
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <AnimatedCard delay={260} style={{ flex: 1 }}>
                 {highlights[2] ? (
-                  <HighlightTile entry={highlights[2]} onPress={onOpenDay} />
+                  <HighlightTile entry={highlights[2]} onPress={() => { onSelectDate?.(highlights[2].date, highlights[2].id); onOpenDay(); }} />
                 ) : (
-                  <Pressable style={localStyles.emptyTilePlaceholder} onPress={onOpenDay}>
+                  <Pressable style={localStyles.emptyTilePlaceholder} onPress={() => { onSelectDate?.(displayDate); onOpenDay(); }}>
                     <Ionicons name="sparkles-outline" size={24} color={palette.primary} style={{ opacity: 0.5 }} />
                     <Text style={localStyles.emptyTileText}>{homeT.suggestMore}</Text>
                   </Pressable>
@@ -186,8 +197,8 @@ export function HomeScreen({
                 {/* Tile 4: Mini Peace Index */}
                 <View style={localStyles.miniPeaceTile}>
                   <Ionicons name="heart-circle-outline" size={24} color={palette.primary} />
-                  <Text style={localStyles.miniPeacePercent}>{peaceIndex}%</Text>
-                  <Text style={localStyles.miniPeaceDesc} numberOfLines={2}>
+                  <Text style={[localStyles.miniPeacePercent, { color: palette.primary }]}>{peaceIndex}%</Text>
+                  <Text style={[localStyles.miniPeaceDesc, { color: palette.onSurface }]} numberOfLines={2}>
                     {homeT.peaceIndex}
                   </Text>
                 </View>
@@ -198,7 +209,7 @@ export function HomeScreen({
           /* Fallback: Old Card 1 (Daily Alignment) */
           <View style={styles.heroCard}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={styles.cardKicker}>{t.home.kicker}</Text>
+              <Text style={styles.cardKicker}>{dynamicKicker}</Text>
               <Ionicons name="sparkles-sharp" size={18} color={palette.primary} />
             </View>
             <View style={{ marginTop: 10 }}>
@@ -260,7 +271,7 @@ export function HomeScreen({
 
         {/* Card 3: Action Buttons — stacked full-width */}
         <View style={{ gap: 10 }}>
-          <Pressable style={[styles.primaryButton, { flex: undefined }]} onPress={onOpenDay}>
+          <Pressable style={[styles.primaryButton, { flex: undefined }]} onPress={() => { onSelectDate?.(displayDate); onOpenDay(); }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
               <Ionicons name="eye-outline" size={18} color={palette.white} />
               <Text style={styles.primaryButtonText}>{t.home.viewFullDay}</Text>
@@ -347,9 +358,9 @@ export function MoodCalendar({
   const moodColors: Record<string, string> = {
     very_bad: '#E53935',
     bad:      '#FB8C00',
-    neutral:  '#9E9E9E',
-    good:     '#43A047',
-    great:    '#7E57C2',
+    neutral:  '#43A047',
+    good:     '#1E88E5',
+    great:    '#8E24AA',
   };
 
   const dayCount = mode === '30day' ? 30 : 7;
@@ -415,22 +426,24 @@ export function MoodCalendar({
                 </View>
               )}
             </View>
-            <Pressable onPress={onClose} style={{ padding: 4 }}>
-              <Ionicons name="close" size={22} color={palette.muted} />
-            </Pressable>
+            {/* Close icon moved to bottom button per design */}
           </View>
 
-          <Text style={[styles.dialogText, { marginBottom: 8 }]}>
-            {homeT.moodSummary ? homeT.moodSummary(goodDays, neutralDays, emptyDays) : t.home.moodCalendarDesc}
+          <Text style={[styles.dialogText, { marginBottom: 12 }]}>
+            {t.home.moodCalendarDesc}
           </Text>
 
-          {streak >= 3 && homeT.streakMessage && (
-            <View style={{ backgroundColor: palette.primaryContainer, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 10, alignSelf: 'flex-start' }}>
-              <Text style={{ color: palette.primary, fontSize: 12, fontWeight: '700' }}>
-                {homeT.streakMessage(streak)}
-              </Text>
-            </View>
-          )}
+          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
+            <Text style={{ fontSize: 13, color: palette.ink, fontWeight: '500' }}>
+              {homeT.moodSummary ? homeT.moodSummary(goodDays, neutralDays, emptyDays) : `${goodDays} happy, ${neutralDays} normal, ${emptyDays} not recorded 💫`}
+            </Text>
+            {streak >= 3 && homeT.streakMessage && (
+              <View style={{ backgroundColor: '#0B132B', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, marginLeft: 6, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={{ fontSize: 11 }}>🔥</Text>
+                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{homeT.streakMessage(streak)}</Text>
+              </View>
+            )}
+          </View>
 
           {/* Mode toggle */}
           <View style={{ flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 12, padding: 3, marginBottom: 14, alignSelf: 'center' }}>
@@ -463,29 +476,56 @@ export function MoodCalendar({
 
             {/* Grid */}
             {mode === '7day' ? (
-              <View style={styles.moodCalendarGrid}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'flex-start' }}>
                 {days.map((day) => {
                   const isSelected = selectedDateKey === day.dateKey;
-                  const intensity  = Math.min(1, 0.4 + day.count * 0.2);
                   return (
                     <Pressable
                       key={day.dateKey}
                       style={[
-                        styles.moodDayCell,
-                        isSelected && { borderColor: palette.primary, borderWidth: 2, backgroundColor: 'rgba(3,31,65,0.05)', borderRadius: 12, padding: 4 },
+                        {
+                          width: '22%', // 4 columns guaranteed
+                          aspectRatio: 0.75,
+                          backgroundColor: '#fff',
+                          borderRadius: 14,
+                          borderWidth: 1,
+                          borderColor: palette.outlineVariant,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: 4,
+                          shadowColor: 'rgba(0,0,0,0.02)',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 1,
+                          shadowRadius: 4,
+                          elevation: 1,
+                        },
+                        isSelected && { borderColor: palette.primary, borderWidth: 2, backgroundColor: 'rgba(3,31,65,0.02)' },
                       ]}
                       onPress={() => setSelectedDateKey(day.dateKey)}
                     >
-                      <Text style={styles.moodDayName}>{day.dayLabel}</Text>
-                      <Text style={styles.moodDateText}>{day.dayNum}</Text>
-                      <View style={[
-                        styles.moodDotLarge,
-                        { backgroundColor: day.mood ? moodColors[day.mood] : palette.outline, opacity: day.count ? intensity : 0.25 },
-                      ]} />
-                      <Text style={[styles.moodCellText, { fontSize: day.mood ? 12 : 11 }]}>
-                        {day.mood ? `${moodEmoji[day.mood as keyof typeof moodEmoji]} ${t.mood[day.mood]}` : t.home.emptyMood}
+                      <Text style={{ fontSize: 11, color: palette.ink, marginBottom: 8, fontWeight: '600' }}>
+                        {day.dayLabel}, {day.dayNum}
                       </Text>
-                      <Text style={styles.moodCountText}>{t.home.entryCount(day.count)}</Text>
+                      {day.mood ? (
+                        <View style={{ position: 'relative', width: 44, height: 44, justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ position: 'absolute', width: 24, height: 24, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 12 }} />
+                          <MaterialCommunityIcons name={moodEmoji[day.mood as keyof typeof moodEmoji].replace('-outline', '')} size={44} color={moodColors[day.mood]} />
+                        </View>
+                      ) : (
+                        <View style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 22,
+                          borderWidth: 1,
+                          borderColor: palette.outline,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}>
+                          <Text style={{ fontSize: 9, color: palette.muted, textAlign: 'center', lineHeight: 11, fontWeight: '500' }}>
+                            {t.home.emptyMood.split(' ').join('\n')}
+                          </Text>
+                        </View>
+                      )}
                     </Pressable>
                   );
                 })}
@@ -541,20 +581,20 @@ export function MoodCalendar({
 
             {/* Selected day detail */}
             {selectedDateKey && (
-              <View style={{ marginTop: 14, padding: 12, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(3,31,65,0.08)', gap: 8 }}>
+              <View style={{ marginTop: 14, padding: 12, backgroundColor: 'rgba(150, 150, 150, 0.15)', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(150, 150, 150, 0.1)', gap: 8 }}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: palette.primary }}>
                   {homeT.dayDate(selectedDateKey.split('-').reverse().join('/'))}
                 </Text>
                 {selectedDayEntries.length > 0 ? (
                   <ScrollView style={{ maxHeight: 110 }} nestedScrollEnabled>
                     {selectedDayEntries.map((e) => (
-                      <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: 'rgba(3,31,65,0.04)' }}>
+                      <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: 'rgba(150, 150, 150, 0.15)' }}>
                         <View style={{ flex: 1, marginRight: 8 }}>
                           <Text style={{ fontSize: 12, color: palette.ink, fontWeight: '500' }} numberOfLines={1}>
                             {e.time} • {e.text || homeT.noText}
                           </Text>
                         </View>
-                        <Text style={{ fontSize: 14 }}>{moodEmoji[e.mood]}</Text>
+                        <MaterialCommunityIcons name={moodEmoji[e.mood]} size={16} color={palette.onSurfaceVariant} />
                       </View>
                     ))}
                   </ScrollView>
@@ -587,7 +627,7 @@ export function MoodCalendar({
                 </View>
                 {yearAgoEntries.slice(0, 2).map((e) => (
                   <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Text style={{ fontSize: 13 }}>{moodEmoji[e.mood]}</Text>
+                    <MaterialCommunityIcons name={moodEmoji[e.mood]} size={15} color={palette.onSurfaceVariant} />
                     <Text style={{ fontSize: 12, color: palette.ink, flex: 1 }} numberOfLines={2}>
                       {e.text || homeT.momentNoText}
                     </Text>

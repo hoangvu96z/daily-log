@@ -192,7 +192,7 @@ async function processClustersAndSave(clusters: BaseSignal[][]): Promise<number>
 
 // === Task Definitions ===
 
-export async function runAutoTrackerOnce(): Promise<void> {
+export async function runAutoTrackerOnce(): Promise<{ newEntries: number, photosScanned: number } | void> {
   console.log('[AutoTracker] runAutoTrackerOnce executed at', new Date().toISOString());
 
   if (Platform.OS === 'web') return;
@@ -213,11 +213,29 @@ export async function runAutoTrackerOnce(): Promise<void> {
   const lastScanTime = lastScanTimeStr ? Number(lastScanTimeStr) : 0;
 
   const signals = await buildSignals(lastScanTime);
+  const photosScanned = signals.filter(s => s.type === 'photo').length;
   const clusters = clusterSignals(signals);
   
-  await processClustersAndSave(clusters);
+  const created = await processClustersAndSave(clusters);
   
-  await saveSetting('last_auto_scan_time', Date.now().toString());
+  const nowStr = Date.now().toString();
+  const statsStr = JSON.stringify({ new_suggestions: created, photos_scanned: photosScanned });
+  
+  await saveSetting('last_auto_scan_time', nowStr);
+  await saveSetting('last_auto_scan_stats', statsStr);
+  
+  // Try to update store if it's initialized (in foreground)
+  try {
+    const store = useJournalStore.getState();
+    if (store.hydrated) {
+      store.updateSettings('last_auto_scan_time', nowStr);
+      store.updateSettings('last_auto_scan_stats', statsStr);
+    }
+  } catch (e) {
+    // Ignore, running in background where UI store might not be available
+  }
+  
+  return { newEntries: created, photosScanned };
 }
 
 TaskManager.defineTask(TASK_NAME, async () => {
@@ -229,6 +247,11 @@ TaskManager.defineTask(TASK_NAME, async () => {
     const successCount = Number(settings['bgFetch_successCount'] || 0) + 1;
     await saveSetting('bgFetch_successCount', successCount.toString());
     await saveSetting('bgFetch_lastRun', new Date().toISOString());
+    
+    try {
+      const store = useJournalStore.getState();
+      if (store.hydrated) store.updateSettings('bgFetch_successCount', successCount);
+    } catch (e) {}
 
     return BackgroundFetch.BackgroundFetchResult.NewData;
   } catch (error) {
@@ -237,6 +260,11 @@ TaskManager.defineTask(TASK_NAME, async () => {
     const settings = await loadSettings();
     const failCount = Number(settings['bgFetch_failCount'] || 0) + 1;
     await saveSetting('bgFetch_failCount', failCount.toString());
+    
+    try {
+      const store = useJournalStore.getState();
+      if (store.hydrated) store.updateSettings('bgFetch_failCount', failCount);
+    } catch (e) {}
 
     return BackgroundFetch.BackgroundFetchResult.Failed;
   }
@@ -293,11 +321,20 @@ export async function refreshAutoSuggestions(): Promise<number> {
 
     const signals = await buildSignals(lastScanTime);
     if (signals.length === 0) return 0;
+    const photosScanned = signals.filter(s => s.type === 'photo').length;
 
     const clusters = clusterSignals(signals);
     const created = await processClustersAndSave(clusters);
 
-    await saveSetting('last_auto_scan_time', Date.now().toString());
+    const nowStr = Date.now().toString();
+    const statsStr = JSON.stringify({ new_suggestions: created, photos_scanned: photosScanned });
+    
+    await saveSetting('last_auto_scan_time', nowStr);
+    await saveSetting('last_auto_scan_stats', statsStr);
+    
+    useJournalStore.getState().updateSettings('last_auto_scan_time', nowStr);
+    useJournalStore.getState().updateSettings('last_auto_scan_stats', statsStr);
+    
     return created;
   } catch (error) {
     console.error('[AutoTracker:Foreground] refreshAutoSuggestions failed:', error);

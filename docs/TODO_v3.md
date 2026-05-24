@@ -59,30 +59,30 @@ Mục tiêu: Đảm bảo tính năng tự động ghi nhận nhật ký (Auto-t
 
 ### 4. Xử lý Vòng đời Entry (Lưu / Bỏ / Sửa / Xóa)
 - **File:** `src/memory/database.ts`, `src/components/TimelineCard.tsx`, `src/screens/DayScreen.tsx`, `src/components/MomentComposer.tsx`
-- [ ] **Lưu/Bỏ Gợi ý (Suggested Entry):**
-  - [ ] Hành động "Lưu": Giữ nguyên ID, đổi `status` thành `'saved'`, update vào database bằng `updateEntry`.
-  - [ ] Hành động "Bỏ": Xóa cứng (hoặc soft-delete) bản ghi gợi ý đó khỏi SQLite. Phải đảm bảo logic autoTracker ở lần quét sau nhận biết được cụm signal này đã bị skip (lưu mảng `skipped_clusters` vào settings hoặc đánh dấu `deleted` trong DB).
-  - [ ] Animation: Bọc Card gợi ý bằng Reanimated, kích hoạt slide-out và fade khi nhấn Lưu/Bỏ.
-- [ ] **Sửa (Edit) Entry:**
-  - [ ] Trong `database.ts`, tạo function `updateEntry(id: string, patch: Partial<Entry>)`.
-  - [ ] Ở `TimelineCard.tsx`, thêm nút Menu `...` (hoặc xử lý long-press) cho các entry có `status === 'saved'`.
-  - [ ] Mở menu có nút "Chỉnh sửa".
-  - [ ] Khi click, gọi mở `MomentComposer` (hoặc AddMomentSheet), truyền prop `mode="edit"` và `initialEntry={entry}`.
-  - [ ] Đổi nút CTA chính của composer thành "Cập nhật". Khi click, gọi `updateEntry` và update state Zustand.
-- [ ] **Xóa (Delete) Entry:**
-  - [ ] Tạo function `deleteEntry(id: string)` trong `database.ts`.
-  - [ ] Menu của `TimelineCard` có nút "Xóa khoảnh khắc".
-  - [ ] Khi click -> Hiện popup cảnh báo: "Xóa khoảnh khắc này? Hành động này không thể hoàn tác."
-  - [ ] User confirm -> Gọi `deleteEntry`, trigger update Zustand để loại entry đó khỏi view của ngày.
+- [x] **Lưu/Bỏ Gợi ý (Suggested Entry):**
+  - [x] Hành động "Lưu": Giữ nguyên ID, đổi `status` thành `'saved'`, update vào database bằng `updateEntry`.
+  - [x] Hành động "Bỏ": Xóa cứng (hoặc soft-delete) bản ghi gợi ý đó khỏi SQLite. Phải đảm bảo logic autoTracker ở lần quét sau nhận biết được cụm signal này đã bị skip (lưu mảng `skipped_clusters` vào settings hoặc đánh dấu `deleted` trong DB).
+  - [x] Animation: Bọc Card gợi ý bằng Reanimated, kích hoạt slide-out và fade khi nhấn Lưu/Bỏ.
+- [x] **Sửa (Edit) Entry:**
+  - [x] Trong `database.ts`, tạo function `updateEntry(id: string, patch: Partial<Entry>)`.
+  - [x] Ở `TimelineCard.tsx`, thêm nút Menu `...` (hoặc xử lý long-press) cho các entry có `status === 'saved'`.
+  - [x] Mở menu có nút "Chỉnh sửa".
+  - [x] Khi click, gọi mở `MomentComposer` (hoặc AddMomentSheet), truyền prop `mode="edit"` và `initialEntry={entry}`.
+  - [x] Đổi nút CTA chính của composer thành "Cập nhật". Khi click, gọi `updateEntry` và update state Zustand.
+- [x] **Xóa (Delete) Entry:**
+  - [x] Tạo function `deleteEntry(id: string)` trong `database.ts`.
+  - [x] Menu của `TimelineCard` có nút "Xóa khoảnh khắc".
+  - [x] Khi click -> Hiện popup cảnh báo: "Xóa khoảnh khắc này? Hành động này không thể hoàn tác."
+  - [x] User confirm -> Gọi `deleteEntry`, trigger update Zustand để loại entry đó khỏi view của ngày.
 
 ### 5. Logging & Diagnostics (Dành cho Dev)
 - **File:** `src/skills/autoTracker.ts`, `src/screens/MeScreen.tsx`
-- [ ] Sau mỗi lần tracker chạy xong, ghi nhận thông số vào Zustand/Storage:
-  - [ ] `last_auto_scan_time`: timestamp.
-  - [ ] `last_auto_scan_stats`: chuỗi JSON `{ new_suggestions: N, photos_scanned: M }`.
-  - [ ] `bgFetch_successCount` / `bgFetch_failCount`.
-- [ ] Thêm section "Diagnostics" (Chẩn đoán) dưới cùng `MeScreen` (chỉ hiển thị nếu dùng biến môi trường dev `__DEV__`):
-  - [ ] Render các chỉ số trên ra UI để tester dễ dàng kiểm chứng chức năng chạy ngầm.
+- [x] Sau mỗi lần tracker chạy xong, ghi nhận thông số vào Zustand/Storage:
+  - [x] `last_auto_scan_time`: timestamp.
+  - [x] `last_auto_scan_stats`: chuỗi JSON `{ new_suggestions: N, photos_scanned: M }`.
+  - [x] `bgFetch_successCount` / `bgFetch_failCount`.
+- [x] Thêm section "Diagnostics" (Chẩn đoán) dưới cùng `MeScreen` (chỉ hiển thị nếu dùng biến môi trường dev `__DEV__`):
+  - [x] Render các chỉ số trên ra UI để tester dễ dàng kiểm chứng chức năng chạy ngầm.
 
 ---
 
@@ -177,7 +177,17 @@ Mục tiêu: Đưa cảm giác App lên mức mượt mà, "có hồn" (GenZ) th
 
 - [ ] Search entries text đầy đủ / filter theo mood / filter theo địa điểm.
 - [ ] Biểu đồ Mood Trend (Line chart phân tích cảm xúc tuần/tháng).
-- [ ] Hỗ trợ tạo 1 entry chứa nhiều ảnh (Carousel swipeable) hoặc 1 short video clip.
+- [ ] **Hỗ trợ Upload Nhiều Ảnh (Multi-Image Carousel)**:
+  - Nâng cấp `ImagePicker` để cho phép chọn tối đa 10 ảnh cùng lúc.
+  - **Cơ sở dữ liệu**: Đổi cấu trúc `imageUri` (chuỗi) thành `mediaAssets` (mảng JSON) để lưu trữ linh hoạt nhiều tệp tin.
+  - **Giao diện (UI)**: Xây dựng Component `Carousel` cho phép vuốt (swipe) mượt mà sang trái/phải.
+  - Thêm hệ thống "Pagination Dots" (các dấu chấm tròn) hoặc số đếm (VD: 1/5) góc trên ảnh để dễ theo dõi.
+
+- [ ] **Hỗ trợ Upload & Phát Video Ngắn (Short Reels)**:
+  - Cho phép người dùng chọn video clip từ thư viện (có thể giới hạn thời lượng < 60 giây để tối ưu dung lượng).
+  - Tích hợp thư viện trình phát (`expo-av` hoặc `expo-video`) để tự động phát, tự động lặp (auto-play & loop) và tắt tiếng mặc định (muted) ở màn hình Timeline.
+  - **Xử lý ngầm**: Tự động trích xuất 1 khung hình (thumbnail frame) từ video để làm ảnh bìa (cover), giúp màn hình chính hiển thị nhanh không bị giật lag.
+  - Hệ thống Reels tự động (Weekly Reels) sẽ ghép các video clip lại thành một thước phim dài sinh động thay vì chỉ chạy Slideshow ảnh tĩnh.
 - [ ] Hệ thống Push Notification cục bộ (`expo-notifications`):
   - [ ] Nhắc nhở buổi tối (VD: 21:00) "Hôm nay bạn thấy thế nào?".
   - [ ] Nhắc cuối tuần: "Tuần qua của bạn đã sẵn sàng".

@@ -9,6 +9,8 @@ export interface AnimatedCardProps {
   variant?: AnimationVariant;
   duration?: number;
   style?: any;
+  exiting?: any;
+  layout?: any;
 }
 
 export function AnimatedCard({ 
@@ -16,7 +18,9 @@ export function AnimatedCard({
   delay = 0, 
   variant = 'fadeInDown', 
   duration = 350, 
-  style 
+  style,
+  exiting,
+  layout
 }: AnimatedCardProps) {
   let enteringAnimation: any;
   let exitingAnimation: any;
@@ -39,7 +43,7 @@ export function AnimatedCard({
   }
 
   return (
-    <Animated.View entering={enteringAnimation} exiting={exitingAnimation} style={style}>
+    <Animated.View entering={enteringAnimation} exiting={exiting || exitingAnimation} layout={layout} style={style}>
       {children}
     </Animated.View>
   );

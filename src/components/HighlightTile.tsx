@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../components/AppText';
@@ -14,16 +14,24 @@ interface HighlightTileProps {
 export function HighlightTile({ entry, onPress }: HighlightTileProps) {
   const hasImage = !!entry.imageUri;
 
+  const fallbackBgColors: Record<string, string> = {
+    very_bad: '#E53935',
+    bad: '#FB8C00',
+    neutral: '#43A047',
+    good: '#1E88E5',
+    great: '#8E24AA',
+  };
+
   return (
     <Pressable style={styles.tile} onPress={onPress}>
       {hasImage ? (
         <Image source={{ uri: entry.imageUri }} style={styles.bgImage} resizeMode="cover" />
       ) : (
-        <View style={styles.fallbackBg} />
+        <View style={[styles.fallbackBg, { backgroundColor: fallbackBgColors[entry.mood] || '#1E88E5' }]} />
       )}
       
       {/* Overlay Scrim for Text Legibility */}
-      <View style={[styles.scrim, !hasImage && styles.fallbackScrim]} />
+      <View style={[styles.scrim, !hasImage && { backgroundColor: 'rgba(0, 0, 0, 0.2)' }]} />
 
       {/* Content Container */}
       <View style={styles.content}>
@@ -35,8 +43,8 @@ export function HighlightTile({ entry, onPress }: HighlightTileProps) {
           {entry.text}
         </Text>
 
-        <View style={styles.moodBadge}>
-          <Text style={styles.moodEmoji}>{moodEmoji[entry.mood]}</Text>
+        <View style={styles.footerRow}>
+          <MaterialCommunityIcons name={moodEmoji[entry.mood]} size={18} color="rgba(255,255,255,0.85)" />
           {entry.locationName && (
             <Text style={styles.locationText} numberOfLines={1}>
               • {entry.locationName}

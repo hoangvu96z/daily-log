@@ -12,21 +12,19 @@ const translations: Record<Language, typeof vi> = { vi, en };
 
 // === Access Function ===
 
-let currentLanguage: Language = 'vi';
-
-export function setLanguage(lang: Language): void {
-  currentLanguage = lang;
-}
+import { useJournalStore } from '../memory/store';
 
 export function getLanguage(): Language {
-  return currentLanguage;
+  try {
+    return useJournalStore.getState().settings?.language || 'vi';
+  } catch {
+    return 'vi';
+  }
 }
 
 export function t(): typeof vi {
-  return translations[currentLanguage];
+  return translations[getLanguage()];
 }
-
-import { useJournalStore } from '../memory/store';
 
 export function useTranslation() {
   const language = useJournalStore((state) => state.settings?.language || 'vi');
@@ -41,6 +39,6 @@ export function useTranslation() {
  * Get the locale string for Intl.DateTimeFormat.
  */
 export function getLocale(): string {
-  return currentLanguage === 'vi' ? 'vi-VN' : 'en-US';
+  return getLanguage() === 'vi' ? 'vi-VN' : 'en-US';
 }
 

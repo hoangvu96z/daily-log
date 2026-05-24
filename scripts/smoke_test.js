@@ -218,23 +218,28 @@ assert('Empty entries list → empty slidable',                 getSlidable([]).
 section('§6  Translation File Key Parity');
 
 const translationsPath = path.join(__dirname, '../src/i18n/translations.ts');
-let translationsSrc = '';
+const viPath = path.join(__dirname, '../src/i18n/vi.ts');
+const enPath = path.join(__dirname, '../src/i18n/en.ts');
+
+let translationsSrc = '', viSrc = '', enSrc = '';
 try {
   translationsSrc = fs.readFileSync(translationsPath, 'utf8');
+  viSrc = fs.readFileSync(viPath, 'utf8');
+  enSrc = fs.readFileSync(enPath, 'utf8');
 } catch (e) {
-  assert('translations.ts is readable', false, e.message);
+  assert('translations files are readable', false, e.message);
 }
 
-if (translationsSrc) {
-  assert('Declares Vietnamese (vi) translation block',          translationsSrc.includes('const vi ='));
-  assert('Declares English (en) translation block',             translationsSrc.includes('const en'));
-  assert('Type-enforces parity via "typeof vi"',                translationsSrc.includes('typeof vi'));
-  assert('Has reel section in translations',                    translationsSrc.includes('reel:'));
-  assert('Has settings section in translations',                translationsSrc.includes('settings:'));
-  assert('Has ai section (local fallback templates)',           translationsSrc.includes('ai:'));
-  assert('Has permissions section',                             translationsSrc.includes('permissions:'));
-  assert('Has onboarding section',                              translationsSrc.includes('onboarding:'));
-  assert('backupTitle key exists (4.2 requirement)',             translationsSrc.includes('backupTitle'));
+if (viSrc && enSrc && translationsSrc) {
+  assert('Declares Vietnamese (vi) translation block',          viSrc.includes('export const vi ='));
+  assert('Declares English (en) translation block',             enSrc.includes('export const en: typeof vi ='));
+  assert('Type-enforces parity via "typeof vi"',                enSrc.includes('typeof vi'));
+  assert('Has reel section in translations',                    viSrc.includes('reel:'));
+  assert('Has settings section in translations',                viSrc.includes('settings:'));
+  assert('Has ai section (local fallback templates)',           viSrc.includes('ai:'));
+  assert('Has permissions section',                             viSrc.includes('permissions:'));
+  assert('Has onboarding section',                              viSrc.includes('onboarding:'));
+  assert('backupTitle key exists (4.2 requirement)',             viSrc.includes('backupTitle'));
   assert('useTranslation() hook is exported',                   translationsSrc.includes('export function useTranslation'));
 }
 

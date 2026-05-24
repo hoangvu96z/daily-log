@@ -172,6 +172,30 @@ export async function updateEntryStatus(id: string, status: string, isHighlight:
   );
 }
 
+export async function updateEntry(id: string, patch: Partial<Entry>): Promise<void> {
+  if (Platform.OS === 'web') {
+    const all = await getAllEntries();
+    const idx = all.findIndex((e) => e.id === id);
+    if (idx >= 0) {
+      all[idx] = { ...all[idx], ...patch };
+      localStorage.setItem('ad_entries', JSON.stringify(all));
+    }
+    return;
+  }
+  const database = await getDB();
+  const entries = Object.entries(patch);
+  if (entries.length === 0) return;
+
+  const setClause = entries.map(([k]) => `${k} = ?`).join(', ');
+  const values = entries.map(([_, v]) => {
+    if (typeof v === 'boolean') return v ? 1 : 0;
+    return v ?? null;
+  });
+  values.push(id);
+
+  await database.runAsync(`UPDATE entries SET ${setClause} WHERE id = ?`, values);
+}
+
 export async function deleteEntry(id: string): Promise<void> {
   if (Platform.OS === 'web') {
     const all = await getAllEntries();

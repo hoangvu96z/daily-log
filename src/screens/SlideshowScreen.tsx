@@ -11,6 +11,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Dimensions,
   Image,
   Modal,
@@ -112,14 +113,14 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
     }
   }, [visible]);
 
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${progressValue.value * 100}%`,
+  }));
+
   if (slidableEntries.length === 0) return null;
 
   const entry = slidableEntries[currentIndex];
   const mood = entry.mood ?? 'neutral';
-
-  const progressStyle = useAnimatedStyle(() => ({
-    width: `${progressValue.value * 100}%`,
-  }));
 
   return (
     <Modal
@@ -189,9 +190,10 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
             >
               {/* Mood chip */}
               <View style={ss.moodChipRow}>
-                <View style={[ss.moodChip, { borderColor: moodAccent[mood] }]}>
+                <View style={[ss.moodChip, { borderColor: moodAccent[mood], flexDirection: 'row', alignItems: 'center' }]}>
+                  <MaterialCommunityIcons name={moodEmoji[mood]} size={16} color="#fff" style={{ marginRight: 6 }} />
                   <Text style={ss.moodChipText}>
-                    {moodEmoji[mood]}  {mood.replace('_', ' ')}
+                    {t.mood[mood]}
                   </Text>
                 </View>
                 <Text style={ss.timeText}>{entry.time}</Text>

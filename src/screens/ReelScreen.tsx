@@ -33,11 +33,14 @@ export function ReelScreen({
   const [slideshowTitle, setSlideshowTitle] = useState<string | undefined>();
 
   const now = new Date();
-  const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-  const yearAgoDate = yearAgo.toISOString().slice(0, 10);
-  const yearAgoCount = entries.filter((entry) => entry.date === yearAgoDate).length;
+  const todayMonthDay = now.toISOString().slice(5, 10); // "-MM-DD"
+  const currentYear = now.getFullYear();
+
+  const onThisDayEntries = entries.filter((e) => {
+    return e.status === 'saved' && e.date.endsWith(todayMonthDay) && !e.date.startsWith(String(currentYear));
+  });
+  const hasOnThisDay = onThisDayEntries.length > 0;
   const savedCount = entries.filter((entry) => entry.status === 'saved').length;
-  const hasYearAgoEntries = yearAgoCount > 0;
 
   const openSlideshow = (reelEntries: Entry[], title?: string) => {
     const validEntries = reelEntries.filter((e) => e.status === 'saved' && (e.imageUri || e.text));
@@ -48,21 +51,8 @@ export function ReelScreen({
   };
 
   const openReelSlideshow = (reel: WeeklyReel) => {
-    const reelEntries = entries.filter(
-      (e) => e.date >= reel.startDate && e.date <= reel.endDate,
-    );
+    const reelEntries = reel.entryIds.map(id => entries.find(e => e.id === id)).filter(Boolean) as Entry[];
     openSlideshow(reelEntries, reel.weekId);
-  };
-
-  /** Pick the first entry with an image for a given reel */
-  const getCoverEntry = (reel: WeeklyReel): Entry | undefined => {
-    return entries.find(
-      (e) =>
-        e.date >= reel.startDate &&
-        e.date <= reel.endDate &&
-        e.status === 'saved' &&
-        e.imageUri,
-    );
   };
 
   return (
@@ -75,15 +65,14 @@ export function ReelScreen({
           <Pressable
             style={styles.yearAgoCard}
             onPress={() => {
-              onOpenDate(yearAgoDate);
-              onOpenDay();
+              if (hasOnThisDay) openSlideshow(onThisDayEntries, t.reel.todayLastYear);
             }}
           >
             <View style={styles.yearAgoText}>
               <Text style={styles.sectionKicker}>{t.reel.todayLastYear}</Text>
               <Text style={styles.yearAgoTitle}>
-                {hasYearAgoEntries
-                  ? t.reel.memorableMoments(yearAgoCount)
+                {hasOnThisDay
+                  ? t.reel.memorableMoments(onThisDayEntries.length)
                   : t.reel.noMoments}
               </Text>
             </View>
@@ -120,15 +109,14 @@ export function ReelScreen({
         <Text style={styles.sectionTitle}>{t.reel.yourWeek}</Text>
         {reels.length > 0 ? (
           reels.map((reel, idx) => {
-            const coverEntry = getCoverEntry(reel);
             return (
               <AnimatedCard key={reel.weekId} delay={120 + idx * 60}>
                 <Pressable style={styles.reelCard} onPress={() => openReelSlideshow(reel)}>
                   {/* Thumbnail: real image or colour fallback */}
                   <View style={ss.thumbWrap}>
-                    {coverEntry?.imageUri ? (
+                    {reel.coverImageId ? (
                       <Image
-                        source={{ uri: coverEntry.imageUri }}
+                        source={{ uri: reel.coverImageId }}
                         style={ss.thumbImage}
                         resizeMode="cover"
                       />

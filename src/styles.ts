@@ -387,6 +387,8 @@ const lightStyles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   moodText: {
     color: lightPalette.primary,
@@ -1355,6 +1357,8 @@ const darkStyles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   moodText: {
     color: darkPalette.primary,

@@ -19,7 +19,7 @@ import { AccentColor, Settings, ThemeMode } from '../types';
 import { pickMomentImage } from '../services/imagePicker';
 import { PaywallModal } from '../components/PaywallModal';
 import * as BackgroundFetch from 'expo-background-fetch';
-import { getAutoTrackerStatus, registerAutoTracker, runAutoTrackerOnce, unregisterAutoTracker } from '../skills/autoTracker';
+import { getAutoTrackerStatus, registerAutoTracker, runAutoTrackerOnce, unregisterAutoTracker, refreshAutoSuggestions } from '../skills/autoTracker';
 import { MoodCalendar } from './HomeScreen';
 import { Entry } from '../types';
 import { exportBackup, exportBackupWeb, importBackup, importBackupWeb } from '../skills/backup';
@@ -361,6 +361,33 @@ export function MeScreen({
           onPress={() => updateSetting('language', lang === 'vi' ? 'en' : 'vi')}
         />
       </SettingsCard>
+      {__DEV__ && (
+        <SettingsCard title="Diagnostics (Dev Only)">
+          <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+            <Text style={{ fontSize: 12, color: palette.ink, marginBottom: 4 }}>
+              Last Scan: {settings.last_auto_scan_time ? new Date(Number(settings.last_auto_scan_time)).toLocaleString() : 'Never'}
+            </Text>
+            <Text style={{ fontSize: 12, color: palette.ink, marginBottom: 4 }}>
+              Stats: {settings.last_auto_scan_stats || 'None'}
+            </Text>
+            <Text style={{ fontSize: 12, color: palette.ink, marginBottom: 4 }}>
+              bgFetch Success: {settings.bgFetch_successCount || 0}
+            </Text>
+            <Text style={{ fontSize: 12, color: palette.ink, marginBottom: 4 }}>
+              bgFetch Fail: {settings.bgFetch_failCount || 0}
+            </Text>
+            <Pressable 
+              style={{ marginTop: 12, padding: 10, backgroundColor: palette.primaryContainer, borderRadius: 8, alignItems: 'center' }}
+              onPress={async () => {
+                const created = await refreshAutoSuggestions();
+                Alert.alert('Scan Complete', `Created ${created} new suggestions.`);
+              }}
+            >
+              <Text style={{ color: palette.primary, fontWeight: '700', fontSize: 12 }}>Trigger Manual Scan</Text>
+            </Pressable>
+          </View>
+        </SettingsCard>
+      )}
       <View style={styles.footerLinks}>
         <Text style={styles.footerLink}>{t.settings.privacyPolicy}</Text>
         <Text style={styles.footerLink}>{t.settings.termsOfUse}</Text>

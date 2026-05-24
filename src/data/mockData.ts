@@ -16,12 +16,12 @@ export const defaultSettings: Settings = {
   isPremium: false,
 };
 
-export const moodEmoji: Record<Mood, string> = {
-  very_bad: '😞',
-  bad: '😐',
-  neutral: '🙂',
-  good: '😊',
-  great: '🤩',
+export const moodEmoji: Record<Mood, any> = {
+  very_bad: 'emoticon-cry-outline',
+  bad: 'emoticon-sad-outline',
+  neutral: 'emoticon-neutral-outline',
+  good: 'emoticon-happy-outline',
+  great: 'emoticon-excited-outline',
 };
 
 export const moodLabels: Record<Mood, string> = {
@@ -32,12 +32,12 @@ export const moodLabels: Record<Mood, string> = {
   great: 'Tuyệt',
 };
 
-export const moodOptions: Array<{ value: Mood; label: string; emoji: string }> = [
-  { value: 'very_bad', label: 'Tệ', emoji: '😞' },
-  { value: 'bad', label: 'Chậm', emoji: '😐' },
-  { value: 'neutral', label: 'Bình thường', emoji: '🙂' },
-  { value: 'good', label: 'Ổn', emoji: '😊' },
-  { value: 'great', label: 'Tuyệt', emoji: '🤩' },
+export const moodOptions: Array<{ value: Mood; label: string; emoji: any }> = [
+  { value: 'very_bad', label: 'Tệ', emoji: 'emoticon-cry-outline' },
+  { value: 'bad', label: 'Chậm', emoji: 'emoticon-sad-outline' },
+  { value: 'neutral', label: 'Bình thường', emoji: 'emoticon-neutral-outline' },
+  { value: 'good', label: 'Ổn', emoji: 'emoticon-happy-outline' },
+  { value: 'great', label: 'Tuyệt', emoji: 'emoticon-excited-outline' },
 ];
 
 export const tabItems: TabItem[] = [

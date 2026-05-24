@@ -1,5 +1,7 @@
 import { ComposerMode, Mood } from '../types';
 import { t, getLanguage } from '../i18n/translations';
+import { vi } from '../i18n/vi';
+import { en } from '../i18n/en';
 
 // === AI Service Interface ===
 
@@ -12,6 +14,7 @@ export interface AISuggestionInput {
   locationName?: string;
   calendarText?: string;
   photoLabels?: string[]; // e.g. ["coffee", "laptop", "street"]
+  lang: 'vi' | 'en';
 }
 
 export interface AISuggestionResult {
@@ -115,7 +118,7 @@ export const aiService: AISuggestionService = new GeminiAISuggestionService();
 // === Mock Text Generation ===
 
 function createMockSuggestion(input: AISuggestionInput): string {
-  const dictionary = t();
+  const dictionary = input.lang === 'en' ? en : vi;
   if (input.calendarText) {
     return `${input.calendarText} ${dictionary.ai.calendarSuffix}`;
   }
@@ -158,24 +161,32 @@ function moodText(mood: Mood, dictionary: any): string {
  * - Neutral tone, no psychological analysis, no extreme language
  */
 export function buildAIPrompt(input: AISuggestionInput): string {
+  const lang = input.lang || 'vi';
+  const isEn = lang === 'en';
+
   const parts: string[] = [
-    'Bạn là trợ lý nhật ký riêng tư, chỉ mô tả khoảnh khắc, không phân tích tâm lý.',
+    isEn 
+      ? 'You are a private diary assistant. Describe the moment objectively, without psychological analysis.'
+      : 'Bạn là trợ lý nhật ký riêng tư, chỉ mô tả khoảnh khắc, không phân tích tâm lý.',
     '',
-    'Dữ liệu:',
+    isEn ? 'Data:' : 'Dữ liệu:',
   ];
 
   if (input.time) {
-    parts.push(`- Thời gian: ${input.time} ${input.period || ''}, ${input.dayOfWeek || ''}`);
+    parts.push(`- ${isEn ? 'Time' : 'Thời gian'}: ${input.time} ${input.period || ''}, ${input.dayOfWeek || ''}`);
   }
   if (input.locationName) {
-    parts.push(`- Địa điểm: ${input.locationName}`);
+    parts.push(`- ${isEn ? 'Location' : 'Địa điểm'}: ${input.locationName}`);
   }
   if (input.photoLabels && input.photoLabels.length > 0) {
-    parts.push(`- Mô tả ảnh: ${input.photoLabels.join(', ')}`);
+    parts.push(`- ${isEn ? 'Photo description' : 'Mô tả ảnh'}: ${input.photoLabels.join(', ')}`);
   }
 
   parts.push('');
-  parts.push('Hãy viết 1–2 câu tiếng Việt ngắn gọn (tổng dưới 40 từ) mô tả khoảnh khắc này. Không dùng từ quá kịch tính.');
+  parts.push(isEn 
+    ? 'Write 1-2 short sentences (under 40 words total) describing this moment. Do not use overly dramatic language. Respond in English.'
+    : 'Hãy viết 1–2 câu tiếng Việt ngắn gọn (tổng dưới 40 từ) mô tả khoảnh khắc này. Không dùng từ quá kịch tính.'
+  );
 
   return parts.join('\n');
 }
