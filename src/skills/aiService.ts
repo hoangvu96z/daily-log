@@ -14,8 +14,14 @@ export interface AISuggestionInput {
   photoLabels?: string[]; // e.g. ["coffee", "laptop", "street"]
 }
 
+export interface AISuggestionResult {
+  text: string;
+  isError: boolean;
+}
+
 export interface AISuggestionService {
   generateSuggestion(input: AISuggestionInput): Promise<string>;
+  generateSuggestionWithStatus(input: AISuggestionInput): Promise<AISuggestionResult>;
 }
 
 // === Mock Implementation ===
@@ -30,41 +36,50 @@ export interface AISuggestionService {
  */
 class MockAISuggestionService implements AISuggestionService {
   async generateSuggestion(input: AISuggestionInput): Promise<string> {
-    // Simulate slight delay like a real API would have
+    const result = await this.generateSuggestionWithStatus(input);
+    return result.text;
+  }
+
+  async generateSuggestionWithStatus(input: AISuggestionInput): Promise<AISuggestionResult> {
     await new Promise((resolve) => setTimeout(resolve, 100));
-    return createMockSuggestion(input);
+    try {
+      return { text: createMockSuggestion(input), isError: true };
+    } catch {
+      return { text: t().ai.fallbackText, isError: true };
+    }
   }
 }
 
 class GeminiAISuggestionService implements AISuggestionService {
   async generateSuggestion(input: AISuggestionInput): Promise<string> {
-    // Try to get GEMINI_API_KEY from env or store (if configured)
-    const apiKey = (typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : '') || '';
+    const result = await this.generateSuggestionWithStatus(input);
+    return result.text;
+  }
+
+  async generateSuggestionWithStatus(input: AISuggestionInput): Promise<AISuggestionResult> {
+    const apiKey = (typeof process !== 'undefined' && process.env ? (process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY) : '') || '';
+    
     if (!apiKey) {
-      return createMockSuggestion(input);
+      return this.fallback(input);
     }
 
     const prompt = buildAIPrompt(input);
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-    const apiCall = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
+          contents: [{ parts: [{ text: prompt }] }],
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -76,20 +91,20 @@ class GeminiAISuggestionService implements AISuggestionService {
         throw new Error('Empty API response');
       }
 
-      return text.trim();
-    };
-
-    // Timeout helper (3 seconds)
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('API request timed out')), 3000)
-    );
-
-    try {
-      // Race API call against 3-second timeout
-      return await Promise.race([apiCall(), timeout]);
+      return { text: text.trim(), isError: false };
     } catch (error) {
-      console.warn('[GeminiAISuggestionService] Failed or timed out, falling back to mock:', error);
-      return createMockSuggestion(input);
+      clearTimeout(timeoutId);
+      console.warn('[GeminiAISuggestionService] Failed or timed out, falling back:', error);
+      return this.fallback(input);
+    }
+  }
+
+  private fallback(input: AISuggestionInput): AISuggestionResult {
+    try {
+      return { text: createMockSuggestion(input), isError: true };
+    } catch (mockError) {
+      console.error('[GeminiAISuggestionService] Mock failed, using hardcode string:', mockError);
+      return { text: t().ai.fallbackText, isError: true };
     }
   }
 }

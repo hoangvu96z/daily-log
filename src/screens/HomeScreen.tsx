@@ -178,7 +178,7 @@ export function HomeScreen({
                 ) : (
                   <Pressable style={localStyles.emptyTilePlaceholder} onPress={onOpenDay}>
                     <Ionicons name="sparkles-outline" size={24} color={palette.primary} style={{ opacity: 0.5 }} />
-                    <Text style={localStyles.emptyTileText}>Gợi ý thêm</Text>
+                    <Text style={localStyles.emptyTileText}>{homeT.suggestMore}</Text>
                   </Pressable>
                 )}
               </AnimatedCard>
@@ -188,7 +188,7 @@ export function HomeScreen({
                   <Ionicons name="heart-circle-outline" size={24} color={palette.primary} />
                   <Text style={localStyles.miniPeacePercent}>{peaceIndex}%</Text>
                   <Text style={localStyles.miniPeaceDesc} numberOfLines={2}>
-                    {lang === 'vi' ? 'Chỉ số bình yên' : 'Peace index'}
+                    {homeT.peaceIndex}
                   </Text>
                 </View>
               </AnimatedCard>
@@ -435,7 +435,7 @@ export function MoodCalendar({
           {/* Mode toggle */}
           <View style={{ flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 12, padding: 3, marginBottom: 14, alignSelf: 'center' }}>
             {(['7day', '30day'] as const).map((m) => {
-              const label  = m === '7day' ? (isVi ? '7 ngày' : '7 days') : (isVi ? '30 ngày' : '30 days');
+              const label  = homeT.daysLabel(m === '7day' ? 7 : 30);
               const isActive = mode === m;
               const locked   = m === '30day' && !isPremium;
               return (
@@ -543,7 +543,7 @@ export function MoodCalendar({
             {selectedDateKey && (
               <View style={{ marginTop: 14, padding: 12, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(3,31,65,0.08)', gap: 8 }}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: palette.primary }}>
-                  {isVi ? 'Ngày' : 'Day'} {selectedDateKey.split('-').reverse().join('/')}
+                  {homeT.dayDate(selectedDateKey.split('-').reverse().join('/'))}
                 </Text>
                 {selectedDayEntries.length > 0 ? (
                   <ScrollView style={{ maxHeight: 110 }} nestedScrollEnabled>
@@ -551,7 +551,7 @@ export function MoodCalendar({
                       <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: 'rgba(3,31,65,0.04)' }}>
                         <View style={{ flex: 1, marginRight: 8 }}>
                           <Text style={{ fontSize: 12, color: palette.ink, fontWeight: '500' }} numberOfLines={1}>
-                            {e.time} • {e.text || (isVi ? 'Không có nội dung' : 'No text')}
+                            {e.time} • {e.text || homeT.noText}
                           </Text>
                         </View>
                         <Text style={{ fontSize: 14 }}>{moodEmoji[e.mood]}</Text>
@@ -560,7 +560,7 @@ export function MoodCalendar({
                   </ScrollView>
                 ) : (
                   <Text style={{ fontSize: 12, color: palette.muted, fontStyle: 'italic' }}>
-                    {isVi ? 'Chưa ghi nhật ký ngày này.' : 'No entries for this day.'}
+                    {homeT.noEntriesForDay}
                   </Text>
                 )}
                 <Pressable
@@ -569,8 +569,8 @@ export function MoodCalendar({
                 >
                   <Text style={{ color: selectedDayEntries.length > 0 ? palette.white : palette.primary, fontSize: 12, fontWeight: '700' }}>
                     {selectedDayEntries.length > 0
-                      ? (isVi ? 'Xem chi tiết ngày này' : 'View Day Details')
-                      : (isVi ? 'Đi tới Tab Ngày' : 'Go to Day Tab')}
+                      ? homeT.viewDayDetails
+                      : homeT.goToDayTab}
                   </Text>
                 </Pressable>
               </View>
@@ -582,20 +582,20 @@ export function MoodCalendar({
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Text style={{ fontSize: 13 }}>🕰️</Text>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: palette.primary }}>
-                    {isVi ? 'Năm ngoái hôm này' : 'One year ago today'}
+                    {homeT.oneYearAgo}
                   </Text>
                 </View>
                 {yearAgoEntries.slice(0, 2).map((e) => (
                   <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ fontSize: 13 }}>{moodEmoji[e.mood]}</Text>
                     <Text style={{ fontSize: 12, color: palette.ink, flex: 1 }} numberOfLines={2}>
-                      {e.text || (isVi ? 'Khoảnh khắc không có nội dung' : 'Moment without text')}
+                      {e.text || homeT.momentNoText}
                     </Text>
                   </View>
                 ))}
                 <Pressable onPress={() => { onSelectDate?.(yearAgoKey); onClose(); }}>
                   <Text style={{ fontSize: 11, color: palette.primary, fontWeight: '600', textDecorationLine: 'underline' }}>
-                    {isVi ? `Xem ${yearAgoEntries.length} khoảnh khắc ngày đó →` : `View ${yearAgoEntries.length} moment(s) →`}
+                    {homeT.viewMoments(yearAgoEntries.length)}
                   </Text>
                 </Pressable>
               </View>
@@ -610,15 +610,15 @@ export function MoodCalendar({
                 <Ionicons name="lock-closed-outline" size={18} color={palette.primary} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: palette.primary }}>
-                    {isVi ? 'Mở khóa 30 ngày' : 'Unlock 30-day view'}
+                    {homeT.unlock30Days}
                   </Text>
                   <Text style={{ fontSize: 11, color: palette.muted, marginTop: 2 }}>
-                    {isVi ? 'Heatmap 30 ngày + on-this-day năm trước' : '30-day heatmap & on-this-day insights'}
+                    {homeT.unlock30DaysDesc}
                   </Text>
                 </View>
                 <View style={{ backgroundColor: palette.primary, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}>
                   <Text style={{ color: palette.white, fontSize: 11, fontWeight: '800' }}>
-                    {isVi ? 'Nâng cấp' : 'Upgrade'}
+                    {t.settings.premiumUpgradeBtn}
                   </Text>
                 </View>
               </Pressable>

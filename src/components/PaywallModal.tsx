@@ -51,7 +51,6 @@ export function PaywallModal({ visible, onClose, onSuccess }: PaywallModalProps)
   const [plans, setPlans] = useState<SubscriptionPlan[]>(DEFAULT_PLANS);
 
   const setT = t.settings as any;
-  const isVi = lang === 'vi';
 
   // Fetch live plan prices when modal opens
   useEffect(() => {
@@ -69,26 +68,24 @@ export function PaywallModal({ visible, onClose, onSuccess }: PaywallModalProps)
       const result = await SubscriptionService.shared().purchase(selectedPlan);
       if (result.success) {
         Alert.alert(
-          isVi ? 'Nâng cấp thành công 🎉' : 'Upgrade Successful 🎉',
-          isVi
-            ? 'Chào mừng bạn đến với Daily Log Premium! Các tính năng đã được mở khóa.'
-            : 'Welcome to Daily Log Premium! All features have been unlocked.',
+          setT.paywallUpgradeSuccessTitle,
+          setT.paywallUpgradeSuccessDesc,
           [{ text: 'OK', onPress: () => { onSuccess(); onClose(); } }],
         );
       } else if (!result.cancelled) {
         Alert.alert(
-          isVi ? 'Lỗi thanh toán' : 'Payment Error',
-          result.error ?? (isVi ? 'Đã xảy ra lỗi. Vui lòng thử lại.' : 'Something went wrong. Please try again.'),
+          setT.paywallPaymentError,
+          result.error ?? setT.paywallPaymentErrorDesc,
           [{ text: 'OK' }],
         );
       }
     } catch (err: any) {
-      Alert.alert(isVi ? 'Lỗi' : 'Error', err?.message ?? 'Unknown error', [{ text: 'OK' }]);
+      Alert.alert(setT.paywallPaymentError, err?.message ?? 'Unknown error', [{ text: 'OK' }]);
     } finally {
       setLoading(false);
       setLoadingAction(null);
     }
-  }, [selectedPlan, isVi, onSuccess, onClose]);
+  }, [selectedPlan, setT, onSuccess, onClose]);
 
   const handleRestore = useCallback(async () => {
     setLoading(true);
@@ -97,24 +94,24 @@ export function PaywallModal({ visible, onClose, onSuccess }: PaywallModalProps)
       const result = await SubscriptionService.shared().restorePurchases();
       if (result.success) {
         Alert.alert(
-          isVi ? 'Khôi phục thành công ✅' : 'Restore Successful ✅',
-          isVi ? 'Đã khôi phục giao dịch Premium của bạn.' : 'Your Premium purchase has been successfully restored.',
+          setT.paywallRestoreSuccessTitle,
+          setT.paywallRestoreSuccessDesc,
           [{ text: 'OK', onPress: () => { onSuccess(); onClose(); } }],
         );
       } else {
         Alert.alert(
-          isVi ? 'Không tìm thấy giao dịch' : 'No Purchase Found',
-          result.error ?? (isVi ? 'Không có giao dịch nào để khôi phục.' : 'No previous purchase found to restore.'),
+          setT.paywallNoPurchase,
+          result.error ?? setT.paywallNoPurchaseDesc,
           [{ text: 'OK' }],
         );
       }
     } catch (err: any) {
-      Alert.alert(isVi ? 'Lỗi' : 'Error', err?.message ?? 'Unknown error', [{ text: 'OK' }]);
+      Alert.alert(setT.paywallPaymentError, err?.message ?? 'Unknown error', [{ text: 'OK' }]);
     } finally {
       setLoading(false);
       setLoadingAction(null);
     }
-  }, [isVi, onSuccess, onClose]);
+  }, [setT, onSuccess, onClose]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>

@@ -22,6 +22,7 @@ import { Dimensions,
   TouchableWithoutFeedback,
   View } from 'react-native';
 import { Text } from '../components/AppText';
+import { useTranslation } from '../i18n/translations';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -65,6 +66,7 @@ interface SlideshowScreenProps {
 }
 
 export function SlideshowScreen({ visible, entries, weekTitle, onClose }: SlideshowScreenProps) {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [slideKey, setSlideKey] = useState(0);
@@ -225,7 +227,7 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
               </Text>
               {paused && (
                 <Animated.View entering={FadeIn} exiting={FadeOut} style={ss.pauseBadge}>
-                  <Text style={ss.pauseText}>⏸  Paused</Text>
+                  <Text style={ss.pauseText}>⏸  {t.reel.paused}</Text>
                 </Animated.View>
               )}
             </View>

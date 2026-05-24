@@ -45,17 +45,17 @@ Mục tiêu: Đảm bảo tính năng tự động ghi nhận nhật ký (Auto-t
 
 ### 3. Hardening AI Suggestion (Chống lỗi gọi AI)
 - **File:** `src/skills/aiService.ts`, `src/components/MomentComposer.tsx`
-- [ ] Xử lý API Key an toàn:
-  - [ ] Lấy `GEMINI_API_KEY` từ `.env` (thông qua expo-env hoặc process.env).
-  - [ ] Bắt lỗi nếu API key rỗng -> tự động fallback sang cơ chế local.
-- [ ] Xây dựng Fallback Chain cho Gemini request:
-  - [ ] Step 1: Gọi hàm fetch tới Gemini API kèm theo `AbortController` timeout cứng = 3000ms.
-  - [ ] Step 2: Bắt catch (Lỗi mạng / Timeout / Hết quota) -> Gọi `MockAISuggestionService.generate()` (tạo text dựa trên mood, time, location).
-  - [ ] Step 3: Bắt catch (Lỗi mock) -> Trả về chuỗi hardcode: "Hôm nay có gì muốn ghi lại?".
-- [ ] Nâng cấp UI state của `MomentComposer`:
-  - [ ] State: `loading` -> Hiển thị skeleton hoặc text "Đang phân tích gợi ý AI…".
-  - [ ] State: `success` -> Hiển thị kết quả text kèm nút "Dùng gợi ý".
-  - [ ] State: `error` -> Hiển thị fallback text, cho phép user tự nhập tay.
+- [x] Xử lý API Key an toàn:
+  - [x] Lấy `GEMINI_API_KEY` từ `.env` (thông qua expo-env hoặc process.env).
+  - [x] Bắt lỗi nếu API key rỗng -> tự động fallback sang cơ chế local.
+- [x] Xây dựng Fallback Chain cho Gemini request:
+  - [x] Step 1: Gọi hàm fetch tới Gemini API kèm theo `AbortController` timeout cứng = 3000ms.
+  - [x] Step 2: Bắt catch (Lỗi mạng / Timeout / Hết quota) -> Gọi `MockAISuggestionService.generate()` (tạo text dựa trên mood, time, location).
+  - [x] Step 3: Bắt catch (Lỗi mock) -> Trả về chuỗi hardcode: "Hôm nay có gì muốn ghi lại?".
+- [x] Nâng cấp UI state của `MomentComposer`:
+  - [x] State: `loading` -> Hiển thị skeleton hoặc text "Đang phân tích gợi ý AI…".
+  - [x] State: `success` -> Hiển thị kết quả text kèm nút "Dùng gợi ý".
+  - [x] State: `error` -> Hiển thị fallback text, cho phép user tự nhập tay.
 
 ### 4. Xử lý Vòng đời Entry (Lưu / Bỏ / Sửa / Xóa)
 - **File:** `src/memory/database.ts`, `src/components/TimelineCard.tsx`, `src/screens/DayScreen.tsx`, `src/components/MomentComposer.tsx`

@@ -189,7 +189,7 @@ export function MeScreen({
               </Text>
             </View>
             <Text style={{ color: palette.white, opacity: 0.85, fontSize: 11.5 }}>
-              {lang === 'vi' ? 'Mở khóa AI gợi ý, backup và theme cao cấp' : 'Unlock AI writing prompts, backup & customization'}
+              {t.settings.premiumUpgradeDesc}
             </Text>
           </View>
           <View style={{
@@ -199,7 +199,7 @@ export function MeScreen({
             borderRadius: 12,
           }}>
             <Text style={{ color: palette.primary, fontSize: 12, fontWeight: '800' }}>
-              {lang === 'vi' ? 'Nâng cấp' : 'Upgrade'}
+              {t.settings.premiumUpgradeBtn}
             </Text>
           </View>
         </Pressable>
@@ -230,10 +230,10 @@ export function MeScreen({
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ color: palette.ink, fontSize: 13, fontWeight: '800' }}>
-              {lang === 'vi' ? 'Bạn đang sở hữu Premium!' : 'Premium Account Active!'}
+              {t.settings.premiumActiveTitle}
             </Text>
             <Text style={{ color: palette.muted, fontSize: 11 }}>
-              {lang === 'vi' ? 'Đã mở khóa toàn bộ tính năng cao cấp' : 'All premium features are fully unlocked'}
+              {t.settings.premiumActiveDesc}
             </Text>
           </View>
         </View>
@@ -248,12 +248,12 @@ export function MeScreen({
         <SettingsRow
           icon="keypad-outline"
           title={t.settings.pinTitle}
-          subtitle={settings.pinSet ? (settings.pinEnabled ? 'Đang bật PIN' : 'Đã tạo PIN, đang tắt') : t.settings.pinSubtitle}
+          subtitle={settings.pinSet ? (settings.pinEnabled ? t.settings.pinEnabledState : t.settings.pinDisabledState) : t.settings.pinSubtitle}
           onPress={() => navigation?.navigate?.('PinSetup')}
         />
         {settings.pinSet && (
           <ToggleRow
-            title="Dùng PIN để khóa app"
+            title={t.settings.usePinLock}
             value={Boolean(settings.pinEnabled)}
             onValueChange={(value) => updateSetting('pinEnabled', value)}
           />
@@ -265,7 +265,7 @@ export function MeScreen({
         <SettingsRow
           icon="shield-checkmark-outline"
           title={t.settings.privacyTitle}
-          subtitle={lang === 'vi' ? 'Tìm hiểu cách dữ liệu của bạn được bảo mật' : 'Learn how your data is secured'}
+          subtitle={t.settings.privacySecuredSub}
           onPress={() => setPrivacyVisible(true)}
         />
         <ToggleRow
@@ -293,7 +293,7 @@ export function MeScreen({
           icon="cloud-outline"
           title={t.settings.backupTitle}
           subtitle={settings.isPremium
-            ? (lang === 'vi' ? 'Xuất / nhập file backup mã hoá' : 'Export / import encrypted backup')
+            ? t.settings.backupPremiumSubtitle
             : t.settings.backupSubtitle}
           onPress={() => {
             if (!settings.isPremium) {
@@ -453,7 +453,7 @@ export function MeScreen({
       <BackupDialog
         visible={backupVisible}
         working={backupWorking}
-        lang={lang}
+        t={t}
         onClose={() => setBackupVisible(false)}
         onExport={async () => {
           setBackupWorking(true);
@@ -462,15 +462,13 @@ export function MeScreen({
           setBackupVisible(false);
           if (result.success) {
             Alert.alert(
-              lang === 'vi' ? 'Xuất thành công' : 'Export successful',
-              lang === 'vi'
-                ? `Đã xuất ${result.entryCount ?? 0} entry vào file backup.`
-                : `Exported ${result.entryCount ?? 0} entries to backup file.`,
+              t.settings.exportSuccess,
+              t.settings.exportSuccessDesc(result.entryCount ?? 0),
               [{ text: 'OK' }],
             );
           } else {
             Alert.alert(
-              lang === 'vi' ? 'Lỗi xuất backup' : 'Export error',
+              t.settings.exportError,
               result.error ?? 'Unknown error',
               [{ text: 'OK' }],
             );
@@ -483,15 +481,13 @@ export function MeScreen({
           setBackupVisible(false);
           if (result.success) {
             Alert.alert(
-              lang === 'vi' ? 'Khôi phục thành công' : 'Restore successful',
-              lang === 'vi'
-                ? `Đã khôi phục ${result.entryCount ?? 0} entry từ file backup.\nVui lòng khởi động lại ứng dụng để thấy dữ liệu mới.`
-                : `Restored ${result.entryCount ?? 0} entries from backup.\nPlease restart the app to see the restored data.`,
+              t.settings.restoreSuccess,
+              t.settings.restoreSuccessDesc(result.entryCount ?? 0),
               [{ text: 'OK' }],
             );
           } else if (result.error && result.error !== 'No file selected') {
             Alert.alert(
-              lang === 'vi' ? 'Lỗi khôi phục' : 'Restore error',
+              t.settings.restoreError,
               result.error,
               [{ text: 'OK' }],
             );
@@ -921,19 +917,18 @@ function NotificationsDialog({
 function BackupDialog({
   visible,
   working,
-  lang,
+  t,
   onClose,
   onExport,
   onImport,
 }: {
   visible: boolean;
   working: boolean;
-  lang: string;
+  t: any;
   onClose: () => void;
   onExport: () => void;
   onImport: () => void;
 }) {
-  const isVi = lang === 'vi';
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.dialogScrim}>
@@ -950,7 +945,7 @@ function BackupDialog({
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Text style={styles.dialogTitle}>
-                  {isVi ? 'Sao lưu & Khôi phục' : 'Backup & Restore'}
+                  {t.settings.backupTitle}
                 </Text>
                 <View style={{
                   backgroundColor: palette.primary,
@@ -965,9 +960,7 @@ function BackupDialog({
           </View>
 
           <Text style={[styles.dialogText, { marginBottom: 16 }]}>
-            {isVi
-              ? 'File backup được mã hoá nhẹ để bảo vệ dữ liệu riêng tư của bạn.'
-              : 'Backup files are obfuscated to protect your private data.'}
+            {t.settings.backupEncryption}
           </Text>
 
           <View style={styles.themeOptionList}>
@@ -979,10 +972,10 @@ function BackupDialog({
               <Ionicons name="cloud-upload-outline" size={20} color={palette.primary} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.themeOptionText}>
-                  {isVi ? 'Xuất backup' : 'Export backup'}
+                  {t.settings.exportBackup}
                 </Text>
                 <Text style={{ fontSize: 11, color: palette.muted, marginTop: 1 }}>
-                  {isVi ? 'Lưu file .dailylog → iCloud / Drive / AirDrop' : 'Save .dailylog → iCloud / Drive / AirDrop'}
+                  {t.settings.exportBackupDesc}
                 </Text>
               </View>
               {working && <Ionicons name="reload-outline" size={16} color={palette.primary} />}
@@ -996,10 +989,10 @@ function BackupDialog({
               <Ionicons name="cloud-download-outline" size={20} color={palette.primary} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.themeOptionText}>
-                  {isVi ? 'Nhập & khôi phục' : 'Import & restore'}
+                  {t.settings.importBackup}
                 </Text>
                 <Text style={{ fontSize: 11, color: palette.muted, marginTop: 1 }}>
-                  {isVi ? 'Chọn file .dailylog để khôi phục dữ liệu' : 'Pick a .dailylog file to restore data'}
+                  {t.settings.importBackupDesc}
                 </Text>
               </View>
             </Pressable>
@@ -1014,15 +1007,13 @@ function BackupDialog({
           }}>
             <Ionicons name="warning-outline" size={16} color={palette.red} style={{ marginTop: 1 }} />
             <Text style={{ fontSize: 12, color: palette.red, flex: 1, lineHeight: 17 }}>
-              {isVi
-                ? 'Khôi phục sẽ thay thế toàn bộ dữ liệu hiện tại. Hãy xuất backup trước nếu cần.'
-                : 'Restoring will replace all current data. Export a backup first if needed.'}
+              {t.settings.importWarning}
             </Text>
           </View>
 
           <Pressable style={styles.dialogSecondary} onPress={onClose}>
             <Text style={styles.dialogSecondaryText}>
-              {isVi ? 'Đóng' : 'Close'}
+              {t.common.close}
             </Text>
           </Pressable>
         </View>

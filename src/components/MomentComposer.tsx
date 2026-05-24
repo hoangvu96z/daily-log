@@ -30,7 +30,7 @@ export function MomentComposer({
   const imageUri = pickedImageUri || draft.imageUri;
 
   const [suggestion, setSuggestion] = useState('');
-  const [loadingSuggestion, setLoadingSuggestion] = useState(false);
+  const [suggestionStatus, setSuggestionStatus] = useState<'loading' | 'success' | 'error'>('loading');
 
   useEffect(() => {
     if (!visible) return;
@@ -38,7 +38,7 @@ export function MomentComposer({
     let active = true;
 
     async function fetchSuggestion() {
-      setLoadingSuggestion(true);
+      setSuggestionStatus('loading');
 
       // Determine period
       let period: string | undefined = undefined;
@@ -66,14 +66,15 @@ export function MomentComposer({
       };
 
       try {
-        const text = await aiService.generateSuggestion(input);
+        const result = await aiService.generateSuggestionWithStatus(input);
         if (active) {
-          setSuggestion(text);
-          setLoadingSuggestion(false);
+          setSuggestion(result.text);
+          setSuggestionStatus(result.isError ? 'error' : 'success');
         }
       } catch (err) {
         if (active) {
-          setLoadingSuggestion(false);
+          setSuggestion(t.ai.fallbackText);
+          setSuggestionStatus('error');
         }
       }
     }
@@ -167,27 +168,37 @@ export function MomentComposer({
             onChangeText={setNote}
           />
           {suggestionVisible && (
-            <View style={styles.aiCard}>
+            <View style={[styles.aiCard, suggestionStatus === 'error' && { backgroundColor: '#ffecec' }]}>
               <View style={styles.aiHeader}>
-                <Ionicons name="sparkles-outline" size={17} color={palette.green} />
-                <Text style={styles.aiTitle}>{t.composer.aiSuggestionTitle}</Text>
+                <Ionicons 
+                  name={suggestionStatus === 'error' ? 'alert-circle-outline' : 'sparkles-outline'} 
+                  size={17} 
+                  color={suggestionStatus === 'error' ? '#cc0000' : palette.green} 
+                />
+                <Text style={[styles.aiTitle, suggestionStatus === 'error' && { color: '#cc0000' }]}>
+                  {suggestionStatus === 'error' ? t.composer.aiSuggestionErrorTitle : t.composer.aiSuggestionTitle}
+                </Text>
               </View>
-              {loadingSuggestion ? (
+              {suggestionStatus === 'loading' ? (
                 <View style={{ paddingVertical: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>
                   <ActivityIndicator size="small" color={palette.green} />
                   <Text style={{ color: palette.muted, fontSize: 13 }}>
-                    {lang === 'en' ? 'Generating suggestion...' : 'Đang tạo gợi ý...'}
+                    {t.composer.generatingSuggestion}
                   </Text>
                 </View>
               ) : (
                 <>
                   <Text style={styles.aiText}>{suggestion}</Text>
                   <View style={styles.miniActionRow}>
-                    <Pressable style={styles.miniPrimary} onPress={() => setNote(suggestion)}>
-                      <Text style={styles.miniPrimaryText}>{t.composer.useSuggestion}</Text>
+                    <Pressable style={[styles.miniPrimary, suggestionStatus === 'error' && { backgroundColor: '#ffcccc' }]} onPress={() => setNote(suggestion)}>
+                      <Text style={[styles.miniPrimaryText, suggestionStatus === 'error' && { color: '#cc0000' }]}>
+                        {suggestionStatus === 'error' ? t.composer.useFallback : t.composer.useSuggestion}
+                      </Text>
                     </Pressable>
-                    <Pressable style={styles.miniSecondary} onPress={() => setSuggestionVisible(false)}>
-                      <Text style={styles.miniSecondaryText}>{t.composer.ignoreSuggestion}</Text>
+                    <Pressable style={[styles.miniSecondary, suggestionStatus === 'error' && { backgroundColor: '#ffffff', borderColor: '#ffcccc' }]} onPress={() => setSuggestionVisible(false)}>
+                      <Text style={[styles.miniSecondaryText, suggestionStatus === 'error' && { color: '#cc0000' }]}>
+                        {t.composer.ignoreSuggestion}
+                      </Text>
                     </Pressable>
                   </View>
                 </>
