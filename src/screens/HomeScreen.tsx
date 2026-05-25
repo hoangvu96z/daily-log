@@ -12,6 +12,9 @@ import { Entry } from '../types';
 import { HighlightTile } from '../components/HighlightTile';
 import { useFocusEffect } from '@react-navigation/native';
 import { ensureAutoTrackerFreshness } from '../skills/autoTracker';
+import { getLocalDateString } from '../utils/dateUtils';
+import { mostFrequent } from '../utils/arrayUtils';
+import { useJournalStore } from '../memory/store';
 
 enum SentimentType {
   POSITIVE = 'positive',
@@ -70,14 +73,16 @@ export function HomeScreen({
   });
 
   const sortedDates = [...new Set(entries.map(e => e.date))].sort((a, b) => b.localeCompare(a));
-  const displayDate = sortedDates.length > 0 ? sortedDates[0] : new Date().toISOString().slice(0, 10);
+  const displayDate = sortedDates.length > 0 ? sortedDates[0] : getLocalDateString();
   const highlights = entries
     .filter((entry) => entry.date === displayDate)
     .sort((a, b) => b.time.localeCompare(a.time))
     .slice(0, 4);
 
-  const todayDate = new Date().toISOString().slice(0, 10);
-  const yesterdayDate = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const todayDate = getLocalDateString();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayDate = getLocalDateString(yesterday);
   let dynamicKicker = t.home.kicker;
   if (displayDate === todayDate) {
     dynamicKicker = lang === 'vi' ? 'Hôm nay của bạn' : 'Your Today';
@@ -173,7 +178,7 @@ export function HomeScreen({
                 {highlights[1] ? (
                   <HighlightTile entry={highlights[1]} onPress={() => { onSelectDate?.(highlights[1].date, highlights[1].id); onOpenDay(); }} />
                 ) : (
-                  <Pressable style={localStyles.emptyTilePlaceholder} onPress={() => { onSelectDate?.(displayDate); onOpenDay(); }}>
+                  <Pressable style={localStyles.emptyTilePlaceholder} onPress={() => { useJournalStore.getState().setSelectedDate(displayDate); useJournalStore.getState().setSheetVisible(true); }}>
                     <Ionicons name="add-circle-outline" size={24} color={palette.primary} style={{ opacity: 0.5 }} />
                     <Text style={localStyles.emptyTileText}>{t.home.emptyYesterday}</Text>
                   </Pressable>
@@ -187,7 +192,7 @@ export function HomeScreen({
                 {highlights[2] ? (
                   <HighlightTile entry={highlights[2]} onPress={() => { onSelectDate?.(highlights[2].date, highlights[2].id); onOpenDay(); }} />
                 ) : (
-                  <Pressable style={localStyles.emptyTilePlaceholder} onPress={() => { onSelectDate?.(displayDate); onOpenDay(); }}>
+                  <Pressable style={localStyles.emptyTilePlaceholder} onPress={() => { useJournalStore.getState().setSelectedDate(displayDate); useJournalStore.getState().setSheetVisible(true); }}>
                     <Ionicons name="sparkles-outline" size={24} color={palette.primary} style={{ opacity: 0.5 }} />
                     <Text style={localStyles.emptyTileText}>{homeT.suggestMore}</Text>
                   </Pressable>
@@ -350,7 +355,7 @@ export function MoodCalendar({
 
   useEffect(() => {
     if (visible) {
-      setSelectedDateKey(new Date().toISOString().slice(0, 10));
+      setSelectedDateKey(getLocalDateString());
       setMode(isPremium ? '30day' : '7day');
     }
   }, [visible, isPremium]);
@@ -367,7 +372,7 @@ export function MoodCalendar({
   const days = Array.from({ length: dayCount }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - (dayCount - 1 - i));
-    const dateKey = date.toISOString().slice(0, 10);
+    const dateKey = getLocalDateString(date);
     const dayEntries = entries.filter(e => e.date === dateKey && e.status === 'saved');
     const dominantMood = dayEntries.length > 0 ? mostFrequent(dayEntries.map(e => e.mood)) : null;
     return {
@@ -376,7 +381,7 @@ export function MoodCalendar({
       dayNum: date.getDate(),
       count: dayEntries.length,
       mood: dominantMood,
-      isToday: dateKey === new Date().toISOString().slice(0, 10),
+      isToday: dateKey === getLocalDateString(),
     };
   });
 
@@ -396,7 +401,7 @@ export function MoodCalendar({
   // On-this-day (year ago)
   const yearAgo = new Date();
   yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-  const yearAgoKey     = yearAgo.toISOString().slice(0, 10);
+  const yearAgoKey     = getLocalDateString(yearAgo);
   const yearAgoEntries = entries.filter(e => e.date === yearAgoKey && e.status === 'saved');
 
   const selectedDayEntries = selectedDateKey
@@ -674,14 +679,7 @@ export function MoodCalendar({
   );
 }
 
-function mostFrequent<T>(arr: T[]): T | null {
-  if (arr.length === 0) return null;
-  const freq = new Map<T, number>();
-  arr.forEach(v => freq.set(v, (freq.get(v) ?? 0) + 1));
-  let best: T = arr[0]; let max = 0;
-  freq.forEach((count, key) => { if (count > max) { max = count; best = key; } });
-  return best;
-}
+
 function DailyInsightDialog({ visible, entries, onClose, t }: { visible: boolean; entries: Entry[]; onClose: () => void; t: any }) {
   const homeT = t.home as any;
   return (

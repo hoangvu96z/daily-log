@@ -10,6 +10,7 @@ import { palette } from '../theme/palette';
 import { ComposerDraft, Entry, Mood } from '../types';
 import { ImagePlaceholder } from './ImagePlaceholder';
 import { aiService, AISuggestionInput } from '../skills/aiService';
+import { getLocalDateString } from '../utils/dateUtils';
 
 const moodIconColors: Record<Mood, string> = {
   very_bad: '#E53935', // Red
@@ -128,7 +129,7 @@ export function MomentComposer({
     } else {
       onSave({
         id: Date.now().toString(),
-        date: draft?.prefillDate || now.toISOString().slice(0, 10),
+        date: draft?.prefillDate || getLocalDateString(now),
         time: draft?.prefillTime || now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false }),
         mood,
         text: note || suggestion,

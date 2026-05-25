@@ -5,6 +5,7 @@ import { deleteAllEntries, deleteEntry as dbDeleteEntry, updateEntry as dbUpdate
 import { hasPinCode } from './secureStore';
 import { generateSeedEntries, isSeedEntry } from '../data/seedEntries';
 import { generateWeeklyReels } from '../skills/reels';
+import { getLocalDateString } from '../utils/dateUtils';
 
 // === Store Interface ===
 interface JournalState {
@@ -25,6 +26,7 @@ interface JournalState {
   saveSuggestion: (id: string) => Promise<void>;
   discardSuggestion: (id: string) => Promise<void>;
   resetEntries: () => Promise<void>;
+  restoreFromBackup: (entries: Entry[], settings: Partial<Settings>, reels: WeeklyReel[]) => Promise<void>;
   setEntries: (entries: Entry[]) => void;
   updateEntry: (id: string, patch: Partial<Entry>) => Promise<void>;
   deleteEntry: (id: string) => Promise<void>;
@@ -145,6 +147,20 @@ export const useJournalStore = create<JournalState>((set) => ({
     await deleteAllEntries();
     set({ entries: [] });
   },
+  restoreFromBackup: async (entries, settings, reels) => {
+    await deleteAllEntries();
+    for (const e of entries) {
+      await insertEntry(e);
+    }
+    for (const [k, v] of Object.entries(settings)) {
+      await saveSetting(k, v as any);
+    }
+    set((state) => ({
+      entries,
+      settings: { ...state.settings, ...(settings as Settings) },
+      reels,
+    }));
+  },
   setEntries: (entries) => set({ entries }),
   updateEntry: async (id, patch) => {
     await dbUpdateEntry(id, patch);
@@ -180,7 +196,7 @@ export const useJournalStore = create<JournalState>((set) => ({
   // UI State
   activeTab: 'home',
   setActiveTab: (tab) => set({ activeTab: tab }),
-  selectedDate: new Date().toISOString().slice(0, 10),
+  selectedDate: getLocalDateString(),
   setSelectedDate: (date) => set({ selectedDate: date }),
   sheetVisible: false,
   setSheetVisible: (visible) => set({ sheetVisible: visible }),

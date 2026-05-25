@@ -14,6 +14,7 @@ import { ensureAutoTrackerFreshness } from '../skills/autoTracker';
 import { useJournalStore } from '../memory/store';
 import { MomentComposer } from '../components/MomentComposer';
 import { SlideOutRight, LinearTransition } from 'react-native-reanimated';
+import { getLocalDateString } from '../utils/dateUtils';
 
 export function DayScreen({
   entries,
@@ -127,7 +128,7 @@ export function DayScreen({
 function shiftDate(date: string, days: number) {
   const next = new Date(`${date}T12:00:00`);
   next.setDate(next.getDate() + days);
-  return next.toISOString().slice(0, 10);
+  return getLocalDateString(next);
 }
 
 function formatDateTitle(date: string, locale: string) {

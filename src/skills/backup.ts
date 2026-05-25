@@ -20,6 +20,9 @@
 import { Platform, Share } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
+import { zip, unzip } from 'react-native-zip-archive';
+import { useJournalStore } from '../memory/store';
+import { getLocalDateString } from '../utils/dateUtils';
 import {
   deleteAllEntries,
   getAllEntries,
@@ -92,57 +95,67 @@ export async function exportBackup(): Promise<BackupResult> {
       return { success: false, error: 'Backup not supported on web' };
     }
 
-    // 1. Gather data
     const [entries, reels, settings] = await Promise.all([
       getAllEntries(),
       getAllReels(),
       loadSettings(),
     ]);
 
-    // Omit sensitive fields we don't want in backup (PIN hash is in SecureStore separately)
     const safeSettings: Partial<Settings> = { ...settings };
     delete (safeSettings as any).pinCodeHash;
 
-    // 2. Build bundle
+    const stagingDir = FileSystem.cacheDirectory + 'backup_staging/';
+    const mediaDir = stagingDir + 'media/';
+    await FileSystem.deleteAsync(stagingDir, { idempotent: true });
+    await FileSystem.makeDirectoryAsync(mediaDir, { intermediates: true });
+
+    const bundleEntries = JSON.parse(JSON.stringify(entries));
+    for (const entry of bundleEntries) {
+      if (entry.imageUri && entry.imageUri.startsWith('file://')) {
+        const filename = entry.imageUri.split('/').pop() || `${entry.id}.jpg`;
+        try {
+          await FileSystem.copyAsync({ from: entry.imageUri, to: mediaDir + filename });
+          entry.imageUri = 'media/' + filename;
+        } catch (e) {
+          console.warn(`Backup image failed for ${entry.id}`, e);
+        }
+      }
+    }
+
     const bundle: BackupBundle = {
       magic: BACKUP_MAGIC,
       exportedAt: new Date().toISOString(),
       version: 1,
-      entries,
+      entries: bundleEntries,
       reels,
       settings: safeSettings,
-      mediaIndex: {}, // Media URIs are local paths; we store metadata only for now
+      mediaIndex: {},
     };
 
-    // 3. Serialise + obfuscate
     const plainJson = JSON.stringify(bundle);
     const obfuscated = obfuscate(plainJson);
-
-    // 4. Write to cache dir
-    const fileName = `daily_log_backup_${new Date()
-      .toISOString()
-      .slice(0, 10)}.dailylog`;
-    const filePath = `${FileSystem.cacheDirectory}${fileName}`;
-    await FileSystem.writeAsStringAsync(filePath, obfuscated, {
+    await FileSystem.writeAsStringAsync(stagingDir + 'metadata.json', obfuscated, {
       encoding: FileSystem.EncodingType.UTF8,
     });
 
-    // 5. Share via system share-sheet
+    const fileName = `daily_log_backup_${getLocalDateString()}.dailylog`;
+    const zipPath = `${FileSystem.cacheDirectory}${fileName}`;
+    await FileSystem.deleteAsync(zipPath, { idempotent: true });
+    
+    await zip(stagingDir, zipPath);
+    await FileSystem.deleteAsync(stagingDir, { idempotent: true });
+
     const shared = await Share.share({
       title: 'Daily Log Backup',
       message: Platform.OS === 'android' ? `Backup created: ${fileName}` : undefined,
-      url: filePath, // iOS share sheet picks up the file
+      url: zipPath,
     });
 
     if (shared.action === Share.dismissedAction) {
       return { success: false, error: 'Share cancelled' };
     }
 
-    return {
-      success: true,
-      filePath,
-      entryCount: entries.length,
-    };
+    return { success: true, filePath: zipPath, entryCount: entries.length };
   } catch (err: any) {
     console.error('[backup] exportBackup error:', err);
     return { success: false, error: err?.message ?? 'Unknown error' };
@@ -161,9 +174,8 @@ export async function importBackup(): Promise<BackupResult> {
       return { success: false, error: 'Restore not supported on web' };
     }
 
-    // 1. Let user pick file
     const result = await DocumentPicker.getDocumentAsync({
-      type: '*/*',          // no MIME filter — .dailylog is custom
+      type: '*/*',
       copyToCacheDirectory: true,
       multiple: false,
     });
@@ -172,20 +184,31 @@ export async function importBackup(): Promise<BackupResult> {
       return { success: false, error: 'No file selected' };
     }
 
-    const asset = result.assets[0];
+    const fileUri = result.assets[0].uri;
+    const extractDir = FileSystem.cacheDirectory + 'backup_extract/';
+    await FileSystem.deleteAsync(extractDir, { idempotent: true });
+    await FileSystem.makeDirectoryAsync(extractDir, { intermediates: true });
 
-    // 2. Read file
-    const raw = await FileSystem.readAsStringAsync(asset.uri, {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
+    try {
+      await unzip(fileUri, extractDir);
+    } catch (e) {
+      // Fallback: If it's not a zip, maybe it's just the old JSON obfuscated file
+      await FileSystem.copyAsync({ from: fileUri, to: extractDir + 'metadata.json' });
+    }
 
-    // 3. Deobfuscate + parse
+    const metadataPath = extractDir + 'metadata.json';
+    const metadataInfo = await FileSystem.getInfoAsync(metadataPath);
+    if (!metadataInfo.exists) {
+      return { success: false, error: 'Invalid backup format' };
+    }
+
+    const raw = await FileSystem.readAsStringAsync(metadataPath, { encoding: FileSystem.EncodingType.UTF8 });
+    
     let bundle: BackupBundle;
     try {
       const plain = deobfuscate(raw);
       bundle = JSON.parse(plain) as BackupBundle;
     } catch {
-      // Try treating it as plain JSON (unobfuscated / older format)
       try {
         bundle = JSON.parse(raw) as BackupBundle;
       } catch {
@@ -193,45 +216,58 @@ export async function importBackup(): Promise<BackupResult> {
       }
     }
 
-    // 4. Validate magic
     if (bundle.magic !== BACKUP_MAGIC) {
       return { success: false, error: 'Not a valid Daily Log backup file' };
     }
 
-    // 5. Wipe existing data
-    await deleteAllEntries();
-
-    // 6. Restore entries
-    for (const entry of bundle.entries ?? []) {
-      await insertEntry(entry);
+    const docDir = FileSystem.documentDirectory;
+    const newEntries = bundle.entries ?? [];
+    
+    for (const entry of newEntries) {
+      if (entry.imageUri && entry.imageUri.startsWith('media/')) {
+        const filename = entry.imageUri.replace('media/', '');
+        const sourcePath = extractDir + entry.imageUri;
+        const destPath = docDir + filename;
+        
+        try {
+          const info = await FileSystem.getInfoAsync(sourcePath);
+          if (info.exists) {
+            await FileSystem.copyAsync({ from: sourcePath, to: destPath });
+            entry.imageUri = destPath;
+          } else {
+            entry.imageUri = undefined;
+          }
+        } catch (e) {
+          entry.imageUri = undefined;
+        }
+      }
     }
 
-    // 7. Restore reels
+    await FileSystem.deleteAsync(extractDir, { idempotent: true });
+
+    // Wipe and restore Database
+    await deleteAllEntries();
+    for (const entry of newEntries) {
+      await insertEntry(entry);
+    }
     for (const reel of bundle.reels ?? []) {
       await insertReel(reel);
     }
 
-    // 8. Restore non-sensitive settings (theme, language, accentColor, etc.)
     const SAFE_SETTINGS_KEYS: Array<keyof Settings> = [
-      'theme',
-      'language',
-      'accentColor',
-      'autoTrackingEnabled',
-      'allowPhotos',
-      'allowLocation',
-      'allowCalendar',
+      'theme', 'language', 'accentColor', 'autoTrackingEnabled',
+      'allowPhotos', 'allowLocation', 'allowCalendar',
     ];
     for (const key of SAFE_SETTINGS_KEYS) {
       const value = bundle.settings?.[key];
-      if (value !== undefined) {
-        await saveSetting(key, value);
-      }
+      if (value !== undefined) await saveSetting(key, value);
     }
 
-    return {
-      success: true,
-      entryCount: bundle.entries?.length ?? 0,
-    };
+    // Refresh Zustand store to reflect UI immediately
+    const store = useJournalStore.getState();
+    await store.restoreFromBackup(newEntries, bundle.settings, bundle.reels ?? []);
+
+    return { success: true, entryCount: newEntries.length };
   } catch (err: any) {
     console.error('[backup] importBackup error:', err);
     return { success: false, error: err?.message ?? 'Unknown error' };
@@ -268,7 +304,7 @@ export async function exportBackupWeb(): Promise<BackupResult> {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `daily_log_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `daily_log_backup_${getLocalDateString()}.json`;
     a.click();
     URL.revokeObjectURL(url);
 

@@ -1,4 +1,5 @@
 import * as Calendar from 'expo-calendar';
+import { getLocalDateString } from '../utils/dateUtils';
 import { Platform } from 'react-native';
 import { CalendarEventDraft, PermissionState } from '../types';
 
@@ -55,7 +56,7 @@ export function calendarEventToDraft(event: CalendarEventDraft) {
     calendarEventId: event.id,
     calendarText: `${event.title}${detail}`,
     locationName: event.location,
-    prefillDate: start.toISOString().slice(0, 10),
+    prefillDate: getLocalDateString(start),
     prefillTime,
   };
 }

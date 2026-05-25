@@ -19,10 +19,11 @@ import { ReelScreen } from '../screens/ReelScreen';
 import { pickMomentImage } from '../services/imagePicker';
 import { calendarEventToDraft, getTodayCalendarEvents } from '../skills/calendar';
 import { requestLocationAccess } from '../skills/permissions';
-import { CalendarEventDraft, ComposerDraft, ComposerMode, Entry } from '../types';
+import { CalendarEventDraft, ComposerDraft, ComposerMode, Entry, PermissionExplanationModalProps } from '../types';
 import { palette } from '../theme/palette';
 import { styles } from '../styles';
 import { PaywallModal } from '../components/PaywallModal';
+import { getLocalDateString } from '../utils/dateUtils';
 
 const Tab = createBottomTabNavigator();
 
@@ -39,12 +40,13 @@ export function TabNavigator() {
   } = useJournalStore();
 
   const { t, lang } = useTranslation();
-  const [sheetVisible, setSheetVisible] = useState(false);
+  const sheetVisible = useJournalStore(state => state.sheetVisible);
+  const setSheetVisible = useJournalStore(state => state.setSheetVisible);
   const [composerVisible, setComposerVisible] = useState(false);
   const [calendarPickerVisible, setCalendarPickerVisible] = useState(false);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEventDraft[]>([]);
   const [composerDraft, setComposerDraft] = useState<ComposerDraft>({ mode: 'note' });
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [paywallVisible, setPaywallVisible] = useState(false);
 
@@ -169,7 +171,7 @@ export function TabNavigator() {
 
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayDate = yesterday.toISOString().slice(0, 10);
+  const yesterdayDate = getLocalDateString(yesterday);
 
   return (
     <>

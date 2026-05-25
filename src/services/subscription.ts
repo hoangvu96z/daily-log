@@ -25,6 +25,12 @@
  */
 
 import { Platform } from 'react-native';
+import Purchases, { PurchasesPackage } from 'react-native-purchases';
+
+// IMPORTANT: Replace these with your actual RevenueCat Public API Keys later
+const REVENUECAT_API_KEY_IOS = 'appl_YOUR_IOS_KEY_HERE';
+const REVENUECAT_API_KEY_ANDROID = 'goog_YOUR_ANDROID_KEY_HERE';
+const ENTITLEMENT_ID = 'premium';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -158,47 +164,90 @@ class SimulatedPurchaseService implements ISubscriptionService {
 // ─── Native service placeholder (RevenueCat / expo-iap) ───────────────────────
 
 class NativePurchaseService implements ISubscriptionService {
-  /**
-   * TODO: Replace with RevenueCat SDK:
-   *
-   * import Purchases from 'react-native-purchases';
-   * Purchases.configure({ apiKey: REVENUECAT_IOS_KEY });
-   */
+  private isConfigured = false;
+
+  private async ensureConfigured() {
+    if (this.isConfigured) return;
+    if (Platform.OS === 'ios') {
+      Purchases.configure({ apiKey: REVENUECAT_API_KEY_IOS });
+    } else if (Platform.OS === 'android') {
+      Purchases.configure({ apiKey: REVENUECAT_API_KEY_ANDROID });
+    }
+    this.isConfigured = true;
+  }
 
   async getAvailablePlans(): Promise<SubscriptionPlan[]> {
-    // Fallback to simulated plans until RevenueCat is integrated
+    try {
+      await this.ensureConfigured();
+      const offerings = await Purchases.getOfferings();
+      if (offerings.current && offerings.current.availablePackages.length > 0) {
+        return offerings.current.availablePackages.map((pkg: PurchasesPackage) => {
+          let planId: PlanId = 'monthly';
+          if (pkg.identifier.includes('year') || pkg.identifier.includes('annual')) planId = 'yearly';
+          if (pkg.identifier.includes('lifetime') || pkg.identifier.includes('forever')) planId = 'lifetime';
+          
+          return {
+            id: planId,
+            title: pkg.product.title,
+            description: pkg.product.description,
+            priceString: pkg.product.priceString,
+            priceVND: pkg.product.price,
+            isHighlighted: planId === 'lifetime',
+          };
+        });
+      }
+    } catch (e) {
+      console.warn("RevenueCat getOfferings error:", e);
+    }
+    // Fallback to simulated if fetch fails or no packages configured yet
     return new SimulatedPurchaseService().getAvailablePlans();
   }
 
   async purchase(planId: PlanId): Promise<PurchaseResult> {
-    /**
-     * RevenueCat:
-     * const offerings = await Purchases.getOfferings();
-     * const pkg = offerings.current?.availablePackages.find(p => p.identifier === planId);
-     * const { customerInfo } = await Purchases.purchasePackage(pkg!);
-     * const active = customerInfo.entitlements.active['premium'];
-     * return { success: !!active, planId };
-     */
-    return new SimulatedPurchaseService().purchase(planId);
+    try {
+      await this.ensureConfigured();
+      const offerings = await Purchases.getOfferings();
+      const pkg = offerings.current?.availablePackages.find(p => p.identifier.toLowerCase().includes(planId));
+      
+      if (!pkg) {
+        return { success: false, error: 'Package not found on RevenueCat' };
+      }
+
+      const { customerInfo } = await Purchases.purchasePackage(pkg);
+      const isActive = typeof customerInfo.entitlements.active[ENTITLEMENT_ID] !== 'undefined';
+      
+      return { success: isActive, planId, purchasedAt: new Date().toISOString() };
+    } catch (e: any) {
+      if (e.userCancelled) {
+        return { success: false, cancelled: true };
+      }
+      return { success: false, error: e.message };
+    }
   }
 
   async restorePurchases(): Promise<PurchaseResult> {
-    /**
-     * RevenueCat:
-     * const { customerInfo } = await Purchases.restorePurchases();
-     * const active = customerInfo.entitlements.active['premium'];
-     * return { success: !!active };
-     */
-    return new SimulatedPurchaseService().restorePurchases();
+    try {
+      await this.ensureConfigured();
+      const customerInfo = await Purchases.restorePurchases();
+      const isActive = typeof customerInfo.entitlements.active[ENTITLEMENT_ID] !== 'undefined';
+      
+      if (isActive) {
+        return { success: true, purchasedAt: new Date().toISOString() };
+      }
+      return { success: false, error: 'Không tìm thấy giao dịch nào để khôi phục.' };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
   }
 
   async checkEntitlement(): Promise<boolean> {
-    /**
-     * RevenueCat:
-     * const { customerInfo } = await Purchases.getCustomerInfo();
-     * return !!customerInfo.entitlements.active['premium'];
-     */
-    return new SimulatedPurchaseService().checkEntitlement();
+    try {
+      await this.ensureConfigured();
+      const customerInfo = await Purchases.getCustomerInfo();
+      return typeof customerInfo.entitlements.active[ENTITLEMENT_ID] !== 'undefined';
+    } catch (e) {
+      return false;
+    }
   }
 }
 

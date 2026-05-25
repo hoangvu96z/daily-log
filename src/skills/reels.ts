@@ -1,4 +1,5 @@
 import { Entry, WeeklyReel } from '../types';
+import { getLocalDateString } from '../utils/dateUtils';
 import { insertReel } from '../memory/database';
 
 function getISOWeekBounds(dateStr: string) {
@@ -82,7 +83,7 @@ export async function generateWeeklyReels(entries: Entry[]): Promise<WeeklyReel[
 
     const { start, end } = weekData;
     
-    const formatDate = (d: Date) => d.toISOString().slice(0, 10);
+    const formatDate = (d: Date) => getLocalDateString(d);
     const formatDisplay = (d: Date) => `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
     
     // Sort chronological for playback

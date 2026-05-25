@@ -10,6 +10,7 @@
  */
 
 import { Entry } from '../types';
+import { getLocalDateString } from '../utils/dateUtils';
 
 const SEED_PREFIX = 'seed-';
 
@@ -26,11 +27,11 @@ export function isSeedEntry(entry: Entry): boolean {
  */
 export function generateSeedEntries(language: 'vi' | 'en' = 'vi'): Entry[] {
   const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = getLocalDateString(today);
   
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().slice(0, 10);
+  const yesterdayStr = getLocalDateString(yesterday);
 
   const seeds: { vi: Omit<Entry, 'id'>[]; en: Omit<Entry, 'id'>[] } = {
     vi: [
