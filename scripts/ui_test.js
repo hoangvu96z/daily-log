@@ -198,6 +198,24 @@ async function runUITests() {
       await sleep(WAIT_SHORT);
     }
 
+    // ─── §2b Daily Insight Dialog ──────────────────────────────────────────────
+    section('§2b Daily Insight Dialog');
+
+    const insightOpened = await clickText(page, 'Gợi ý suy ngẫm', 'khoảnh khắc bất ngờ', 'insight', 'Insight');
+    assert('Daily Insight button found and clicked', insightOpened);
+
+    if (insightOpened) {
+      await sleep(WAIT_MED);
+      text = await pageText(page);
+
+      assert('Insight Dialog shows analysis or suggestions',
+        text.includes('Dựa trên') || text.includes('Năng lượng') || text.includes('Luminous') || text.includes('insight'));
+
+      const insightClosed = await clickText(page, 'Đóng', 'Close', '×', 'X');
+      assert('Insight Dialog can be closed', insightClosed);
+      await sleep(WAIT_SHORT);
+    }
+
     // ─── §3  Highlight Tiles ──────────────────────────────────────────────────
     section('§3  Highlight Tiles (Bento Grid)');
 
@@ -312,10 +330,11 @@ async function runUITests() {
         text.includes('premium') || text.includes('sparkles'));
     }
 
-    // ─── §11  Privacy Dialog ──────────────────────────────────────────────────
-    section('§11  Me Tab — Privacy Explanation Dialog');
+    // ─── §11  Privacy & Additional Dialogs ────────────────────────────────────
+    section('§11  Me Tab — Privacy & Settings Dialogs');
 
     if (meClicked) {
+      // Privacy
       const privacyClicked = await clickText(page, 'Quyền riêng tư', 'Privacy', 'Tìm hiểu');
       if (privacyClicked) {
         await sleep(WAIT_MED);
@@ -326,11 +345,43 @@ async function runUITests() {
         assert('Privacy dialog mentions AI labels (not full text)',
           text.includes('AI') || text.includes('label') || text.includes('ẩn danh') || text.includes('anonymi'));
 
-        const privClosed = await clickText(page, 'Đóng', 'Close');
-        assert('Privacy dialog can be closed', privClosed);
+        await clickText(page, 'Đóng', 'Close');
         await sleep(WAIT_SHORT);
       } else {
         assert('Privacy row found (may be scrolled offscreen)', false, 'clickText could not find privacy row');
+      }
+
+      // Theme
+      const themeClicked = await clickText(page, 'Giao diện', 'Theme');
+      if (themeClicked) {
+        await sleep(WAIT_MED);
+        text = await pageText(page);
+        assert('Theme dialog opens (shows Light/Dark options)', text.includes('Sáng') || text.includes('Tối') || text.includes('Light') || text.includes('Dark'));
+        await clickText(page, 'Đóng', 'Close');
+        await sleep(WAIT_SHORT);
+      }
+
+      // Accent Color
+      const colorClicked = await clickText(page, 'Màu chủ đạo', 'Accent Color');
+      if (colorClicked) {
+        await sleep(WAIT_MED);
+        text = await pageText(page);
+        assert('Accent Color dialog opens', text.includes('Màu') || text.includes('Color') || text.includes('chủ đạo'));
+        await clickText(page, 'Đóng', 'Close');
+        await sleep(WAIT_SHORT);
+      }
+
+      // Delete Journal (Safe check only)
+      const deleteRowClicked = await clickText(page, 'Xóa toàn bộ', 'Xóa nhật ký', 'Delete');
+      if (deleteRowClicked) {
+        await sleep(WAIT_MED);
+        text = await pageText(page);
+        assert('Delete Journal dialog opens with warning', text.includes('XÓA') || text.includes('thiết bị') || text.includes('Delete') || text.includes('device'));
+        
+        // CRITICAL: MUST CANCEL
+        const canceled = await clickText(page, 'Hủy', 'Cancel');
+        assert('Delete Journal dialog safely canceled', canceled);
+        await sleep(WAIT_SHORT);
       }
     }
 

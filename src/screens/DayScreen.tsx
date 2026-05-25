@@ -3,9 +3,10 @@ import React from 'react';
 import { Alert, Image, Pressable, ScrollView, View, Dimensions, Modal } from 'react-native';
 import { Text } from '../components/AppText';
 import { AnimatedCard } from '../components/AnimatedCard';
-import { useTranslation } from '../i18n/translations';
+import { PhotoGrid } from '../components/PhotoGrid';
 import { ImagePlaceholder } from '../components/ImagePlaceholder';
-import { moodEmoji, moodLabels } from '../data/mockData';
+import { TimelineCard } from '../components/TimelineCard';
+import { useTranslation } from '../i18n/translations';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { Entry } from '../types';
@@ -13,7 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ensureAutoTrackerFreshness } from '../skills/autoTracker';
 import { useJournalStore } from '../memory/store';
 import { MomentComposer } from '../components/MomentComposer';
-import { PhotoGrid } from '../components/PhotoGrid';
+
 import { useNavigation } from '@react-navigation/native';
 import { SlideOutRight, LinearTransition } from 'react-native-reanimated';
 import { getLocalDateString } from '../utils/dateUtils';
@@ -167,85 +168,4 @@ function formatDateTitle(date: string, locale: string) {
   }).format(d);
 }
 
-function TimelineCard({ entry, index, onPress, onSave, onDiscard, onEdit, onDelete, t }: { entry: Entry; index: number; onPress: () => void; onSave: () => void; onDiscard: () => void; onEdit: () => void; onDelete: () => void; t: any }) {
-  const suggested = entry.status === 'suggested';
 
-  return (
-    <AnimatedCard 
-      variant="fadeInDown" 
-      delay={index * 80} 
-      style={styles.timelineRow}
-      exiting={SlideOutRight}
-      layout={LinearTransition.springify()}
-    >
-      <View style={styles.timelineRail}>
-        <Text style={styles.timeText}>{entry.time}</Text>
-        <View style={styles.railDot} />
-        <View style={styles.railLine} />
-      </View>
-      <Pressable onPress={onPress} style={[styles.entryCard, suggested && styles.suggestedCard, (entry.media && entry.media.length > 0) || entry.imageUri ? { padding: 0, overflow: 'hidden' } : null]}>
-        {(entry.media && entry.media.length > 0) ? (
-          <View pointerEvents="none">
-            <PhotoGrid media={entry.media} onPressImage={() => {}} />
-          </View>
-        ) : entry.imageUri ? (
-          <Image
-            source={{ uri: entry.imageUri }}
-            style={{ width: '100%', aspectRatio: 16 / 9 }}
-            resizeMode="cover"
-          />
-        ) : null}
-        <View style={{ padding: 16 }}>
-          <View style={styles.entryTopRow}>
-            <Text style={styles.entryTime}>{entry.time}</Text>
-            <View style={[styles.moodChip, { backgroundColor: moodBgColors[entry.mood] || 'rgba(158,158,158,0.15)' }]}>
-               <MaterialCommunityIcons name={moodEmoji[entry.mood]} size={16} color={moodTextColors[entry.mood]} style={{ marginRight: 4 }} />
-               <Text style={[{ fontSize: 12, fontWeight: '600' }, { color: moodTextColors[entry.mood] || '#9E9E9E' }]}>
-                 {t.mood[entry.mood]}
-               </Text>
-             </View>
-            {suggested ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
-                <Ionicons name="sparkles" size={14} color={palette.primary} />
-                <Text style={styles.suggestedLabel}>{t.day.suggested}</Text>
-              </View>
-            ) : (
-              <Pressable style={{ marginLeft: 'auto', padding: 4 }} onPress={() => {
-                Alert.alert(
-                  t.common.optionsTitle,
-                  '',
-                  [
-                    { text: t.common.cancel, style: 'cancel' },
-                    { text: t.common.edit, onPress: onEdit },
-                    { text: t.common.delete, style: 'destructive', onPress: () => {
-                      Alert.alert(t.common.deleteConfirmTitle, t.common.deleteConfirmDesc, [
-                        { text: t.common.cancel, style: 'cancel' },
-                        { text: t.common.delete, style: 'destructive', onPress: onDelete },
-                      ]);
-                    }},
-                  ]
-                );
-              }}>
-                <Ionicons name="ellipsis-horizontal" size={20} color={palette.muted} />
-              </Pressable>
-            )}
-          </View>
-          <Text style={styles.entryText}>{entry.text}</Text>
-          {!(entry.media && entry.media.length > 0) && !entry.imageUri && entry.imageLocalId && (
-            <ImagePlaceholder label={entry.imageLocalId} uri={entry.imageUri} />
-          )}
-          {suggested && (
-            <View style={styles.miniActionRow}>
-              <Pressable style={styles.miniPrimary} onPress={onSave}>
-                <Text style={styles.miniPrimaryText}>{t.common.save}</Text>
-              </Pressable>
-              <Pressable style={styles.miniSecondary} onPress={onDiscard}>
-                <Text style={styles.miniSecondaryText}>{t.common.discard}</Text>
-              </Pressable>
-            </View>
-          )}
-        </View>
-      </Pressable>
-    </AnimatedCard>
-  );
-}

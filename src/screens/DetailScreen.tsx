@@ -3,7 +3,7 @@ import { View, ScrollView, Dimensions, Pressable, Image } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Video, ResizeMode } from 'expo-av';
-import ImageView from 'react-native-image-viewing';
+import ImageView from '../components/ImageViewer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '../components/AppText';
