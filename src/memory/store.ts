@@ -94,6 +94,25 @@ export const useJournalStore = create<JournalState>((set) => ({
 
     const onboardingFlag = (settings as any).onboardingComplete === true;
     settings.isPremium = true; // FORCE UNLOCK PREMIUM FOR TESTING
+    
+    // TEST INJECTION: Add an "On this day" entry 1 year ago
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    const testEntry = {
+      id: 'test-on-this-day',
+      date: getLocalDateString(oneYearAgo),
+      time: '10:00',
+      mood: 'great',
+      text: 'Bài kiểm tra: Khoảnh khắc này được tạo ra cách đây chính xác 1 năm!',
+      source: 'manual',
+      status: 'saved',
+      isHighlight: true,
+    } as any;
+    if (!entries.find(e => e.id === 'test-on-this-day')) {
+      entries.push(testEntry);
+      await insertEntry(testEntry);
+    }
+
     set({
       entries,
       settings: { ...settings, pinSet, pinEnabled: pinSet ? settings.pinEnabled : false },
@@ -121,7 +140,10 @@ export const useJournalStore = create<JournalState>((set) => ({
       set((s) => ({ entries: s.entries.filter((e) => !isSeedEntry(e)) }));
     }
     await insertEntry(entry);
-    const newEntries = [...s.entries, entry].sort((a, b) => a.time.localeCompare(b.time));
+    
+    // Get fresh state after possible seed cleanup
+    const currentState = useJournalStore.getState();
+    const newEntries = [...currentState.entries, entry].sort((a, b) => a.time.localeCompare(b.time));
     set({ entries: newEntries });
     
     // Auto-update reels in background

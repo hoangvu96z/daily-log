@@ -16,7 +16,7 @@ import {
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { AccentColor, Settings, ThemeMode } from '../types';
-import { pickMomentImage } from '../services/imagePicker';
+import { pickMomentMedia } from '../services/imagePicker';
 import { PaywallModal } from '../components/PaywallModal';
 import * as BackgroundFetch from 'expo-background-fetch';
 import { getAutoTrackerStatus, registerAutoTracker, runAutoTrackerOnce, unregisterAutoTracker, refreshAutoSuggestions } from '../skills/autoTracker';
@@ -435,9 +435,9 @@ export function MeScreen({
         onCancel={() => setWallpaperVisible(false)}
         onPick={async () => {
           setWallpaperVisible(false);
-          const uri = await pickMomentImage();
-          if (uri) {
-            updateSetting('wallpaperUri', uri);
+          const media = await pickMomentMedia();
+          if (media && media.length > 0) {
+            updateSetting('wallpaperUri', media[0].uri);
           }
         }}
         onRemove={() => {

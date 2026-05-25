@@ -1,6 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
-import { Alert, Image, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, View, Dimensions, Modal } from 'react-native';
 import { Text } from '../components/AppText';
 import { AnimatedCard } from '../components/AnimatedCard';
 import { useTranslation } from '../i18n/translations';
@@ -13,8 +13,28 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ensureAutoTrackerFreshness } from '../skills/autoTracker';
 import { useJournalStore } from '../memory/store';
 import { MomentComposer } from '../components/MomentComposer';
+import { PhotoGrid } from '../components/PhotoGrid';
+import { useNavigation } from '@react-navigation/native';
 import { SlideOutRight, LinearTransition } from 'react-native-reanimated';
 import { getLocalDateString } from '../utils/dateUtils';
+import { Video, ResizeMode } from 'expo-av';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+const moodBgColors: Record<string, string> = {
+  very_bad: '#E5393526',
+  bad: '#FB8C0026',
+  neutral: '#43A04726',
+  good: '#1E88E526',
+  great: '#8E24AA26',
+};
+const moodTextColors: Record<string, string> = {
+  very_bad: '#E53935',
+  bad: '#FB8C00',
+  neutral: '#43A047',
+  good: '#1E88E5',
+  great: '#8E24AA',
+};
 
 export function DayScreen({
   entries,
@@ -36,6 +56,7 @@ export function DayScreen({
 
   const { t, locale } = useTranslation();
   const { updateEntry, deleteEntry } = useJournalStore();
+  const navigation = useNavigation<any>();
   const [editingEntry, setEditingEntry] = React.useState<Entry | null>(null);
 
   const handleDelete = React.useCallback((id: string) => {
@@ -102,6 +123,7 @@ export function DayScreen({
             <TimelineCard
               entry={entry}
               index={index}
+              onPress={() => navigation.navigate('Detail', { entryId: entry.id })}
               onSave={() => onSaveSuggestion(entry.id)}
               onDiscard={() => onDiscardSuggestion(entry.id)}
               onEdit={() => handleEdit(entry)}
@@ -114,7 +136,7 @@ export function DayScreen({
     </ScrollView>
     {editingEntry && (
       <MomentComposer
-        visible={true}
+        visible={!!editingEntry}
         mode="edit"
         initialEntry={editingEntry}
         onClose={() => setEditingEntry(null)}
@@ -145,23 +167,8 @@ function formatDateTitle(date: string, locale: string) {
   }).format(d);
 }
 
-function TimelineCard({ entry, index, onSave, onDiscard, onEdit, onDelete, t }: { entry: Entry; index: number; onSave: () => void; onDiscard: () => void; onEdit: () => void; onDelete: () => void; t: any }) {
+function TimelineCard({ entry, index, onPress, onSave, onDiscard, onEdit, onDelete, t }: { entry: Entry; index: number; onPress: () => void; onSave: () => void; onDiscard: () => void; onEdit: () => void; onDelete: () => void; t: any }) {
   const suggested = entry.status === 'suggested';
-
-  const moodBgColors: Record<string, string> = {
-    very_bad: '#E5393526',
-    bad: '#FB8C0026',
-    neutral: '#43A04726',
-    good: '#1E88E526',
-    great: '#8E24AA26',
-  };
-  const moodTextColors: Record<string, string> = {
-    very_bad: '#E53935',
-    bad: '#FB8C00',
-    neutral: '#43A047',
-    good: '#1E88E5',
-    great: '#8E24AA',
-  };
 
   return (
     <AnimatedCard 
@@ -176,23 +183,27 @@ function TimelineCard({ entry, index, onSave, onDiscard, onEdit, onDelete, t }: 
         <View style={styles.railDot} />
         <View style={styles.railLine} />
       </View>
-      <View style={[styles.entryCard, suggested && styles.suggestedCard, entry.imageUri ? { padding: 0 } : null]}>
-        {entry.imageUri && (
+      <Pressable onPress={onPress} style={[styles.entryCard, suggested && styles.suggestedCard, (entry.media && entry.media.length > 0) || entry.imageUri ? { padding: 0, overflow: 'hidden' } : null]}>
+        {(entry.media && entry.media.length > 0) ? (
+          <View pointerEvents="none">
+            <PhotoGrid media={entry.media} onPressImage={() => {}} />
+          </View>
+        ) : entry.imageUri ? (
           <Image
             source={{ uri: entry.imageUri }}
             style={{ width: '100%', aspectRatio: 16 / 9 }}
             resizeMode="cover"
           />
-        )}
+        ) : null}
         <View style={{ padding: 16 }}>
           <View style={styles.entryTopRow}>
             <Text style={styles.entryTime}>{entry.time}</Text>
             <View style={[styles.moodChip, { backgroundColor: moodBgColors[entry.mood] || 'rgba(158,158,158,0.15)' }]}>
-              <MaterialCommunityIcons name={moodEmoji[entry.mood]} size={16} color={moodTextColors[entry.mood]} style={{ marginRight: 4 }} />
-              <Text style={[styles.entryMoodText, { color: moodTextColors[entry.mood] || '#9E9E9E' }]}>
-                {t.mood[entry.mood]}
-              </Text>
-            </View>
+               <MaterialCommunityIcons name={moodEmoji[entry.mood]} size={16} color={moodTextColors[entry.mood]} style={{ marginRight: 4 }} />
+               <Text style={[{ fontSize: 12, fontWeight: '600' }, { color: moodTextColors[entry.mood] || '#9E9E9E' }]}>
+                 {t.mood[entry.mood]}
+               </Text>
+             </View>
             {suggested ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
                 <Ionicons name="sparkles" size={14} color={palette.primary} />
@@ -220,7 +231,7 @@ function TimelineCard({ entry, index, onSave, onDiscard, onEdit, onDelete, t }: 
             )}
           </View>
           <Text style={styles.entryText}>{entry.text}</Text>
-          {!entry.imageUri && entry.imageLocalId && (
+          {!(entry.media && entry.media.length > 0) && !entry.imageUri && entry.imageLocalId && (
             <ImagePlaceholder label={entry.imageLocalId} uri={entry.imageUri} />
           )}
           {suggested && (
@@ -234,7 +245,7 @@ function TimelineCard({ entry, index, onSave, onDiscard, onEdit, onDelete, t }: 
             </View>
           )}
         </View>
-      </View>
+      </Pressable>
     </AnimatedCard>
   );
 }

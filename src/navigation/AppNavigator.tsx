@@ -7,9 +7,11 @@ import { LockScreen } from '../screens/LockScreen';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { PinSetupScreen } from '../screens/PinSetupScreen';
 import { PinUnlockScreen } from '../screens/PinUnlockScreen';
+import { DetailScreen } from '../screens/DetailScreen';
+import { RootStackParamList } from '../types';
 import { TabNavigator } from './TabNavigator';
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const DarkSanctuaryTheme = {
   ...DefaultTheme,
@@ -72,6 +74,7 @@ export function AppNavigator() {
           <>
             <Stack.Screen name="Tabs" component={TabNavigator} />
             <Stack.Screen name="PinSetup" component={PinSetupScreen} />
+            <Stack.Screen name="Detail" component={DetailScreen} />
           </>
         )}
       </Stack.Navigator>

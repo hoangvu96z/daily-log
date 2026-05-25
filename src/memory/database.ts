@@ -59,8 +59,9 @@ const MIGRATIONS = [
       coverTone TEXT NOT NULL DEFAULT '#cbe4d6',
       entryIds TEXT NOT NULL DEFAULT '[]'
     );
-  `
-  // Add new fields (e.g. tags, sync status) as new migrations here in the future
+  `,
+  // Migration 2: Add media column for Multi-Image/Video
+  `ALTER TABLE entries ADD COLUMN media TEXT DEFAULT '[]';`
 ];
 
 // === Table Initialization ===
@@ -133,8 +134,8 @@ export async function insertEntry(entry: Entry): Promise<void> {
   }
   const database = await getDB();
   await database.runAsync(
-    `INSERT OR REPLACE INTO entries (id, date, time, mood, text, aiSuggestion, imageLocalId, imageUri, locationName, locationLat, locationLon, source, status, isHighlight)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO entries (id, date, time, mood, text, aiSuggestion, media, imageLocalId, imageUri, locationName, locationLat, locationLon, source, status, isHighlight)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       entry.id,
       entry.date,
@@ -142,6 +143,7 @@ export async function insertEntry(entry: Entry): Promise<void> {
       entry.mood,
       entry.text ?? null,
       entry.aiSuggestion ?? null,
+      entry.media ? JSON.stringify(entry.media) : '[]',
       entry.imageLocalId ?? null,
       entry.imageUri ?? null,
       entry.locationName ?? null,
@@ -187,7 +189,8 @@ export async function updateEntry(id: string, patch: Partial<Entry>): Promise<vo
   if (entries.length === 0) return;
 
   const setClause = entries.map(([k]) => `${k} = ?`).join(', ');
-  const values = entries.map(([_, v]) => {
+  const values = entries.map(([k, v]) => {
+    if (k === 'media' && v !== undefined && v !== null) return JSON.stringify(v);
     if (typeof v === 'boolean') return v ? 1 : 0;
     return v ?? null;
   });
@@ -294,6 +297,13 @@ export async function insertReel(reel: WeeklyReel): Promise<void> {
 // === Row Mappers ===
 
 function rowToEntry(row: Record<string, unknown>): Entry {
+  let media = [];
+  try {
+    if (row.media && row.media !== '[]') {
+      media = JSON.parse(row.media as string);
+    }
+  } catch (e) {}
+
   return {
     id: row.id as string,
     date: row.date as string,
@@ -301,6 +311,7 @@ function rowToEntry(row: Record<string, unknown>): Entry {
     mood: row.mood as Entry['mood'],
     text: (row.text as string) ?? undefined,
     aiSuggestion: (row.aiSuggestion as string) ?? undefined,
+    media: media.length > 0 ? media : undefined,
     imageLocalId: (row.imageLocalId as string) ?? undefined,
     imageUri: (row.imageUri as string) ?? undefined,
     locationName: (row.locationName as string) ?? undefined,

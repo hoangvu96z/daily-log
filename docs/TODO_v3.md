@@ -92,27 +92,27 @@ Mục tiêu: Đem lại giá trị cốt lõi thứ 2 ngoài nhật ký tĩnh, �
 
 ### 1. Tự động Tạo Weekly Reels (Tổng hợp tuần)
 - **File:** `src/skills/reels.ts` (mới), `src/screens/ReelScreen.tsx`, DB Schema
-- [ ] Tạo bảng `weekly_reels` trong SQLite (nếu chưa có): `id`, `start_date`, `end_date`, `cover_uri`, `entry_count`, `entry_ids` (JSON).
-- [ ] Viết hàm `generateWeeklyReels(entries: Entry[])`:
-  - [ ] Fetch toàn bộ entry trong 8 tuần gần nhất.
-  - [ ] Dùng thư viện ngày tháng (date-fns hoặc dayjs) để group các entry theo định dạng Tuần ISO (YYYY-WW).
-  - [ ] Phân tích mỗi nhóm tuần: Đếm số lượng entry (`entryCount`), lập danh sách `entryIds`.
-  - [ ] Xác định ảnh cover: Tìm entry có `mood` tốt nhất (tím/vàng), nếu không có thì lấy ảnh đầu tiên.
-  - [ ] Ghi đè (Upsert) các object Reel vào bảng DB.
-- [ ] Trigger tạo Reels:
-  - [ ] Đặt trong `useEffect` lúc init app: check nếu `todayWeekId !== lastGeneratedWeekId` thì chạy generation.
-  - [ ] Đặt trong hàm sau khi user `addEntry` thành công để reel được update tức thì.
-- [ ] Cập nhật UI `ReelScreen`:
-  - [ ] Fetch danh sách reels thực tế từ `getAllReels()`. Loại bỏ mock data.
-  - [ ] Bấm vào card Weekly Reel -> Mở component `SlideshowScreen`, truyền vào list `entryIds` tương ứng.
+- [x] Tạo bảng `weekly_reels` trong SQLite (nếu chưa có): `id`, `start_date`, `end_date`, `cover_uri`, `entry_count`, `entry_ids` (JSON).
+- [x] Viết hàm `generateWeeklyReels(entries: Entry[])`:
+  - [x] Fetch toàn bộ entry trong 8 tuần gần nhất.
+  - [x] Dùng thư viện ngày tháng (date-fns hoặc dayjs) để group các entry theo định dạng Tuần ISO (YYYY-WW).
+  - [x] Phân tích mỗi nhóm tuần: Đếm số lượng entry (`entryCount`), lập danh sách `entryIds`.
+  - [x] Xác định ảnh cover: Tìm entry có `mood` tốt nhất (tím/vàng), nếu không có thì lấy ảnh đầu tiên.
+  - [x] Ghi đè (Upsert) các object Reel vào bảng DB.
+- [x] Trigger tạo Reels:
+  - [x] Đặt trong `useEffect` lúc init app: check nếu `todayWeekId !== lastGeneratedWeekId` thì chạy generation.
+  - [x] Đặt trong hàm sau khi user `addEntry` thành công để reel được update tức thì.
+- [x] Cập nhật UI `ReelScreen`:
+  - [x] Fetch danh sách reels thực tế từ `getAllReels()`. Loại bỏ mock data.
+  - [x] Bấm vào card Weekly Reel -> Mở component `SlideshowScreen`, truyền vào list `entryIds` tương ứng.
 
 ### 2. Tính năng "Hôm nay năm trước" (On this day)
 - **File:** `src/screens/ReelScreen.tsx`
-- [ ] Tạo query fetch `getEntriesOnDate(date)` với `date` bằng đúng mốc thời gian hôm nay trừ đi 1 năm (tương đối theo DD/MM).
-- [ ] UI Card "Hôm nay năm trước":
-  - [ ] Nếu query trả về > 0 entries: Hiển thị 1 card lớn trên cùng màn hình Reel.
-  - [ ] Card lấy ảnh thumbnail của entry đầu tiên. Kèm text nổi bật "X khoảnh khắc của một năm trước".
-  - [ ] Action: Nhấn vào card -> Gọi `SlideshowScreen` khởi chạy tập các entry đó.
+- [x] Tạo query fetch `getEntriesOnDate(date)` với `date` bằng đúng mốc thời gian hôm nay trừ đi 1 năm (tương đối theo DD/MM).
+- [x] UI Card "Hôm nay năm trước":
+  - [x] Nếu query trả về > 0 entries: Hiển thị 1 card lớn trên cùng màn hình Reel.
+  - [x] Card lấy ảnh thumbnail của entry đầu tiên. Kèm text nổi bật "X khoảnh khắc của một năm trước".
+  - [x] Action: Nhấn vào card -> Gọi `SlideshowScreen` khởi chạy tập các entry đó.
 
 ---
 

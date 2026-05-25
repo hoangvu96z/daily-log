@@ -24,17 +24,10 @@ import { Dimensions,
   View } from 'react-native';
 import { Text } from '../components/AppText';
 import { useTranslation } from '../i18n/translations';
-import Animated, {
-  FadeIn,
-  FadeOut,
-  interpolate,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, interpolate, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { moodEmoji } from '../data/mockData';
 import { Entry, Mood } from '../types';
+import { Video, ResizeMode } from 'expo-av';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const SLIDE_DURATION_MS = 4000;
@@ -75,9 +68,38 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
   const progressValue = useSharedValue(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const slidableEntries = entries.filter(
-    (e) => e.status === 'saved' && (e.imageUri || e.text),
-  );
+  const slides = React.useMemo(() => {
+    const arr: any[] = [];
+    for (const e of entries) {
+      if (e.status !== 'saved') continue;
+      if (!e.imageUri && !e.text && !(e.media && e.media.length > 0)) continue;
+      
+      if (e.media && e.media.length > 0) {
+        for (let i = 0; i < e.media.length; i++) {
+          arr.push({
+            id: `${e.id}-${i}`,
+            mediaItem: e.media[i],
+            mood: e.mood,
+            text: i === 0 ? e.text : undefined, // Only show text on first slide
+            time: e.time,
+            locationName: e.locationName
+          });
+        }
+      } else {
+        arr.push({
+          id: e.id,
+          imageUri: e.imageUri,
+          mood: e.mood,
+          text: e.text,
+          time: e.time,
+          locationName: e.locationName
+        });
+      }
+    }
+    return arr;
+  }, [entries]);
+
+  const slidableEntries = slides;
 
   const advance = useCallback(() => {
     setCurrentIndex((prev) => {
@@ -135,23 +157,38 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
         onPressOut={() => setPaused(false)}
       >
         <View style={ss.container}>
-          {/* Background: real photo or mood-gradient */}
-          {entry.imageUri ? (
+          {/* Background: real photo/video or mood-gradient */}
+          {entry.mediaItem?.type === 'video' ? (
             <Animated.View
               key={`bg-${slideKey}`}
               entering={FadeIn.duration(600)}
               style={StyleSheet.absoluteFill}
             >
-              <Image source={{ uri: entry.imageUri }} style={ss.bgImage} resizeMode="cover" />
+              <Video
+                source={{ uri: entry.mediaItem.uri }}
+                style={StyleSheet.absoluteFill}
+                resizeMode={ResizeMode.COVER}
+                shouldPlay={!paused && visible}
+                isLooping
+                isMuted
+              />
+            </Animated.View>
+          ) : entry.mediaItem?.type === 'image' || entry.imageUri ? (
+            <Animated.View
+              key={`bg-${slideKey}`}
+              entering={FadeIn.duration(600)}
+              style={StyleSheet.absoluteFill}
+            >
+              <Image source={{ uri: entry.mediaItem?.uri || entry.imageUri }} style={ss.bgImage} resizeMode="cover" />
             </Animated.View>
           ) : (
             <Animated.View
               key={`bg-grad-${slideKey}`}
               entering={FadeIn.duration(700)}
-              style={[ss.bgGradient, { backgroundColor: moodGradientBg[mood] }]}
+              style={[ss.bgGradient, { backgroundColor: moodGradientBg[mood as Mood] }]}
             >
               {/* Accent colour blob for visual interest */}
-              <View style={[ss.moodBlob, { backgroundColor: moodAccent[mood] }]} />
+              <View style={[ss.moodBlob, { backgroundColor: moodAccent[mood as Mood] }]} />
             </Animated.View>
           )}
 
@@ -190,10 +227,10 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
             >
               {/* Mood chip */}
               <View style={ss.moodChipRow}>
-                <View style={[ss.moodChip, { borderColor: moodAccent[mood], flexDirection: 'row', alignItems: 'center' }]}>
-                  <MaterialCommunityIcons name={moodEmoji[mood]} size={16} color="#fff" style={{ marginRight: 6 }} />
+                <View style={[ss.moodChip, { borderColor: moodAccent[mood as Mood], flexDirection: 'row', alignItems: 'center' }]}>
+                  <MaterialCommunityIcons name={moodEmoji[mood as Mood]} size={16} color="#fff" style={{ marginRight: 6 }} />
                   <Text style={ss.moodChipText}>
-                    {t.mood[mood]}
+                    {t.mood[mood as Mood]}
                   </Text>
                 </View>
                 <Text style={ss.timeText}>{entry.time}</Text>
@@ -228,8 +265,8 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
                 {currentIndex + 1} / {slidableEntries.length}
               </Text>
               {paused && (
-                <Animated.View entering={FadeIn} exiting={FadeOut} style={ss.pauseBadge}>
-                  <Text style={ss.pauseText}>⏸  {t.reel.paused}</Text>
+                <Animated.View entering={FadeIn} exiting={FadeOut} style={[ss.pauseBadge, { backgroundColor: moodGradientBg[mood as Mood] }]}>
+                  <Text style={[ss.pauseText, { color: moodAccent[mood as Mood] }]}>⏸  {t.reel.paused}</Text>
                 </Animated.View>
               )}
             </View>

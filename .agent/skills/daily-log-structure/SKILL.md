@@ -128,7 +128,8 @@ AppNavigator
             ├── Tab: Ngày (DayScreen)
             │       ├── ←→ arrows to change date
             │       ├── TimelineCard: suggested entry → Save / Discard
-            │       └── TimelineCard: saved entry → Menu (Edit / Delete)
+            │       ├── TimelineCard: saved entry → Menu (Edit / Delete)
+            │       └── Tap entry → Navigate to DetailScreen (Stack)
             │
             ├── Tab: Reel (ReelScreen)
             │       ├── "Today Last Year" card → navigate("day") to year-ago date
@@ -146,7 +147,8 @@ AppNavigator
             │       └── Wallpaper row (premium) → WallpaperPicker (internal modal)
             │
             └── [Stack screens within TabNavigator scope]
-                    └── PinSetup (PinSetupScreen) — navigate from MeScreen
+                    ├── PinSetup (PinSetupScreen) — navigate from MeScreen
+                    └── Detail (DetailScreen) — Full screen moment detail with PhotoGrid and zoomable Image Viewer
 
 Global overlays (mounted in TabNavigator, always available):
 ├── AddMomentSheet — bottom sheet, triggered by center + button in BottomTabs
@@ -188,8 +190,9 @@ Global overlays (mounted in TabNavigator, always available):
   mood: Mood;              // 'very_bad' | 'bad' | 'neutral' | 'good' | 'great'
   text?: string;
   aiSuggestion?: string;
-  imageLocalId?: string;
-  imageUri?: string;       // Local file URI
+  media?: MediaItem[];     // Array of multiple media items (image/video)
+  imageLocalId?: string;   // Legacy
+  imageUri?: string;       // Legacy URI
   locationName?: string;
   locationLat?: number;
   locationLon?: number;

@@ -4,11 +4,12 @@ import { Modal, Pressable, SafeAreaView, ScrollView, TextInput, View, ActivityIn
 import { Text } from '../components/AppText';
 import { moodOptions } from '../data/mockData';
 import { useTranslation } from '../i18n/translations';
-import { pickMomentImage } from '../services/imagePicker';
+import { pickMomentMedia } from '../services/imagePicker';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
-import { ComposerDraft, Entry, Mood } from '../types';
+import { ComposerDraft, Entry, Mood, MediaItem } from '../types';
 import { ImagePlaceholder } from './ImagePlaceholder';
+import { Image } from 'react-native';
 import { aiService, AISuggestionInput } from '../skills/aiService';
 import { getLocalDateString } from '../utils/dateUtils';
 
@@ -39,8 +40,8 @@ export function MomentComposer({
   const [mood, setMood] = useState<Mood>(initialEntry?.mood || 'good');
   const [note, setNote] = useState(initialEntry?.text || '');
   const [suggestionVisible, setSuggestionVisible] = useState(mode === 'create');
-  const [pickedImageUri, setPickedImageUri] = useState<string | undefined>(initialEntry?.imageUri);
-  const imageUri = pickedImageUri || draft?.imageUri || initialEntry?.imageUri;
+  const [pickedMedia, setPickedMedia] = useState<MediaItem[]>(initialEntry?.media || (initialEntry?.imageUri ? [{ uri: initialEntry.imageUri, type: 'image' }] : []));
+  const activeMedia = pickedMedia.length > 0 ? pickedMedia : (draft?.media || (draft?.imageUri ? [{ uri: draft.imageUri, type: 'image' }] : []));
 
   const [suggestion, setSuggestion] = useState('');
   const [suggestionStatus, setSuggestionStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -49,7 +50,7 @@ export function MomentComposer({
     if (visible) {
       setMood(initialEntry?.mood || 'good');
       setNote(initialEntry?.text || '');
-      setPickedImageUri(initialEntry?.imageUri);
+      setPickedMedia(initialEntry?.media || (initialEntry?.imageUri ? [{ uri: initialEntry.imageUri, type: 'image' }] : []));
       setSuggestionVisible(mode === 'create');
     }
   }, [visible, initialEntry, mode]);
@@ -84,7 +85,7 @@ export function MomentComposer({
         period,
         locationName: draft!.locationName,
         calendarText: draft!.calendarText,
-        photoLabels: imageUri ? ['photo'] : undefined,
+        photoLabels: activeMedia.length > 0 ? ['photo'] : undefined,
         lang,
       };
 
@@ -107,13 +108,27 @@ export function MomentComposer({
     return () => {
       active = false;
     };
-  }, [visible, draft, mood, imageUri, mode]);
+  }, [visible, draft, mood, activeMedia.length, mode]);
 
-  const addImage = async () => {
-    const uri = await pickMomentImage();
-    if (uri) {
-      setPickedImageUri(uri);
+  const addMedia = async () => {
+    // Only allow max 10
+    if (activeMedia.length >= 10) return;
+    const newItems = await pickMomentMedia();
+    if (newItems && newItems.length > 0) {
+      setPickedMedia([...activeMedia, ...newItems.map(asset => ({
+        uri: asset.uri,
+        type: asset.type,
+        width: asset.width,
+        height: asset.height,
+        duration: asset.duration ?? undefined
+      }))].slice(0, 10));
     }
+  };
+
+  const removeMedia = (index: number) => {
+    const nextMedia = [...activeMedia];
+    nextMedia.splice(index, 1);
+    setPickedMedia(nextMedia);
   };
 
   const save = () => {
@@ -123,8 +138,9 @@ export function MomentComposer({
         ...initialEntry,
         mood,
         text: note,
-        imageUri,
-        imageLocalId: pickedImageUri ? 'picked-photo' : initialEntry.imageLocalId,
+        media: activeMedia.length > 0 ? activeMedia : undefined,
+        imageUri: undefined,
+        imageLocalId: undefined,
       });
     } else {
       onSave({
@@ -134,8 +150,7 @@ export function MomentComposer({
         mood,
         text: note || suggestion,
         aiSuggestion: suggestion,
-        imageLocalId: imageUri ? 'picked-photo' : undefined,
-        imageUri,
+        media: activeMedia.length > 0 ? activeMedia : undefined,
         locationName: draft?.locationName,
         locationLat: draft?.locationLat,
         locationLon: draft?.locationLon,
@@ -145,7 +160,7 @@ export function MomentComposer({
       });
     }
     setNote('');
-    setPickedImageUri(undefined);
+    setPickedMedia([]);
     setSuggestionVisible(true);
   };
 
@@ -162,13 +177,33 @@ export function MomentComposer({
           <View style={styles.iconButtonSpacer} />
         </View>
         <ScrollView contentContainerStyle={styles.composerContent}>
-          {imageUri ? (
-            <Pressable onPress={addImage}>
-              <ImagePlaceholder label={t.composer.addPhoto} large uri={imageUri} />
-            </Pressable>
+          {activeMedia.length > 0 ? (
+            <View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 10 }}>
+                {activeMedia.map((item, index) => (
+                  <View key={index} style={{ width: 200, height: 150, borderRadius: 12, overflow: 'hidden', position: 'relative' }}>
+                    <Image source={{ uri: item.uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    {item.type === 'video' && (
+                      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.2)' }}>
+                        <Ionicons name="play-circle" size={36} color={palette.white} />
+                      </View>
+                    )}
+                    <Pressable style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, width: 24, height: 24, justifyContent: 'center', alignItems: 'center' }} onPress={() => removeMedia(index)}>
+                      <Ionicons name="close" size={16} color={palette.white} />
+                    </Pressable>
+                  </View>
+                ))}
+                {activeMedia.length < 10 && (
+                  <Pressable style={[styles.addPhotoBox, { width: 150, height: 150, margin: 0 }]} onPress={addMedia}>
+                    <Ionicons name="add" size={28} color={palette.green} />
+                    <Text style={[styles.addPhotoText, { marginTop: 4 }]}>Thêm ({activeMedia.length}/10)</Text>
+                  </Pressable>
+                )}
+              </ScrollView>
+            </View>
           ) : (
-            <Pressable style={styles.addPhotoBox} onPress={addImage}>
-              <Ionicons name="image-outline" size={28} color={palette.green} />
+            <Pressable style={styles.addPhotoBox} onPress={addMedia}>
+              <Ionicons name="images-outline" size={28} color={palette.green} />
               <Text style={styles.addPhotoText}>{t.composer.addPhoto}</Text>
             </Pressable>
           )}
@@ -192,19 +227,19 @@ export function MomentComposer({
                     { borderColor: moodIconColors[option.value], backgroundColor: moodIconColors[option.value] + '15' } // 15 = ~8% opacity
                   ]
                 ]}
-                onPress={() => setMood(option.value)}
+                onPress={() => setMood(option.value as Mood)}
               >
                 <MaterialCommunityIcons 
                   name={option.emoji} 
                   size={28} 
-                  color={moodIconColors[option.value]} 
+                  color={moodIconColors[option.value as Mood]} 
                   style={{ opacity: mood === option.value ? 1 : 0.4 }}
                 />
                 <Text style={[
                   styles.moodOptionText, 
-                  mood === option.value && [styles.moodOptionTextSelected, { color: moodIconColors[option.value] }]
+                  mood === option.value && [styles.moodOptionTextSelected, { color: moodIconColors[option.value as Mood] }]
                 ]}>
-                  {t.mood[option.value]}
+                  {t.mood[option.value as Mood]}
                 </Text>
               </Pressable>
             ))}

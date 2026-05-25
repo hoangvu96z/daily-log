@@ -43,7 +43,7 @@ export function HighlightTile({ entry, onPress }: HighlightTileProps) {
           {entry.text}
         </Text>
 
-        <View style={styles.footerRow}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
           <MaterialCommunityIcons name={moodEmoji[entry.mood]} size={18} color="rgba(255,255,255,0.85)" />
           {entry.locationName && (
             <Text style={styles.locationText} numberOfLines={1}>

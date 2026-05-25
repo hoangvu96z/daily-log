@@ -159,6 +159,7 @@ async function processClustersAndSave(clusters: BaseSignal[][]): Promise<number>
       mood: 'neutral',
       time: timeStr,
       locationName,
+      lang: 'vi',
     });
 
     // Fallback if AI doesn't incorporate the calendar event

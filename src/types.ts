@@ -9,6 +9,15 @@ export type ComposerMode = 'photo' | 'note' | 'calendar';
 export type PermissionState = 'unknown' | 'granted' | 'denied' | 'unavailable';
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type AccentColor = 'navy' | 'sage' | 'ocean' | 'lavender' | 'terracotta';
+export type MediaType = 'image' | 'video';
+
+export type MediaItem = {
+  uri: string;
+  type: MediaType;
+  width?: number;
+  height?: number;
+  duration?: number; // For videos
+};
 
 // === Entry ===
 export type Entry = {
@@ -18,8 +27,9 @@ export type Entry = {
   mood: Mood;
   text?: string;
   aiSuggestion?: string;
-  imageLocalId?: string;     // Local photo identifier
-  imageUri?: string;         // URI for display
+  media?: MediaItem[];       // Array of multiple media items (image/video)
+  imageLocalId?: string;     // Legacy
+  imageUri?: string;         // Legacy URI for display
   locationName?: string;     // Human-readable location name
   locationLat?: number;      // Latitude
   locationLon?: number;      // Longitude
@@ -69,7 +79,8 @@ export type WeeklyReel = {
 // === Composer Draft ===
 export type ComposerDraft = {
   mode: ComposerMode;
-  imageUri?: string;
+  media?: MediaItem[];
+  imageUri?: string; // Legacy
   locationName?: string;
   locationLat?: number;
   locationLon?: number;
@@ -93,4 +104,12 @@ export type TabItem = {
   key: TabKey;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
+};
+
+// === Navigation ===
+export type RootStackParamList = {
+  Onboarding: undefined;
+  Tabs: undefined;
+  PinSetup: undefined;
+  Detail: { entryId: string };
 };

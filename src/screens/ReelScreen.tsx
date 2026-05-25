@@ -15,6 +15,7 @@ import { SlideshowScreen } from './SlideshowScreen';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { Entry, WeeklyReel } from '../types';
+import { getLocalDateString } from '../utils/dateUtils';
 
 export function ReelScreen({
   entries,
@@ -33,7 +34,7 @@ export function ReelScreen({
   const [slideshowTitle, setSlideshowTitle] = useState<string | undefined>();
 
   const now = new Date();
-  const todayMonthDay = now.toISOString().slice(5, 10); // "-MM-DD"
+  const todayMonthDay = getLocalDateString(now).substring(5); // "MM-DD"
   const currentYear = now.getFullYear();
 
   const onThisDayEntries = entries.filter((e) => {
@@ -43,7 +44,7 @@ export function ReelScreen({
   const savedCount = entries.filter((entry) => entry.status === 'saved').length;
 
   const openSlideshow = (reelEntries: Entry[], title?: string) => {
-    const validEntries = reelEntries.filter((e) => e.status === 'saved' && (e.imageUri || e.text));
+    const validEntries = reelEntries.filter((e) => e.status === 'saved' && (e.imageUri || e.text || (e.media && e.media.length > 0)));
     if (validEntries.length === 0) return;
     setSlideshowEntries(validEntries);
     setSlideshowTitle(title);

@@ -16,10 +16,10 @@ import { DayScreen } from '../screens/DayScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { MeScreen } from '../screens/MeScreen';
 import { ReelScreen } from '../screens/ReelScreen';
-import { pickMomentImage } from '../services/imagePicker';
+import { pickMomentMedia } from '../services/imagePicker';
 import { calendarEventToDraft, getTodayCalendarEvents } from '../skills/calendar';
 import { requestLocationAccess } from '../skills/permissions';
-import { CalendarEventDraft, ComposerDraft, ComposerMode, Entry, PermissionExplanationModalProps } from '../types';
+import { CalendarEventDraft, ComposerDraft, ComposerMode, Entry } from '../types';
 import { palette } from '../theme/palette';
 import { styles } from '../styles';
 import { PaywallModal } from '../components/PaywallModal';
@@ -82,9 +82,9 @@ export function TabNavigator() {
     const nextDraft: ComposerDraft = { mode };
 
     if (mode === 'photo') {
-      const imageUri = await pickMomentImage();
-      if (imageUri) {
-        nextDraft.imageUri = imageUri;
+      const mediaItems = await pickMomentMedia();
+      if (mediaItems && mediaItems.length > 0) {
+        nextDraft.media = mediaItems;
       }
     }
 
