@@ -24,6 +24,21 @@ jobs:
       - name: Run smoke test
         run: npm run test:smoke | tee smoke_test.log
 
+      - name: Start web server
+        run: npm run web &
+        
+      - name: Wait for web server
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:8081 > /dev/null; then
+              echo "Web server is ready"
+              exit 0
+            fi
+            echo "Waiting for web server... ($i/30)"
+            sleep 2
+          done
+          exit 1
+
       - name: Run UI test
         run: npm run test:ui | tee ui_test.log
 
