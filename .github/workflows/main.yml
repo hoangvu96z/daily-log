@@ -1,0 +1,47 @@
+name: Run Tests and Send Email
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run smoke test
+        run: npm run test:smoke | tee smoke_test.log
+
+      - name: Run UI test
+        run: npm run test:ui | tee ui_test.log
+
+      - name: Prepare combined log
+        run: cat smoke_test.log ui_test.log > test_results.log
+
+      - name: Send email with results
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.office365.com
+          server_port: 587
+          secure: true
+          username: ${{ secrets.OUTLOOK_USERNAME }}
+          password: ${{ secrets.OUTLOOK_PASSWORD }}
+          subject: "Daily Log - Test Results"
+          to: your_email@hotmail.com
+          from: GitHub Actions <your_email@hotmail.com>
+          body: |
+            Smoke test and UI test have completed.
+            See attached log file for details.
+          attachments: test_results.log
