@@ -25,7 +25,7 @@ jobs:
         run: npm run test:smoke | tee smoke_test.log
 
       - name: Run UI test
-        run: npm run test:ui | tee ui_test.log
+        run: npm run test:ui | tee ui_test.logS
 
       - name: Prepare combined log
         run: cat smoke_test.log ui_test.log > test_results.log
@@ -39,8 +39,8 @@ jobs:
           username: ${{ secrets.OUTLOOK_USERNAME }}
           password: ${{ secrets.OUTLOOK_PASSWORD }}
           subject: "Daily Log - Test Results"
-          to: your_email@hotmail.com
-          from: GitHub Actions <your_email@hotmail.com>
+          to: hoangvu96z@gmail.com
+          from: GitHub Actions <hoangvu96z@hotmail.com>
           body: |
             Smoke test and UI test have completed.
             See attached log file for details.

@@ -13,7 +13,7 @@ export function ScreenHeader({ title, subtitle, rightIcon, onRightPress }: { tit
         {subtitle ? <Text style={styles.screenSubtitle}>{subtitle}</Text> : null}
       </View>
       {rightIcon && onRightPress && (
-        <Pressable onPress={onRightPress} style={{ padding: 8, backgroundColor: palette.primaryContainer, borderRadius: 20 }}>
+        <Pressable aria-label={rightIcon} onPress={onRightPress} style={{ padding: 8, backgroundColor: palette.primaryContainer, borderRadius: 20 }}>
           <Ionicons name={rightIcon} size={24} color={palette.ink} />
         </Pressable>
       )}

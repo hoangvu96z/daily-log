@@ -12,7 +12,8 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Dimensions,
+import {
+  Dimensions,
   Image,
   Modal,
   Platform,
@@ -21,7 +22,8 @@ import { Dimensions,
   StatusBar,
   StyleSheet,
   TouchableWithoutFeedback,
-  View } from 'react-native';
+  View
+} from 'react-native';
 import { Text } from '../components/AppText';
 import { useTranslation } from '../i18n/translations';
 import { getLocalDateString } from '../utils/dateUtils';
@@ -37,18 +39,18 @@ const SLIDE_DURATION_MS = 4000;
 
 const moodGradientBg: Record<Mood, string> = {
   very_bad: '#1a0a0a',
-  bad:      '#0f1218',
-  neutral:  '#0a1a12',
-  good:     '#071a0e',
-  great:    '#051510',
+  bad: '#0f1218',
+  neutral: '#0a1a12',
+  good: '#071a0e',
+  great: '#051510',
 };
 
 const moodAccent: Record<Mood, string> = {
   very_bad: 'rgba(186,26,26,0.25)',
-  bad:      'rgba(60,80,120,0.25)',
-  neutral:  'rgba(30,80,60,0.25)',
-  good:     'rgba(50,140,90,0.25)',
-  great:    'rgba(100,200,160,0.25)',
+  bad: 'rgba(60,80,120,0.25)',
+  neutral: 'rgba(30,80,60,0.25)',
+  good: 'rgba(50,140,90,0.25)',
+  great: 'rgba(100,200,160,0.25)',
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -85,7 +87,7 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
     if (diffDays >= 14 && diffDays < 21) return lang === 'vi' ? `2 tuần trước` : `2W ago`;
     if (diffDays >= 21 && diffDays < 28) return lang === 'vi' ? `3 tuần trước` : `3W ago`;
     if (diffDays >= 28 && diffDays < 60) return lang === 'vi' ? `1 tháng trước` : `1M ago`;
-    
+
     // fallback
     const yyyy = targetDate.getFullYear();
     const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
@@ -101,7 +103,7 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
     for (const e of entries) {
       if (e.status !== 'saved') continue;
       if (!e.imageUri && !e.text && !(e.media && e.media.length > 0)) continue;
-      
+
       if (e.media && e.media.length > 0) {
         for (let i = 0; i < e.media.length; i++) {
           arr.push({

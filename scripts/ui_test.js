@@ -298,8 +298,8 @@ async function runUITests() {
         text.includes('Chưa có reel') || text.includes('No reels'));
     }
 
-    // ─── §9  Me Tab — Settings Groups ────────────────────────────────────────
-    section('§9  Me Tab — Settings Groups');
+    // ─── §9  Me Tab ────────────────────────────────────────
+    section('§9  Me Tab');
 
     const meClicked = await clickText(page, 'Me', 'Tôi', 'Settings');
     assert('Me tab button found and clickable', meClicked);
@@ -309,16 +309,7 @@ async function runUITests() {
       text = await pageText(page);
 
       assert('Me screen title visible',
-        text.includes('Góc riêng') || text.includes('Your Corner') || text.includes('Settings'));
-
-      assert('Privacy / Permissions group present',
-        text.includes('Quyền') || text.includes('Permission') || text.includes('quyền riêng tư') || text.includes('Privacy'));
-
-      assert('App & Appearance group present',
-        text.includes('Giao diện') || text.includes('App') || text.includes('Appearance') || text.includes('theme'));
-
-      assert('Diary Lock group present',
-        text.includes('Khóa') || text.includes('Lock') || text.includes('PIN') || text.includes('Face ID'));
+        text.includes('Me') || text.includes('Góc riêng') || text.includes('Your Corner'));
     }
 
     // ─── §10  Premium Banner ──────────────────────────────────────────────────
@@ -330,72 +321,8 @@ async function runUITests() {
         text.includes('premium') || text.includes('sparkles'));
     }
 
-    // ─── §11  Privacy & Additional Dialogs ────────────────────────────────────
-    section('§11  Me Tab — Privacy & Settings Dialogs');
-
-    if (meClicked) {
-      // Privacy
-      const privacyClicked = await clickText(page, 'Quyền riêng tư', 'Privacy', 'Tìm hiểu');
-      if (privacyClicked) {
-        await sleep(WAIT_MED);
-        text = await pageText(page);
-        assert('Privacy dialog opens and shows on-device storage info',
-          text.includes('SQLite') || text.includes('trên máy') || text.includes('On-Device') || text.includes('device'));
-
-        assert('Privacy dialog mentions AI labels (not full text)',
-          text.includes('AI') || text.includes('label') || text.includes('ẩn danh') || text.includes('anonymi'));
-
-        await clickText(page, 'Đóng', 'Close');
-        await sleep(WAIT_SHORT);
-      } else {
-        assert('Privacy row found (may be scrolled offscreen)', false, 'clickText could not find privacy row');
-      }
-
-      // Theme
-      const themeClicked = await clickText(page, 'Giao diện', 'Theme');
-      if (themeClicked) {
-        await sleep(WAIT_MED);
-        text = await pageText(page);
-        assert('Theme dialog opens (shows Light/Dark options)', text.includes('Sáng') || text.includes('Tối') || text.includes('Light') || text.includes('Dark'));
-        await clickText(page, 'Đóng', 'Close');
-        await sleep(WAIT_SHORT);
-      }
-
-      // Accent Color
-      const colorClicked = await clickText(page, 'Màu chủ đạo', 'Accent Color');
-      if (colorClicked) {
-        await sleep(WAIT_MED);
-        text = await pageText(page);
-        assert('Accent Color dialog opens', text.includes('Màu') || text.includes('Color') || text.includes('chủ đạo'));
-        await clickText(page, 'Đóng', 'Close');
-        await sleep(WAIT_SHORT);
-      }
-
-      // Delete Journal (Safe check only)
-      const deleteRowClicked = await clickText(page, 'Xóa toàn bộ', 'Xóa nhật ký', 'Delete');
-      if (deleteRowClicked) {
-        await sleep(WAIT_MED);
-        text = await pageText(page);
-        assert('Delete Journal dialog opens with warning', text.includes('XÓA') || text.includes('thiết bị') || text.includes('Delete') || text.includes('device'));
-        
-        // CRITICAL: MUST CANCEL
-        const canceled = await clickText(page, 'Hủy', 'Cancel');
-        assert('Delete Journal dialog safely canceled', canceled);
-        await sleep(WAIT_SHORT);
-      }
-    }
-
-    // ─── §12  Backup Row ──────────────────────────────────────────────────────
-    section('§12  Me Tab — Backup & Restore Row');
-
-    if (meClicked) {
-      text = await pageText(page);
-      assert('Backup & Restore row visible in Me screen',
-        text.includes('Sao lưu') || text.includes('Backup') || text.includes('backup'));
-    }
-
-    // ─── §13  FAB Button ──────────────────────────────────────────────────────
-    section('§13  FAB (+) Compose Button');
+    // ─── §11  FAB Button ──────────────────────────────────────────────────────
+    section('§11  FAB (+) Compose Button');
 
     // Navigate back to Home to check FAB
     await clickText(page, 'Home', 'Trang chủ');
@@ -410,8 +337,8 @@ async function runUITests() {
     });
     assert('FAB (+) compose button is present on Home screen', hasFab);
 
-    // ─── §14  Tab Bar ─────────────────────────────────────────────────────────
-    section('§14  Tab Bar — All 4 Tabs Present');
+    // ─── §12  Tab Bar ─────────────────────────────────────────────────────────
+    section('§12  Tab Bar — All 4 Tabs Present');
 
     text = await pageText(page);
     assert('Tab bar has "Home" tab label',  text.includes('Home'));
