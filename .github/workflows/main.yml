@@ -25,7 +25,7 @@ jobs:
         run: npm run test:smoke | tee smoke_test.log
 
       - name: Run UI test
-        run: npm run test:ui | tee ui_test.logS
+        run: npm run test:ui | tee ui_test.log
 
       - name: Prepare combined log
         run: cat smoke_test.log ui_test.log > test_results.log

@@ -22,7 +22,7 @@
  *  §14  Tab bar has all 4 tabs (Home, Ngày, Reel, Me)
  */
 
-const puppeteer = require('puppeteer');
+import puppeteer from 'puppeteer';
 
 // ─── Colours ──────────────────────────────────────────────────────────────────
 const c = {
@@ -379,4 +379,4 @@ async function runUITests() {
   }
 }
 
-runUITests();
+await runUITests();
