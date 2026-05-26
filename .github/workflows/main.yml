@@ -50,7 +50,7 @@ jobs:
         with:
           server_address: smtp.office365.com
           server_port: 587
-          secure: true
+          secure: false
           username: ${{ secrets.OUTLOOK_USERNAME }}
           password: ${{ secrets.OUTLOOK_PASSWORD }}
           subject: "Daily Log - Test Results"
