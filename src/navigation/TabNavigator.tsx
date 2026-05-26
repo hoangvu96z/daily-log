@@ -240,6 +240,7 @@ export function TabNavigator() {
                 });
               }}
               entriesCount={entries.length}
+              entries={entries}
               onResetJournal={resetEntries}
             />
           )}

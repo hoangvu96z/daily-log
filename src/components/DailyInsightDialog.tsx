@@ -1,7 +1,9 @@
 import React from 'react';
 import { Modal, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { Text } from './AppText';
+import { MoodTrendChart } from './MoodTrendChart';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { Entry } from '../types';
@@ -31,6 +33,7 @@ export function DailyInsightDialog({ visible, entries, onClose, t }: { visible: 
               {homeT.insightsText}
             </Text>
           </View>
+          <MoodTrendChart entries={entries} />
           <Pressable style={[styles.saveButton, { marginTop: 20 }]} onPress={onClose}>
             <Text style={styles.saveButtonText}>{t.common.close}</Text>
           </Pressable>

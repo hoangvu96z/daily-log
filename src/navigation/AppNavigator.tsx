@@ -10,6 +10,8 @@ import { PinUnlockScreen } from '../screens/PinUnlockScreen';
 import { DetailScreen } from '../screens/DetailScreen';
 import { RootStackParamList } from '../types';
 import { TabNavigator } from './TabNavigator';
+import { SearchScreen } from '../screens/SearchScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -75,6 +77,8 @@ export function AppNavigator() {
             <Stack.Screen name="Tabs" component={TabNavigator} />
             <Stack.Screen name="PinSetup" component={PinSetupScreen} />
             <Stack.Screen name="Detail" component={DetailScreen} />
+            <Stack.Screen name="Search" component={SearchScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
           </>
         )}
       </Stack.Navigator>

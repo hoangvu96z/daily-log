@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { Entry, Settings, WeeklyReel } from '../types';
+import { Entry, Settings, WeeklyReel, HighlightCollection } from '../types';
 
 let SQLite: any = null;
 if (Platform.OS !== 'web') {
@@ -61,7 +61,15 @@ const MIGRATIONS = [
     );
   `,
   // Migration 2: Add media column for Multi-Image/Video
-  `ALTER TABLE entries ADD COLUMN media TEXT DEFAULT '[]';`
+  `ALTER TABLE entries ADD COLUMN media TEXT DEFAULT '[]';`,
+  // Migration 3: Add Highlights table
+  `CREATE TABLE IF NOT EXISTS highlights (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    coverImageUri TEXT,
+    entryIds TEXT NOT NULL DEFAULT '[]',
+    createdAt TEXT NOT NULL
+  );`
 ];
 
 // === Table Initialization ===
@@ -294,6 +302,52 @@ export async function insertReel(reel: WeeklyReel): Promise<void> {
   );
 }
 
+// === Highlights CRUD ===
+
+export async function getAllHighlights(): Promise<HighlightCollection[]> {
+  if (Platform.OS === 'web') {
+    const raw = localStorage.getItem('ad_highlights');
+    return raw ? JSON.parse(raw) : [];
+  }
+  const database = await getDB();
+  const rows = await database.getAllAsync('SELECT * FROM highlights ORDER BY createdAt DESC');
+  return rows.map(rowToHighlight);
+}
+
+export async function insertHighlight(highlight: HighlightCollection): Promise<void> {
+  if (Platform.OS === 'web') {
+    const all = await getAllHighlights();
+    const existing = all.findIndex((h) => h.id === highlight.id);
+    if (existing >= 0) all[existing] = highlight;
+    else all.push(highlight);
+    all.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    localStorage.setItem('ad_highlights', JSON.stringify(all));
+    return;
+  }
+  const database = await getDB();
+  await database.runAsync(
+    `INSERT OR REPLACE INTO highlights (id, title, coverImageUri, entryIds, createdAt)
+     VALUES (?, ?, ?, ?, ?)`,
+    [
+      highlight.id,
+      highlight.title,
+      highlight.coverImageUri ?? null,
+      JSON.stringify(highlight.entryIds),
+      highlight.createdAt,
+    ],
+  );
+}
+
+export async function deleteHighlight(id: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    const all = await getAllHighlights();
+    localStorage.setItem('ad_highlights', JSON.stringify(all.filter(h => h.id !== id)));
+    return;
+  }
+  const database = await getDB();
+  await database.runAsync('DELETE FROM highlights WHERE id = ?', [id]);
+}
+
 // === Row Mappers ===
 
 function rowToEntry(row: Record<string, unknown>): Entry {
@@ -339,5 +393,21 @@ function rowToReel(row: Record<string, unknown>): WeeklyReel {
     coverImageId: (row.coverImageId as string) ?? undefined,
     coverTone: row.coverTone as string,
     entryIds,
+  };
+}
+
+function rowToHighlight(row: Record<string, unknown>): HighlightCollection {
+  let entryIds: string[] = [];
+  try {
+    entryIds = JSON.parse(row.entryIds as string);
+  } catch {
+    entryIds = [];
+  }
+  return {
+    id: row.id as string,
+    title: row.title as string,
+    coverImageUri: (row.coverImageUri as string) ?? undefined,
+    entryIds,
+    createdAt: row.createdAt as string,
   };
 }

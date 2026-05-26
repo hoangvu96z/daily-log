@@ -13,6 +13,7 @@ import { useTranslation } from '../i18n/translations';
 import { RootStackParamList } from '../types';
 import { moodEmoji } from '../data/mockData';
 import { styles } from '../styles';
+import { palette } from '../theme/palette';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Detail'>;
 
@@ -46,18 +47,18 @@ export function DetailScreen({ route, navigation }: Props) {
   const viewerImages = useMemo(() => {
     if (!detailEntry) return [];
     if (detailEntry.media && detailEntry.media.length > 0) {
-      return detailEntry.media.filter(m => m.type === 'image').map(m => ({ uri: m.uri }));
+      return detailEntry.media;
     }
-    if (detailEntry.imageUri) return [{ uri: detailEntry.imageUri }];
+    if (detailEntry.imageUri) return [{ uri: detailEntry.imageUri, type: 'image' as const }];
     return [];
   }, [detailEntry]);
 
   if (!detailEntry) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Entry not found.</Text>
-        <Pressable onPress={() => navigation.goBack()} style={{ marginTop: 20, padding: 12, backgroundColor: '#eee', borderRadius: 8 }}>
-          <Text>Go Back</Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: palette.background, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: palette.ink }}>Entry not found.</Text>
+        <Pressable onPress={() => navigation.goBack()} style={{ marginTop: 20, padding: 12, backgroundColor: palette.outline, borderRadius: 8 }}>
+          <Text style={{ color: palette.ink }}>Go Back</Text>
         </Pressable>
       </SafeAreaView>
     );
@@ -79,12 +80,12 @@ export function DetailScreen({ route, navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top', 'bottom']}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#eee' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.background }} edges={['top', 'bottom']}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: palette.outline }}>
         <Pressable onPress={() => navigation.goBack()} style={{ padding: 4, marginRight: 16 }} hitSlop={10}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color={palette.ink} />
         </Pressable>
-        <Text style={{ fontSize: 16, fontWeight: '600' }}>
+        <Text style={{ fontSize: 16, fontWeight: '600', color: palette.ink }}>
           {formatDateTitle(detailEntry.date, lang)} • {detailEntry.time}
         </Text>
       </View>
@@ -95,19 +96,15 @@ export function DetailScreen({ route, navigation }: Props) {
             <PhotoGrid 
               media={detailEntry.media}
               onPressImage={(index) => {
-                const mediaItem = detailEntry.media![index];
-                if (mediaItem.type === 'image') {
-                  const imgIndex = detailEntry.media!.filter(m => m.type === 'image').findIndex(m => m.uri === mediaItem.uri);
-                  setViewerIndex(Math.max(0, imgIndex));
-                  setViewerVisible(true);
-                }
+                setViewerIndex(index);
+                setViewerVisible(true);
               }}
             />
           </View>
         ) : detailEntry.imageUri ? (
           <View style={{ width: '100%', paddingHorizontal: 16, paddingTop: 16 }}>
             <Pressable 
-              style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: 16, overflow: 'hidden', backgroundColor: '#f5f5f5' }}
+              style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: 16, overflow: 'hidden', backgroundColor: palette.outline }}
               onPress={() => { setViewerIndex(0); setViewerVisible(true); }}
             >
               <Image source={{ uri: detailEntry.imageUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
@@ -116,13 +113,13 @@ export function DetailScreen({ route, navigation }: Props) {
         ) : null}
 
         <View style={{ padding: 20 }}>
-          <View style={[styles.moodChip, { alignSelf: 'flex-start', marginBottom: 16, backgroundColor: moodBgColors[detailEntry.mood] || 'rgba(158,158,158,0.15)' }]}>
+          <View style={[styles.moodChip, { alignSelf: 'flex-start', marginBottom: 16, backgroundColor: moodBgColors[detailEntry.mood] || palette.outline }]}>
             <MaterialCommunityIcons name={moodEmoji[detailEntry.mood]} size={16} color={moodTextColors[detailEntry.mood]} style={{ marginRight: 4 }} />
-            <Text style={[{ fontSize: 12, fontWeight: '600' }, { color: moodTextColors[detailEntry.mood] || '#9E9E9E' }]}>
+            <Text style={[{ fontSize: 12, fontWeight: '600' }, { color: moodTextColors[detailEntry.mood] || palette.muted }]}>
               {t.mood[detailEntry.mood]}
             </Text>
           </View>
-          <Text style={{ fontSize: 16, lineHeight: 24, color: '#333' }}>{detailEntry.text}</Text>
+          <Text style={{ fontSize: 16, lineHeight: 24, color: palette.ink }}>{detailEntry.text}</Text>
         </View>
       </ScrollView>
 

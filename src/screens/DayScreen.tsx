@@ -14,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ensureAutoTrackerFreshness } from '../skills/autoTracker';
 import { useJournalStore } from '../memory/store';
 import { MomentComposer } from '../components/MomentComposer';
+import { HighlightPickerSheet } from '../components/HighlightPickerSheet';
 
 import { useNavigation } from '@react-navigation/native';
 import { SlideOutRight, LinearTransition } from 'react-native-reanimated';
@@ -59,6 +60,7 @@ export function DayScreen({
   const { updateEntry, deleteEntry } = useJournalStore();
   const navigation = useNavigation<any>();
   const [editingEntry, setEditingEntry] = React.useState<Entry | null>(null);
+  const [highlightEntryId, setHighlightEntryId] = React.useState<string | null>(null);
 
   const handleDelete = React.useCallback((id: string) => {
     deleteEntry(id);
@@ -129,6 +131,7 @@ export function DayScreen({
               onDiscard={() => onDiscardSuggestion(entry.id)}
               onEdit={() => handleEdit(entry)}
               onDelete={() => handleDelete(entry.id)}
+              onAddToHighlight={(id) => setHighlightEntryId(id)}
               t={t}
             />
           </View>
@@ -144,6 +147,11 @@ export function DayScreen({
         onSave={handleSaveEdit}
       />
     )}
+    <HighlightPickerSheet 
+      visible={!!highlightEntryId}
+      entryId={highlightEntryId}
+      onClose={() => setHighlightEntryId(null)}
+    />
     </>
   );
 }

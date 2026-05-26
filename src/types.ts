@@ -17,6 +17,7 @@ export type MediaItem = {
   width?: number;
   height?: number;
   duration?: number; // For videos
+  thumbnailUri?: string; // Extracted cover image for video
 };
 
 // === Entry ===
@@ -76,6 +77,15 @@ export type WeeklyReel = {
   entryIds: string[];        // UUIDs of entries in this reel
 };
 
+// === Highlights ===
+export type HighlightCollection = {
+  id: string;
+  title: string;
+  coverImageUri?: string;
+  entryIds: string[]; // UUIDs of the entries in this highlight
+  createdAt: string;
+};
+
 // === Composer Draft ===
 export type ComposerDraft = {
   mode: ComposerMode;
@@ -110,6 +120,12 @@ export type TabItem = {
 export type RootStackParamList = {
   Onboarding: undefined;
   Tabs: undefined;
-  PinSetup: undefined;
-  Detail: { entryId: string };
+  PinSetup: {
+    mode: 'setup' | 'change' | 'disable';
+  };
+  Detail: {
+    entryId: string;
+  };
+  Search: undefined;
+  Settings: undefined;
 };

@@ -5,6 +5,7 @@ import Animated, { SlideOutRight, LinearTransition } from 'react-native-reanimat
 import { Text } from './AppText';
 import { AnimatedCard } from './AnimatedCard';
 import { PhotoGrid } from './PhotoGrid';
+import { MediaCarousel } from './MediaCarousel';
 import { ImagePlaceholder } from './ImagePlaceholder';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
@@ -35,6 +36,7 @@ export function TimelineCard({
   onDiscard,
   onEdit,
   onDelete,
+  onAddToHighlight,
   t,
 }: {
   entry: Entry;
@@ -44,6 +46,7 @@ export function TimelineCard({
   onDiscard: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onAddToHighlight?: (entryId: string) => void;
   t: any;
 }) {
   const suggested = entry.status === 'suggested';
@@ -94,6 +97,7 @@ export function TimelineCard({
                   '',
                   [
                     { text: t.common.cancel, style: 'cancel' },
+                    { text: t.me?.addToHighlight || 'Thêm vào Nổi bật', onPress: () => onAddToHighlight?.(entry.id) },
                     { text: t.common.edit, onPress: onEdit },
                     { text: t.common.delete, style: 'destructive', onPress: () => {
                       Alert.alert(t.common.deleteConfirmTitle, t.common.deleteConfirmDesc, [

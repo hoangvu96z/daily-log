@@ -9,12 +9,14 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hoangvu96z.dailylog"
     },
     "android": {
+      "package": "com.hoangvu96z.dailylog",
       "adaptiveIcon": {
         "backgroundColor": "#f7f0e6"
       }
-    }
+    },
   }
 }

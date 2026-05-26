@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useJournalStore } from './src/memory/store';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { checkBiometricAvailability } from './src/skills/permissions';
+import { syncWidgetData } from './src/skills/widget';
 import { registerAutoTracker, unregisterAutoTracker, runAutoTrackerOnce } from './src/skills/autoTracker';
 import {
   useFonts,
@@ -23,7 +24,7 @@ import { styles } from './src/styles';
 import { palette } from './src/theme/palette';
 
 export default function App() {
-  const { hydrated, initStore, updateSettings, settings } = useJournalStore();
+  const { hydrated, initStore, updateSettings, settings, entries } = useJournalStore();
   const { t } = useTranslation();
 
   const [fontsLoaded] = useFonts({
@@ -37,6 +38,12 @@ export default function App() {
   useEffect(() => {
     initStore();
   }, [initStore]);
+
+  useEffect(() => {
+    if (hydrated) {
+      syncWidgetData(entries);
+    }
+  }, [hydrated, entries]);
 
   useEffect(() => {
     if (!hydrated) return;

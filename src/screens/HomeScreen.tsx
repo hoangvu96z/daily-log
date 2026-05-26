@@ -15,7 +15,7 @@ import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { Entry } from '../types';
 import { HighlightTile } from '../components/HighlightTile';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { ensureAutoTrackerFreshness } from '../skills/autoTracker';
 import { getLocalDateString } from '../utils/dateUtils';
 import { mostFrequent } from '../utils/arrayUtils';
@@ -53,6 +53,7 @@ export function HomeScreen({
   onUpgrade?: () => void;
 }) {
   const { t, lang, locale } = useTranslation();
+  const navigation = useNavigation();
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [insightVisible, setInsightVisible] = useState(false);
 
@@ -158,9 +159,17 @@ export function HomeScreen({
       scrollEventThrottle={16}
     >
       {/* Header Section */}
-      <View style={styles.header}>
-        <RNAnimated.Text style={[styles.screenTitle, { fontSize: titleFontSize }]}>{t.home.title}</RNAnimated.Text>
-        <Text style={styles.screenSubtitle}>{t.home.subtitle}</Text>
+      <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }]}>
+        <View>
+          <RNAnimated.Text style={[styles.screenTitle, { fontSize: titleFontSize }]}>{t.home.title}</RNAnimated.Text>
+          <Text style={styles.screenSubtitle}>{t.home.subtitle}</Text>
+        </View>
+        <Pressable 
+          style={{ padding: 8, backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: 20 }}
+          onPress={() => (navigation as any).navigate('Search')}
+        >
+          <Ionicons name="search" size={24} color={palette.ink} />
+        </Pressable>
       </View>
 
       {/* Bento Grid Stack */}

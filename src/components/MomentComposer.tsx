@@ -12,6 +12,9 @@ import { ImagePlaceholder } from './ImagePlaceholder';
 import { Image } from 'react-native';
 import { aiService, AISuggestionInput } from '../skills/aiService';
 import { getLocalDateString } from '../utils/dateUtils';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { LocationPicker, LocationResult } from './LocationPicker';
+import { requestLocationAccess } from '../skills/permissions';
 
 const moodIconColors: Record<Mood, string> = {
   very_bad: '#E53935', // Red
@@ -42,6 +45,11 @@ export function MomentComposer({
   const [suggestionVisible, setSuggestionVisible] = useState(mode === 'create');
   const [pickedMedia, setPickedMedia] = useState<MediaItem[]>(initialEntry?.media || (initialEntry?.imageUri ? [{ uri: initialEntry.imageUri, type: 'image' }] : []));
   const activeMedia = pickedMedia.length > 0 ? pickedMedia : (draft?.media || (draft?.imageUri ? [{ uri: draft.imageUri, type: 'image' }] : []));
+  
+  const [customDate, setCustomDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [customLocation, setCustomLocation] = useState<LocationResult | null>(null);
 
   const [suggestion, setSuggestion] = useState('');
   const [suggestionStatus, setSuggestionStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -52,6 +60,15 @@ export function MomentComposer({
       setNote(initialEntry?.text || '');
       setPickedMedia(initialEntry?.media || (initialEntry?.imageUri ? [{ uri: initialEntry.imageUri, type: 'image' }] : []));
       setSuggestionVisible(mode === 'create');
+      
+      if (initialEntry) {
+        const [yyyy, mm, dd] = initialEntry.date.split('-');
+        const [hh, min] = initialEntry.time.split(':');
+        const entryDate = new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min));
+        setCustomDate(entryDate);
+      } else {
+        setCustomDate(new Date());
+      }
     }
   }, [visible, initialEntry, mode]);
 
@@ -145,15 +162,15 @@ export function MomentComposer({
     } else {
       onSave({
         id: Date.now().toString(),
-        date: draft?.prefillDate || getLocalDateString(now),
-        time: draft?.prefillTime || now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        date: getLocalDateString(customDate),
+        time: customDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false }),
         mood,
         text: note || suggestion,
         aiSuggestion: suggestion,
         media: activeMedia.length > 0 ? activeMedia : undefined,
-        locationName: draft?.locationName,
-        locationLat: draft?.locationLat,
-        locationLon: draft?.locationLon,
+        locationName: customLocation !== null ? (customLocation.name || undefined) : draft?.locationName,
+        locationLat: customLocation !== null ? (customLocation.lat || undefined) : draft?.locationLat,
+        locationLon: customLocation !== null ? (customLocation.lon || undefined) : draft?.locationLon,
         source: 'manual',
         status: 'saved',
         isHighlight: true,
@@ -163,6 +180,10 @@ export function MomentComposer({
     setPickedMedia([]);
     setSuggestionVisible(true);
   };
+
+  const displayLocation = customLocation !== null 
+    ? (customLocation.name || t.composer.noLocation)
+    : (draft?.locationName || draft?.calendarText || t.composer.noLocation);
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -208,12 +229,35 @@ export function MomentComposer({
             </Pressable>
           )}
           {mode === 'create' && draft && (
-            <Pressable style={styles.metaBox}>
-              <Ionicons name="location-outline" size={18} color={palette.green} />
-              <Text style={styles.metaText}>
-                {t.composer.now} • {draft.locationName || draft.calendarText || t.composer.noLocation}
-              </Text>
-            </Pressable>
+            <View style={{ gap: 8, marginBottom: 12 }}>
+              {/* Date/Time Button */}
+              <Pressable 
+                style={[styles.metaBox, { marginBottom: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]} 
+                onPress={() => setShowDatePicker(true)}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Ionicons name="calendar-outline" size={18} color={palette.green} />
+                  <Text style={styles.metaText}>
+                    {customDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })} {customDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 13, color: palette.primary, fontWeight: '700' }}>{t.composer.changeDateTime}</Text>
+              </Pressable>
+
+              {/* Location Display */}
+              <Pressable 
+                style={[styles.metaBox, { marginBottom: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
+                onPress={() => setShowLocationPicker(true)}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, paddingRight: 8 }}>
+                  <Ionicons name="location-outline" size={18} color={palette.green} />
+                  <Text style={[styles.metaText, { flex: 1 }]} numberOfLines={1}>
+                    {displayLocation}
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 13, color: palette.primary, fontWeight: '700' }}>{t.composer.changeLocation}</Text>
+              </Pressable>
+            </View>
           )}
           <Text style={styles.fieldLabel}>{t.composer.moodLabel}</Text>
           <View style={styles.moodRow}>
@@ -299,6 +343,43 @@ export function MomentComposer({
             </Text>
           </Pressable>
         </View>
+
+        <DateTimePickerModal
+          isVisible={showDatePicker}
+          mode="datetime"
+          date={customDate}
+          onConfirm={(date) => {
+            setShowDatePicker(false);
+            setCustomDate(date);
+          }}
+          onCancel={() => setShowDatePicker(false)}
+          confirmTextIOS={t.common.confirm}
+          cancelTextIOS={t.common.cancel}
+        />
+
+        <LocationPicker
+          visible={showLocationPicker}
+          onClose={() => setShowLocationPicker(false)}
+          onSelect={(loc) => {
+            setCustomLocation(loc);
+            setShowLocationPicker(false);
+          }}
+          onClear={() => {
+            setCustomLocation({ name: '', lat: 0, lon: 0 });
+            setShowLocationPicker(false);
+          }}
+          onUseCurrent={async () => {
+            setShowLocationPicker(false);
+            const result = await requestLocationAccess();
+            if (result.status === 'granted') {
+              setCustomLocation({
+                name: result.locationName || '',
+                lat: result.locationLat || 0,
+                lon: result.locationLon || 0
+              });
+            }
+          }}
+        />
       </SafeAreaView>
     </Modal>
   );

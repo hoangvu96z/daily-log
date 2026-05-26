@@ -122,30 +122,30 @@ Mục tiêu: Thiết lập hệ thống monetize và bảo vệ dữ liệu (k�
 
 ### 1. Hoàn thiện Logic Premium & UI
 - **File:** `src/components/PaywallModal.tsx`, `src/services/subscription.ts`
-- [ ] Cập nhật Copywriting của Paywall (UI/UX):
-  - [ ] Đổi "Đồng bộ đám mây" thành "Xuất file backup (.dailylog) để lưu trên iCloud/Drive".
-  - [ ] Đổi "Không giới hạn hình ảnh" thành "Mở khóa nhiều ảnh hơn mỗi tuần".
-- [ ] Triển khai Native IAP (In-App Purchases):
-  - [ ] Thêm thư viện `react-native-purchases` (RevenueCat) hoặc `expo-in-app-purchases`.
-  - [ ] Implement hàm `purchase(planId)` giao tiếp với store platform (Apple App Store / Google Play). Xử lý promise trả về boolean success/fail hoặc ném error.
-  - [ ] Implement hàm `restorePurchases()` để khôi phục khi user cài lại app.
-  - [ ] Lưu trữ flag `settings.isPremium` vào DB và lưu receipt validation key vào `SecureStore`.
-- [ ] Cập nhật Modal State:
-  - [ ] Bắt lỗi và show Toast/Alert: "Thanh toán bị hủy" hoặc "Lỗi hệ thống: ABC".
+- [x] Cập nhật Copywriting của Paywall (UI/UX):
+  - [x] Đổi "Đồng bộ đám mây" thành "Xuất file backup (.dailylog) để lưu trên iCloud/Drive".
+  - [x] Đổi "Không giới hạn hình ảnh" thành "Mở khóa nhiều ảnh hơn mỗi tuần".
+- [x] Triển khai Native IAP (In-App Purchases):
+  - [x] Thêm thư viện `react-native-purchases` (RevenueCat) hoặc `expo-in-app-purchases`.
+  - [x] Implement hàm `purchase(planId)` giao tiếp với store platform (Apple App Store / Google Play). Xử lý promise trả về boolean success/fail hoặc ném error.
+  - [x] Implement hàm `restorePurchases()` để khôi phục khi user cài lại app.
+  - [x] Lưu trữ flag `settings.isPremium` vào DB và lưu receipt validation key vào `SecureStore`.
+- [x] Cập nhật Modal State:
+  - [x] Bắt lỗi và show Toast/Alert: "Thanh toán bị hủy" hoặc "Lỗi hệ thống: ABC".
 
 ### 2. Export / Import Backup Full Media
 - **File:** `src/memory/backup.ts`
-- [ ] Logic Xuất dữ liệu (Export):
-  - [ ] Dump toàn bộ entries, settings, reels ra JSON file (`metadata.json`).
-  - [ ] Parse toàn bộ file, gom mảng chứa các `imageUri` local.
-  - [ ] Sao chép từng tệp ảnh từ Document/Cache directory vào một thư mục staging (VD: `FileSystem.cacheDirectory + 'backup-media'`).
-  - [ ] Dùng một package JS zip (như `jszip` hoặc `react-native-zip-archive`) để đóng gói `metadata.json` + folder `media/` thành một file `.zip`.
-  - [ ] Nén/Mã hoá (XOR) file `.zip` đó thành định dạng `.dailylog` và share ra hệ thống.
-- [ ] Logic Nhập dữ liệu (Import):
-  - [ ] Giải mã XOR -> unzip nội dung.
-  - [ ] Parse `metadata.json` và insert đè (hoặc thay thế) database hiện tại.
-  - [ ] Move tất cả file trong folder `media/` của zip vào lại Document Directory của ứng dụng.
-  - [ ] Viết hàm duyệt database để regex/replace `imageUri` trỏ đúng vào absolute path mới của thiết bị (do path iOS/Android thay đổi theo từng lần cài/version OS).
+- [x] Logic Xuất dữ liệu (Export):
+  - [x] Dump toàn bộ entries, settings, reels ra JSON file (`metadata.json`).
+  - [x] Parse toàn bộ file, gom mảng chứa các `imageUri` local.
+  - [x] Sao chép từng tệp ảnh từ Document/Cache directory vào một thư mục staging (VD: `FileSystem.cacheDirectory + 'backup-media'`).
+  - [x] Dùng một package JS zip (như `jszip` hoặc `react-native-zip-archive`) để đóng gói `metadata.json` + folder `media/` thành một file `.zip`.
+  - [x] Nén/Mã hoá (XOR) file `.zip` đó thành định dạng `.dailylog` và share ra hệ thống.
+- [x] Logic Nhập dữ liệu (Import):
+  - [x] Giải mã XOR -> unzip nội dung.
+  - [x] Parse `metadata.json` và insert đè (hoặc thay thế) database hiện tại.
+  - [x] Move tất cả file trong folder `media/` của zip vào lại Document Directory của ứng dụng.
+  - [x] Viết hàm duyệt database để regex/replace `imageUri` trỏ đúng vào absolute path mới của thiết bị (do path iOS/Android thay đổi theo từng lần cài/version OS).
 
 ---
 
@@ -155,40 +155,40 @@ Mục tiêu: Đưa cảm giác App lên mức mượt mà, "có hồn" (GenZ) th
 
 ### 1. Mood Calendar & Streak
 - **File:** `src/components/MoodCalendar.tsx`, `src/screens/HomeScreen.tsx`
-- [ ] Áp dụng Color-coding: Chấm (dot) theo ngày sẽ hiện màu sắc của mood (Đỏ, Vàng, Xám, Xanh, Tím) thay vì một màu đơn điệu.
-- [ ] Thêm Text Summary Header: "7 ngày vừa qua: X ngày vui, Y ngày bình thường, Z ngày chưa ghi".
-- [ ] Logic Streak: Đếm số ngày liên tục (tới hôm nay) có entry. Nếu >= 3 ngày -> Render 1 chip tag nhỏ trên UI `🔥 3 ngày liên tục`.
+- [x] Áp dụng Color-coding: Chấm (dot) theo ngày sẽ hiện màu sắc của mood (Đỏ, Vàng, Xám, Xanh, Tím) thay vì một màu đơn điệu.
+- [x] Thêm Text Summary Header: "7 ngày vừa qua: X ngày vui, Y ngày bình thường, Z ngày chưa ghi".
+- [x] Logic Streak: Đếm số ngày liên tục (tới hôm nay) có entry. Nếu >= 3 ngày -> Render 1 chip tag nhỏ trên UI `🔥 3 ngày liên tục`.
 
 ### 2. Custom Theme & Dark Mode
 - **File:** `src/theme/palette.ts`, `src/styles.ts`, Zustand Settings
-- [ ] Khởi tạo 2 biến thể bảng màu: Light và Dark.
-- [ ] Tích hợp React Native `useColorScheme` hoặc đọc từ settings người dùng (System / Light / Dark).
-- [ ] Dynamic Style: Map các biến color trong stylesheet sử dụng palette động. Đảm bảo text không bị ẩn màu xám khi qua Darkmode.
+- [x] Khởi tạo 2 biến thể bảng màu: Light và Dark.
+- [x] Tích hợp React Native `useColorScheme` hoặc đọc từ settings người dùng (System / Light / Dark).
+- [x] Dynamic Style: Map các biến color trong stylesheet sử dụng palette động. Đảm bảo text không bị ẩn màu xám khi qua Darkmode.
 
 ### 3. Cải thiện Animation (Reanimated)
 - **File:** Component dùng chung (Card, Modal, Screen)
-- [ ] Bọc các phần tử thẻ (Home / Day / Reel Card) bằng thẻ `Animated.View`. Áp dụng hiệu ứng fade-in + dịch chuyển nhẹ từ dưới lên (SlideUp) khi render lần đầu (stagger effects).
-- [ ] Chỉnh sửa `Modal` mặc định thành Custom Animated View sử dụng `reanimated` để slide-up từ dưới đáy mượt hơn và fade mờ backdrop (hiệu ứng Glassmorphism).
+- [x] Bọc các phần tử thẻ (Home / Day / Reel Card) bằng thẻ `Animated.View`. Áp dụng hiệu ứng fade-in + dịch chuyển nhẹ từ dưới lên (SlideUp) khi render lần đầu (stagger effects).
+- [x] Chỉnh sửa `Modal` mặc định thành Custom Animated View sử dụng `reanimated` để slide-up từ dưới đáy mượt hơn và fade mờ backdrop (hiệu ứng Glassmorphism).
 
 ---
 
 ## 🚀 Khối P2 – Tính năng Mở Rộng Sau Beta (Tương lai)
 *(Phần này không bắt buộc hoàn thiện trong MVP)*
 
-- [ ] Search entries text đầy đủ / filter theo mood / filter theo địa điểm.
-- [ ] Biểu đồ Mood Trend (Line chart phân tích cảm xúc tuần/tháng).
-- [ ] **Hỗ trợ Upload Nhiều Ảnh (Multi-Image Carousel)**:
+- [x] Search entries text đầy đủ / filter theo mood / filter theo địa điểm.
+- [x] Biểu đồ Mood Trend (Line chart phân tích cảm xúc tuần/tháng).
+- [x] **Hỗ trợ Upload Nhiều Ảnh (Multi-Image Carousel)**:
   - Nâng cấp `ImagePicker` để cho phép chọn tối đa 10 ảnh cùng lúc.
   - **Cơ sở dữ liệu**: Đổi cấu trúc `imageUri` (chuỗi) thành `mediaAssets` (mảng JSON) để lưu trữ linh hoạt nhiều tệp tin.
   - **Giao diện (UI)**: Xây dựng Component `Carousel` cho phép vuốt (swipe) mượt mà sang trái/phải.
   - Thêm hệ thống "Pagination Dots" (các dấu chấm tròn) hoặc số đếm (VD: 1/5) góc trên ảnh để dễ theo dõi.
 
-- [ ] **Hỗ trợ Upload & Phát Video Ngắn (Short Reels)**:
+- [x] **Hỗ trợ Upload & Phát Video Ngắn (Short Reels)**:
   - Cho phép người dùng chọn video clip từ thư viện (có thể giới hạn thời lượng < 60 giây để tối ưu dung lượng).
   - Tích hợp thư viện trình phát (`expo-av` hoặc `expo-video`) để tự động phát, tự động lặp (auto-play & loop) và tắt tiếng mặc định (muted) ở màn hình Timeline.
   - **Xử lý ngầm**: Tự động trích xuất 1 khung hình (thumbnail frame) từ video để làm ảnh bìa (cover), giúp màn hình chính hiển thị nhanh không bị giật lag.
   - Hệ thống Reels tự động (Weekly Reels) sẽ ghép các video clip lại thành một thước phim dài sinh động thay vì chỉ chạy Slideshow ảnh tĩnh.
-- [ ] Hệ thống Push Notification cục bộ (`expo-notifications`):
-  - [ ] Nhắc nhở buổi tối (VD: 21:00) "Hôm nay bạn thấy thế nào?".
-  - [ ] Nhắc cuối tuần: "Tuần qua của bạn đã sẵn sàng".
-- [ ] Tạo Home Widget gốc (iOS / Android) render ảnh đại diện "Hôm nay năm trước" lên màn hình chính điện thoại.
+- [x] Hệ thống Push Notification cục bộ (`expo-notifications`):
+  - [x] Nhắc nhở buổi tối (VD: 21:00) "Hôm nay bạn thấy thế nào?".
+  - [x] Nhắc cuối tuần: "Tuần qua của bạn đã sẵn sàng".
+- [x] Tạo Home Widget gốc (iOS / Android) render ảnh đại diện "Hôm nay năm trước" lên màn hình chính điện thoại.

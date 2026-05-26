@@ -24,6 +24,7 @@ import { Dimensions,
   View } from 'react-native';
 import { Text } from '../components/AppText';
 import { useTranslation } from '../i18n/translations';
+import { getLocalDateString } from '../utils/dateUtils';
 import Animated, { FadeIn, FadeOut, interpolate, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { moodEmoji } from '../data/mockData';
 import { Entry, Mood } from '../types';
@@ -60,10 +61,37 @@ interface SlideshowScreenProps {
 }
 
 export function SlideshowScreen({ visible, entries, weekTitle, onClose }: SlideshowScreenProps) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [slideKey, setSlideKey] = useState(0);
+
+  const getRelativeDateString = (dateStr: string) => {
+    if (!dateStr) return '';
+    const todayStr = getLocalDateString();
+    if (dateStr === todayStr) return lang === 'vi' ? 'Hôm nay' : 'Today';
+
+    const targetDate = new Date(dateStr);
+    targetDate.setHours(0, 0, 0, 0);
+    const todayDate = new Date(todayStr);
+    todayDate.setHours(0, 0, 0, 0);
+
+    const diffTime = todayDate.getTime() - targetDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) return lang === 'vi' ? 'Hôm qua' : 'Yesterday';
+    if (diffDays > 1 && diffDays < 7) return lang === 'vi' ? `${diffDays} ngày trước` : `${diffDays} days ago`;
+    if (diffDays >= 7 && diffDays < 14) return lang === 'vi' ? `1 tuần trước` : `1W ago`;
+    if (diffDays >= 14 && diffDays < 21) return lang === 'vi' ? `2 tuần trước` : `2W ago`;
+    if (diffDays >= 21 && diffDays < 28) return lang === 'vi' ? `3 tuần trước` : `3W ago`;
+    if (diffDays >= 28 && diffDays < 60) return lang === 'vi' ? `1 tháng trước` : `1M ago`;
+    
+    // fallback
+    const yyyy = targetDate.getFullYear();
+    const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(targetDate.getDate()).padStart(2, '0');
+    return `${dd}/${mm}/${yyyy}`;
+  };
 
   const progressValue = useSharedValue(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -82,6 +110,7 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
             mood: e.mood,
             text: i === 0 ? e.text : undefined, // Only show text on first slide
             time: e.time,
+            date: e.date,
             locationName: e.locationName
           });
         }
@@ -92,6 +121,7 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
           mood: e.mood,
           text: e.text,
           time: e.time,
+          date: e.date,
           locationName: e.locationName
         });
       }
@@ -102,14 +132,13 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
   const slidableEntries = slides;
 
   const advance = useCallback(() => {
-    setCurrentIndex((prev) => {
-      if (prev >= slidableEntries.length - 1) {
-        return 0;
-      }
-      return prev + 1;
-    });
-    setSlideKey((k) => k + 1);
-  }, [slidableEntries.length]);
+    if (currentIndex >= slidableEntries.length - 1) {
+      onClose();
+    } else {
+      setCurrentIndex((prev) => prev + 1);
+      setSlideKey((k) => k + 1);
+    }
+  }, [currentIndex, slidableEntries.length, onClose]);
 
   const startTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -131,7 +160,7 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
   useEffect(() => {
     if (visible) {
       setCurrentIndex(0);
-      setSlideKey(0);
+      setSlideKey(Date.now()); // Ensure slideKey resets to re-trigger animations
     }
   }, [visible]);
 
@@ -141,7 +170,9 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
 
   if (slidableEntries.length === 0) return null;
 
-  const entry = slidableEntries[currentIndex];
+  // Prevent out-of-bounds index during transition renders
+  const safeIndex = currentIndex >= slidableEntries.length ? 0 : currentIndex;
+  const entry = slidableEntries[safeIndex];
   const mood = entry.mood ?? 'neutral';
 
   return (
@@ -233,7 +264,7 @@ export function SlideshowScreen({ visible, entries, weekTitle, onClose }: Slides
                     {t.mood[mood as Mood]}
                   </Text>
                 </View>
-                <Text style={ss.timeText}>{entry.time}</Text>
+                <Text style={ss.timeText}>{getRelativeDateString(entry.date)} • {entry.time}</Text>
               </View>
 
               {/* Entry text */}

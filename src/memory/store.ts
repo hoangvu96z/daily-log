@@ -1,10 +1,11 @@
 import { create } from 'zustand';
-import { Entry, Settings, TabKey, WeeklyReel } from '../types';
+import { Entry, Settings, TabKey, WeeklyReel, HighlightCollection } from '../types';
 import { defaultSettings } from '../data/mockData';
-import { deleteAllEntries, deleteEntry as dbDeleteEntry, updateEntry as dbUpdateEntry, getAllEntries, getAllReels, insertEntry, loadSettings, saveSetting, updateEntryStatus } from './database';
+import { deleteAllEntries, deleteEntry as dbDeleteEntry, updateEntry as dbUpdateEntry, getAllEntries, getAllReels, insertEntry, loadSettings, saveSetting, updateEntryStatus, getAllHighlights, insertHighlight as dbInsertHighlight, deleteHighlight as dbDeleteHighlight } from './database';
 import { hasPinCode } from './secureStore';
 import { generateSeedEntries, isSeedEntry } from '../data/seedEntries';
 import { generateWeeklyReels } from '../skills/reels';
+import { syncWidgetData } from '../skills/widget';
 import { getLocalDateString } from '../utils/dateUtils';
 
 // === Store Interface ===
@@ -40,6 +41,13 @@ interface JournalState {
   reels: WeeklyReel[];
   setReels: (reels: WeeklyReel[]) => void;
 
+  // Highlights
+  highlights: HighlightCollection[];
+  setHighlights: (highlights: HighlightCollection[]) => void;
+  addHighlight: (highlight: HighlightCollection) => Promise<void>;
+  updateHighlight: (id: string, patch: Partial<HighlightCollection>) => Promise<void>;
+  removeHighlight: (id: string) => Promise<void>;
+
   // UI State
   activeTab: TabKey;
   setActiveTab: (tab: TabKey) => void;
@@ -66,11 +74,12 @@ export const useJournalStore = create<JournalState>((set) => ({
 
   // Initialization
   initStore: async () => {
-    const [loadedEntries, settings, reels, pinSet] = await Promise.all([
+    const [loadedEntries, settings, reels, pinSet, loadedHighlights] = await Promise.all([
       getAllEntries(),
       loadSettings(),
       getAllReels(),
       hasPinCode(),
+      getAllHighlights(),
     ]);
     const legacyDemoIds = new Set(['1', '2', '3', '4', '5']);
     const entries = loadedEntries.filter((entry) => !legacyDemoIds.has(entry.id));
@@ -117,6 +126,7 @@ export const useJournalStore = create<JournalState>((set) => ({
       entries,
       settings: { ...settings, pinSet, pinEnabled: pinSet ? settings.pinEnabled : false },
       reels,
+      highlights: loadedHighlights,
       onboardingComplete: onboardingFlag,
       hydrated: true,
     });
@@ -214,6 +224,28 @@ export const useJournalStore = create<JournalState>((set) => ({
   // Weekly Reels — start empty
   reels: [],
   setReels: (reels) => set({ reels }),
+
+  // Highlights
+  highlights: [],
+  setHighlights: (highlights) => set({ highlights }),
+  addHighlight: async (highlight) => {
+    await dbInsertHighlight(highlight);
+    set((state) => ({ highlights: [highlight, ...state.highlights] }));
+  },
+  updateHighlight: async (id, patch) => {
+    const state = useJournalStore.getState();
+    const existing = state.highlights.find((h) => h.id === id);
+    if (!existing) return;
+    const updated = { ...existing, ...patch };
+    await dbInsertHighlight(updated);
+    set((s) => ({
+      highlights: s.highlights.map((h) => (h.id === id ? updated : h)),
+    }));
+  },
+  removeHighlight: async (id) => {
+    await dbDeleteHighlight(id);
+    set((state) => ({ highlights: state.highlights.filter((h) => h.id !== id) }));
+  },
 
   // UI State
   activeTab: 'home',

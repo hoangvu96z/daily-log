@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View, Appearance } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { useJournalStore } from '../memory/store';
 import Animated, { useAnimatedStyle, withRepeat, withTiming, withSequence, Easing, useSharedValue } from 'react-native-reanimated';
 import { Text } from './AppText';
 import { styles } from '../styles';
@@ -31,14 +32,22 @@ export function MoodCalendar({
   onUpgrade?: () => void;
 }) {
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(getLocalDateString());
-  const [mode, setMode] = useState<'7day' | '30day'>('7day');
+  const [mode, setMode] = useState<'7day' | 'month'>('7day');
+  const [viewDate, setViewDate] = useState<Date>(new Date());
 
   useEffect(() => {
     if (visible) {
       setSelectedDateKey(getLocalDateString());
-      setMode(isPremium ? '30day' : '7day');
+      setViewDate(new Date());
+      setMode(isPremium ? 'month' : '7day');
     }
   }, [visible, isPremium]);
+
+  const { settings } = useJournalStore();
+  const systemTheme = Appearance.getColorScheme();
+  const isDark = (settings?.theme === 'system' ? systemTheme : settings?.theme) === 'dark';
+  const glassBg = isDark ? 'rgba(30,30,30,0.75)' : 'rgba(255,255,255,0.75)';
+  const dimBg = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
 
   const moodColors: Record<string, string> = {
     very_bad: '#E53935',
@@ -48,10 +57,38 @@ export function MoodCalendar({
     great:    '#8E24AA',
   };
 
-  const dayCount = mode === '30day' ? 30 : 7;
-  const days = Array.from({ length: dayCount }, (_, i) => {
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
+  const startDay = firstDay === 0 ? 6 : firstDay - 1;
+
+  const blankDays = Array.from({ length: startDay }, (_, i) => null);
+
+  const monthDays = Array.from({ length: daysInMonth }, (_, i) => {
+    const date = new Date(year, month, i + 1);
+    const dateKey = getLocalDateString(date);
+    const dayEntries = entries.filter(e => e.date === dateKey && e.status === 'saved');
+    const dominantMood = dayEntries.length > 0 ? mostFrequent(dayEntries.map(e => e.mood)) : null;
+    return {
+      dateKey,
+      dayNum: i + 1,
+      count: dayEntries.length,
+      mood: dominantMood,
+      isToday: dateKey === getLocalDateString(),
+      isCurrentMonth: true,
+    };
+  });
+
+  const allGridItems = [...blankDays, ...monthDays];
+  const weekRows = [];
+  for (let i = 0; i < allGridItems.length; i += 7) {
+    weekRows.push(allGridItems.slice(i, i + 7));
+  }
+
+  const days = Array.from({ length: 7 }, (_, i) => {
     const date = new Date();
-    date.setDate(date.getDate() - (dayCount - 1 - i));
+    date.setDate(date.getDate() - (7 - 1 - i));
     const dateKey = getLocalDateString(date);
     const dayEntries = entries.filter(e => e.date === dateKey && e.status === 'saved');
     const dominantMood = dayEntries.length > 0 ? mostFrequent(dayEntries.map(e => e.mood)) : null;
@@ -62,26 +99,46 @@ export function MoodCalendar({
       count: dayEntries.length,
       mood: dominantMood,
       isToday: dateKey === getLocalDateString(),
+      isCurrentMonth: date.getMonth() === new Date().getMonth(),
+    };
+  });
+
+  const recent7 = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const dayEntries = entries.filter(e => e.date === getLocalDateString(d) && e.status === 'saved');
+    return {
+      mood: dayEntries.length > 0 ? mostFrequent(dayEntries.map(e => e.mood)) : null,
+      count: dayEntries.length,
     };
   });
 
   let streak = 0;
-  for (let i = days.length - 1; i >= 0; i--) {
-    if (days[i].count > 0) streak++;
+  for (let i = recent7.length - 1; i >= 0; i--) {
+    if (recent7[i].count > 0) streak++;
     else break;
   }
 
-  const recentDays  = days.slice(-7);
-  const goodDays    = recentDays.filter(d => d.mood === 'good' || d.mood === 'great').length;
-  const badDays     = recentDays.filter(d => d.mood === 'bad' || d.mood === 'very_bad').length;
-  const neutralDays = recentDays.filter(d => d.mood === 'neutral').length;
-  const emptyDays   = recentDays.filter(d => !d.mood).length;
+  const goodDays    = recent7.filter(d => d.mood === 'good' || d.mood === 'great').length;
+  const badDays     = recent7.filter(d => d.mood === 'bad' || d.mood === 'very_bad').length;
+  const neutralDays = recent7.filter(d => d.mood === 'neutral').length;
+  const emptyDays   = recent7.filter(d => !d.mood).length;
   const homeT = t.home as any;
 
-  const weekRows: typeof days[] = [];
-  if (mode === '30day') {
-    for (let i = 0; i < days.length; i += 7) weekRows.push(days.slice(i, i + 7));
-  }
+  const now = new Date();
+  const isCurrentMonthView = viewDate.getMonth() === now.getMonth() && viewDate.getFullYear() === now.getFullYear();
+
+  const handlePrevMonth = () => {
+    if (!isPremium) {
+      onUpgrade?.();
+      return;
+    }
+    setViewDate(new Date(year, month - 1, 1));
+  };
+  const handleNextMonth = () => {
+    setViewDate(new Date(year, month + 1, 1));
+  };
+  const monthName = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(viewDate);
 
   const isVi = locale.startsWith('vi');
 
@@ -112,26 +169,21 @@ export function MoodCalendar({
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         
         <View style={{ borderTopLeftRadius: 36, borderTopRightRadius: 36, overflow: 'hidden', maxHeight: '90%' }}>
-          <BlurView intensity={100} tint="light" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={100} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           
-          <View style={{ backgroundColor: 'rgba(255,255,255,0.75)', padding: 24, paddingBottom: 50 }}>
+          <View style={{ backgroundColor: glassBg, padding: 24, paddingBottom: 50 }}>
             
             {/* Header */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={{ fontSize: 24, fontWeight: '800', color: palette.ink }}>{t.home.moodCalendarTitle}</Text>
-                {isPremium && (
-                  <View style={{ backgroundColor: palette.primary, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}>
-                    <Text style={{ color: palette.white, fontSize: 9, fontWeight: '800' }}>PRO</Text>
-                  </View>
-                )}
               </View>
-              <Pressable onPress={onClose} style={{ padding: 6, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 20 }}>
+              <Pressable onPress={onClose} style={{ padding: 6, backgroundColor: dimBg, borderRadius: 20 }}>
                 <Ionicons name="close" size={20} color={palette.ink} />
               </Pressable>
             </View>
 
-            {/* Stats Bar */}
+            {/* Stats Bar (Recent 7 Days) */}
             <View style={{ marginBottom: 24 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginBottom: 8, gap: 8 }}>
                 {streak >= 3 && (
@@ -145,8 +197,8 @@ export function MoodCalendar({
                 </Text>
               </View>
               
-              <View style={{ height: 8, borderRadius: 4, flexDirection: 'row', overflow: 'hidden', backgroundColor: 'rgba(0,0,0,0.05)' }}>
-                {recentDays.length > 0 && (
+              <View style={{ height: 8, borderRadius: 4, flexDirection: 'row', overflow: 'hidden', backgroundColor: dimBg }}>
+                {recent7.length > 0 && (
                   <>
                     <View style={{ flex: goodDays, backgroundColor: moodColors.great }} />
                     <View style={{ flex: neutralDays, backgroundColor: moodColors.neutral }} />
@@ -158,22 +210,22 @@ export function MoodCalendar({
             </View>
 
             {/* Mode Toggle */}
-            <View style={{ flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 16, padding: 4, marginBottom: 24, alignSelf: 'center' }}>
-              {(['7day', '30day'] as const).map((m) => {
-                const label  = homeT.daysLabel(m === '7day' ? 7 : 30);
+            <View style={{ flexDirection: 'row', backgroundColor: dimBg, borderRadius: 16, padding: 4, marginBottom: 24, alignSelf: 'center' }}>
+              {(['7day', 'month'] as const).map((m) => {
+                const label  = m === '7day' ? (homeT.daysLabel ? homeT.daysLabel(7) : '7 ngày') : (isVi ? 'Toàn tháng' : 'Full Month');
                 const isActive = mode === m;
-                const locked   = m === '30day' && !isPremium;
+                const locked   = m === 'month' && !isPremium;
                 return (
                   <Pressable
                     key={m}
                     style={{
                       paddingHorizontal: 24, paddingVertical: 10,
                       borderRadius: 14,
-                      backgroundColor: isActive ? palette.white : 'transparent',
+                      backgroundColor: isActive ? palette.primary : 'transparent',
                       flexDirection: 'row', alignItems: 'center', gap: 6,
                       shadowColor: isActive ? '#000' : 'transparent',
                       shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: isActive ? 0.05 : 0,
+                      shadowOpacity: isActive ? 0.2 : 0,
                       shadowRadius: 4,
                     }}
                     onPress={() => {
@@ -181,8 +233,8 @@ export function MoodCalendar({
                       setMode(m);
                     }}
                   >
-                    {locked && <Ionicons name="lock-closed" size={12} color={isActive ? palette.primary : palette.muted} />}
-                    <Text style={{ color: isActive ? palette.primary : palette.muted, fontSize: 13, fontWeight: '700' }}>{label}</Text>
+                    {locked && <Ionicons name="lock-closed" size={12} color={isActive ? '#ffffff' : palette.ink} />}
+                    <Text style={{ color: isActive ? '#ffffff' : palette.ink, fontSize: 13, fontWeight: '700' }}>{label}</Text>
                   </Pressable>
                 );
               })}
@@ -198,7 +250,7 @@ export function MoodCalendar({
                     return (
                       <Pressable
                         key={day.dateKey}
-                        style={[{ alignItems: 'center', width: '20%' }]}
+                        style={[{ alignItems: 'center', width: '20%' }, !day.isCurrentMonth && { opacity: 0.35 }]}
                         onPress={() => setSelectedDateKey(day.dateKey)}
                       >
                         <Text style={{ fontSize: 12, color: day.isToday ? palette.primary : palette.muted, marginBottom: 12, fontWeight: day.isToday ? '800' : '600' }}>
@@ -211,9 +263,9 @@ export function MoodCalendar({
                           )}
                           <View style={[{
                             width: 56, height: 56, borderRadius: 28,
-                            backgroundColor: day.mood ? `${color}1A` : 'rgba(0,0,0,0.03)',
+                            backgroundColor: day.mood ? `${color}1A` : dimBg,
                             borderWidth: day.mood ? 2 : 1,
-                            borderColor: day.mood ? color : 'rgba(0,0,0,0.08)',
+                            borderColor: day.mood ? color : dimBg,
                             alignItems: 'center', justifyContent: 'center',
                           }, isSelected && { borderWidth: 3, borderColor: palette.primary }]}>
                             {day.mood ? (
@@ -229,56 +281,80 @@ export function MoodCalendar({
                 </View>
               ) : (
                 <View style={{ gap: 8 }}>
-                  <View style={{ flexDirection: 'row', gap: 8, marginBottom: 4 }}>
+                  {/* Month Navigation Header */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <Pressable onPress={handlePrevMonth} style={{ padding: 8 }}>
+                      <Ionicons name="chevron-back" size={20} color={(!isPremium && isCurrentMonthView) ? palette.muted : palette.ink} />
+                    </Pressable>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={{ fontSize: 16, fontWeight: '700', color: palette.ink, textTransform: 'uppercase' }}>
+                        {monthName}
+                      </Text>
+                      {!isPremium && <View style={{ backgroundColor: palette.primary, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}><Text style={{ color: palette.white, fontSize: 9, fontWeight: '800' }}>PRO</Text></View>}
+                    </View>
+                    <Pressable onPress={handleNextMonth} style={{ padding: 8 }}>
+                      <Ionicons name="chevron-forward" size={20} color={palette.ink} />
+                    </Pressable>
+                  </View>
+
+                  {/* Grid Header */}
+                  <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
                     {(isVi ? ['T2','T3','T4','T5','T6','T7','CN'] : ['M','T','W','T','F','S','S']).map((d, i) => (
                       <View key={i} style={{ flex: 1, alignItems: 'center' }}>
                         <Text style={{ fontSize: 11, color: palette.muted, fontWeight: '700' }}>{d}</Text>
                       </View>
                     ))}
                   </View>
-                  {weekRows.map((week, wIdx) => (
-                    <View key={wIdx} style={{ flexDirection: 'row', gap: 8 }}>
-                      {week.map((day) => {
-                        const isSelected = selectedDateKey === day.dateKey;
-                        const count = day.count;
-                        const baseHex = day.mood ? moodColors[day.mood] : null;
-                        
-                        // Intensity based on count
-                        const intensity = count === 0 ? 0 : count === 1 ? 0.4 : count === 2 ? 0.7 : 1;
-                        const alpha = Math.round(intensity * 255).toString(16).padStart(2, '0');
-                        const bgColor = baseHex ? `${baseHex}${alpha}` : 'rgba(0,0,0,0.04)';
-                        
-                        return (
-                          <Pressable
-                            key={day.dateKey}
-                            style={{
-                              flex: 1, aspectRatio: 1, borderRadius: 12,
-                              backgroundColor: bgColor,
-                              alignItems: 'center', justifyContent: 'center',
-                              borderWidth: isSelected ? 2.5 : day.isToday ? 2 : 0,
-                              borderColor: isSelected ? palette.ink : day.isToday ? palette.primary : 'transparent',
-                            }}
-                            onPress={() => setSelectedDateKey(day.dateKey)}
-                          >
-                            <Text style={{ fontSize: 12, fontWeight: isSelected || day.isToday ? '800' : '600', color: count > 0 ? palette.white : palette.muted }}>
-                              {day.dayNum}
-                            </Text>
-                            {count > 1 && (
-                              <View style={{ position: 'absolute', top: 4, right: 4, width: 6, height: 6, borderRadius: 3, backgroundColor: palette.white }} />
-                            )}
-                          </Pressable>
-                        );
-                      })}
-                      {week.length < 7 && Array.from({ length: 7 - week.length }).map((_, i) => (
-                        <View key={`p${i}`} style={{ flex: 1 }} />
-                      ))}
-                    </View>
-                  ))}
-                </View>
-              )}
-            </ScrollView>
+
+                  {/* Calendar Grid */}
+                  <View style={{ gap: 8 }}>
+                    {weekRows.map((week, wIdx) => (
+                      <View key={wIdx} style={{ flexDirection: 'row', gap: 8 }}>
+                    {week.map((day, dIdx) => {
+                      if (!day) {
+                        return <View key={`blank-${dIdx}`} style={{ flex: 1, aspectRatio: 1 }} />;
+                      }
+
+                      const isSelected = selectedDateKey === day.dateKey;
+                      const count = day.count;
+                      const baseHex = day.mood ? moodColors[day.mood] : null;
+                      
+                      const intensity = count === 0 ? 0 : count === 1 ? 0.4 : count === 2 ? 0.7 : 1;
+                      const alpha = Math.round(intensity * 255).toString(16).padStart(2, '0');
+                      const bgColor = baseHex ? `${baseHex}${alpha}` : dimBg;
+                      
+                      return (
+                        <Pressable
+                          key={day.dateKey}
+                          style={[{
+                            flex: 1, aspectRatio: 1, borderRadius: 12,
+                            backgroundColor: bgColor,
+                            alignItems: 'center', justifyContent: 'center',
+                            borderWidth: isSelected ? 2.5 : day.isToday ? 2 : 0,
+                            borderColor: isSelected ? palette.ink : day.isToday ? palette.primary : 'transparent',
+                          }]}
+                          onPress={() => setSelectedDateKey(day.dateKey)}
+                        >
+                          <Text style={{ fontSize: 12, fontWeight: isSelected || day.isToday ? '800' : '600', color: count > 0 ? (day.mood ? palette.white : palette.ink) : palette.muted }}>
+                            {day.dayNum}
+                          </Text>
+                          {count > 1 && (
+                            <View style={{ position: 'absolute', top: 4, right: 4, width: 6, height: 6, borderRadius: 3, backgroundColor: palette.white }} />
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                    {week.length < 7 && Array.from({ length: 7 - week.length }).map((_, i) => (
+                      <View key={`pad-${i}`} style={{ flex: 1, aspectRatio: 1 }} />
+                    ))}
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+        </ScrollView>
             
-            <View style={{ marginTop: 24 }}>
+            <View style={{ marginTop: 24, flexDirection: 'row' }}>
               <Pressable
                 style={styles.primaryButton}
                 onPress={() => {
@@ -288,7 +364,7 @@ export function MoodCalendar({
                   }
                 }}
               >
-                <Text style={styles.primaryButtonText}>{t.home.viewFullDay}</Text>
+                <Text style={[styles.primaryButtonText, { color: '#ffffff' }]}>{t.home.viewFullDay}</Text>
               </Pressable>
             </View>
           </View>
