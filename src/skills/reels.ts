@@ -64,11 +64,11 @@ export async function generateWeeklyReels(entries: Entry[]): Promise<WeeklyReel[
     let coverTone = '#cbe4d6'; // Default calming green fallback
     
     // Find cover image: prioritize 'great'/'good' mood with image
-    const entriesWithImage = weekEntries.filter(e => e.imageUri);
+    const entriesWithImage = weekEntries.filter(e => e.imageUri || (e.media && e.media.length > 0));
     const bestImageEntry = entriesWithImage.find(e => e.mood === 'great' || e.mood === 'good') || entriesWithImage[0];
     
     if (bestImageEntry) {
-      coverImageId = bestImageEntry.imageUri;
+      coverImageId = bestImageEntry.imageUri || bestImageEntry.media?.find(m => m.type === 'image')?.uri;
     }
 
     // Find best tone based on overall best mood

@@ -39,7 +39,7 @@ export function PrivacyExplanationDialog({
         <View style={[styles.dialogCard, { width: '90%', paddingVertical: 24 }]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <Text style={[styles.dialogTitle, { fontSize: 18, marginRight: 8, flex: 1 }]}>{setT.privacyTitle}</Text>
-            <Pressable onPress={onClose} style={{ padding: 4 }}>
+            <Pressable aria-label="close" onPress={onClose} style={{ padding: 4 }}>
               <Ionicons name="close" size={24} color={palette.muted} />
             </Pressable>
           </View>

@@ -8,11 +8,15 @@ import { tabItems } from '../data/mockData';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 export function BottomTabs({ state, descriptors, navigation, onAddPress }: BottomTabBarProps & { onAddPress?: () => void }) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  
   return (
     <>
-      <View style={styles.tabBar}>
+      <View style={[styles.tabBar, { height: 84 + insets.bottom, paddingBottom: insets.bottom }]}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const isFocused = state.index === index;
@@ -47,7 +51,12 @@ export function BottomTabs({ state, descriptors, navigation, onAddPress }: Botto
         })}
       </View>
       
-      <Pressable accessibilityRole="button" accessibilityLabel="Add moment" style={styles.fab} onPress={onAddPress}>
+      <Pressable 
+        accessibilityRole="button" 
+        accessibilityLabel="Add moment" 
+        style={[styles.fab, { bottom: 48 + insets.bottom }]} 
+        onPress={onAddPress}
+      >
         <Ionicons name="add" size={30} color={palette.paper} />
       </Pressable>
     </>

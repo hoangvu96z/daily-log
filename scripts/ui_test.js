@@ -172,9 +172,6 @@ async function runUITests() {
     assert('Peace Index / Serenity block rendered',
       text.includes('bình yên') || text.includes('Peace') || text.includes('%'));
 
-    assert('Privacy microcopy visible',
-      text.includes('máy') || text.includes('device') || text.includes('offline') || text.includes('SQLite'));
-
     // ─── §2  Mood Calendar Modal ──────────────────────────────────────────────
     section('§2  Mood Calendar Modal');
 
@@ -193,7 +190,11 @@ async function runUITests() {
         text.includes('T2') || text.includes('Mon') || text.includes('Chưa ghi') || text.includes('Not logged'));
 
       // Close modal
-      const closed = await clickText(page, 'Đóng', 'Close', '×', 'X');
+      const closed = await page.evaluate(() => {
+        const btn = document.querySelector('[aria-label="close"]');
+        if (btn) { btn.click(); return true; }
+        return false;
+      });
       assert('Mood Calendar modal can be closed', closed);
       await sleep(WAIT_SHORT);
     }
@@ -301,7 +302,7 @@ async function runUITests() {
     // ─── §9  Me Tab ────────────────────────────────────────
     section('§9  Me Tab');
 
-    const meClicked = await clickText(page, 'Me', 'Tôi', 'Settings');
+    const meClicked = await clickText(page, 'Me', 'Tôi');
     assert('Me tab button found and clickable', meClicked);
 
     if (meClicked) {
@@ -309,7 +310,36 @@ async function runUITests() {
       text = await pageText(page);
 
       assert('Me screen title visible',
-        text.includes('Me') || text.includes('Góc riêng') || text.includes('Your Corner'));
+        text.includes('Me') || text.includes('Tôi'));
+
+      // Click settings icon to go to Settings screen
+      const settingsIconClicked = await page.evaluate(() => {
+        const btn = document.querySelector('[aria-label="settings-outline"]');
+        if (btn) { btn.click(); return true; }
+        return false;
+      });
+      assert('Settings button found and clicked', settingsIconClicked);
+      
+      if (settingsIconClicked) {
+        await sleep(WAIT_MED);
+        text = await pageText(page);
+        
+        assert('Settings screen title visible',
+          text.includes('Cài đặt') || text.includes('Settings'));
+
+        assert('Privacy microcopy visible',
+          text.includes('máy') || text.includes('device') || text.includes('offline') || text.includes('SQLite') || text.includes('locally'));
+          
+        // Click close to go back to Me tab
+        const closedSettings = await page.evaluate(() => {
+          const btn = document.querySelector('[aria-label="close"]');
+          if (btn) { btn.click(); return true; }
+          return false;
+        });
+        assert('Settings screen can be closed', closedSettings);
+        await sleep(WAIT_MED);
+        text = await pageText(page);
+      }
     }
 
     // ─── §10  Premium Banner ──────────────────────────────────────────────────

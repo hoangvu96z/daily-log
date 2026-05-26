@@ -13,6 +13,7 @@ import { PaywallModal } from '../components/PaywallModal';
 import { HighlightBar } from '../components/HighlightBar';
 import { HighlightPickerSheet } from '../components/HighlightPickerSheet';
 import { SlideshowScreen } from './SlideshowScreen';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function MeScreen({
   navigation,
@@ -50,8 +51,10 @@ export function MeScreen({
     setSlideshowVisible(true);
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <ScrollView contentContainerStyle={styles.screenContent}>
+    <ScrollView contentContainerStyle={[styles.screenContent, { paddingTop: 28 + insets.top, paddingBottom: 120 + insets.bottom }]}>
       <ScreenHeader 
         title={t.tabs.me} 
         rightIcon="settings-outline" 

@@ -17,6 +17,7 @@ import { MomentComposer } from '../components/MomentComposer';
 import { HighlightPickerSheet } from '../components/HighlightPickerSheet';
 
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SlideOutRight, LinearTransition } from 'react-native-reanimated';
 import { getLocalDateString } from '../utils/dateUtils';
 import { Video, ResizeMode } from 'expo-av';
@@ -88,11 +89,12 @@ export function DayScreen({
     }
   }, [selectedEntryId, layoutMap]);
 
+  const insets = useSafeAreaInsets();
   const dayEntries = entries.filter((entry) => entry.date === selectedDate);
 
   return (
     <>
-    <ScrollView contentContainerStyle={styles.screenContent} ref={scrollViewRef}>
+    <ScrollView contentContainerStyle={[styles.screenContent, { paddingTop: 28 + insets.top, paddingBottom: 120 + insets.bottom }]} ref={scrollViewRef}>
       <View style={styles.dayHeader}>
         <View style={{ flex: 1, marginRight: 16 }}>
           <Text style={styles.screenTitle} numberOfLines={1} adjustsFontSizeToFit>{formatDateTitle(selectedDate, locale)}</Text>

@@ -128,7 +128,7 @@ export function PaywallModal({ visible, onClose, onSuccess }: PaywallModalProps)
                 {setT.paywallTitle}
               </Text>
             </View>
-            <Pressable testID="paywall-close" onPress={onClose} style={{ padding: 4 }} hitSlop={8}>
+            <Pressable aria-label="close" testID="paywall-close" onPress={onClose} style={{ padding: 4 }} hitSlop={8}>
               <Ionicons name="close" size={24} color={palette.muted} />
             </Pressable>
           </View>

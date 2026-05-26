@@ -3,63 +3,63 @@ import { useJournalStore } from '../memory/store';
 import { AccentColor } from '../types';
 
 const lightPalette = {
-  background: '#f6faff',       // Soft cream/light blue
-  slate: '#ffffff',            // White surface
-  primary: '#031f41',          // Deep Navy primary text
-  secondary: '#586158',        // Sage green secondary
-  tertiary: '#002425',         // Terracotta/deep teal
-  onSurface: '#001e2e',        // Very dark blue text
-  onSurfaceVariant: '#44474e',  // Muted gray-blue body
-  outline: '#c4c6cf',          // Thin border outline
-  outlineVariant: '#e1e3eb',
-  primaryContainer: '#dff0ff', // Soft sky blue highlight container
-  secondaryContainer: '#dce5d9',
+  background: '#F5F0FF',       // Soft lavender white
+  slate: '#FDFBFF',            // Pure white-purple surface
+  primary: '#6B21A8',          // Deep violet primary
+  secondary: '#9333EA',        // Medium purple secondary
+  tertiary: '#A855F7',         // Bright purple accent
+  onSurface: '#1E0B3A',        // Very dark purple text
+  onSurfaceVariant: '#5B4B8A', // Muted purple body
+  outline: '#D8C8F0',          // Thin purple border
+  outlineVariant: '#EDE5FB',   // Lighter border
+  primaryContainer: '#EDE9FE', // Soft lavender highlight container
+  secondaryContainer: '#E9D5FF',
   white: '#FFFFFF',
   black: '#000000',
-  glow: 'rgba(3, 31, 65, 0.15)',
+  glow: 'rgba(107, 33, 168, 0.15)',
   red: '#ba1a1a',
 
   // === Compatibility Aliases ===
-  green: '#031f41',
-  greenSoft: '#dff0ff',
-  ink: '#001e2e',
-  muted: '#44474e',
-  paper: '#f6faff',
-  cream: '#ffffff',
-  mint: '#eaf5ff',
-  blue: '#485f84',
-  line: '#c4c6cf',
-  coral: '#002425',
+  green: '#6B21A8',
+  greenSoft: '#EDE9FE',
+  ink: '#1E0B3A',
+  muted: '#5B4B8A',
+  paper: '#F5F0FF',
+  cream: '#FDFBFF',
+  mint: '#F3E8FF',
+  blue: '#7C3AED',
+  line: '#D8C8F0',
+  coral: '#6D28D9',
 };
 
 const darkPalette = {
-  background: '#0B132B',       // Deep Navy Base
-  slate: '#1C2541',            // Slate surface
-  primary: '#5BC0BE',          // Neon Teal accent
-  secondary: '#4A607C',        // Trust Blue
-  tertiary: '#924B29',         // Terracotta Accent
-  onSurface: '#FFFFFF',        // High contrast text
-  onSurfaceVariant: '#dbe1ff',  // Soft high contrast text
-  outline: 'rgba(255, 255, 255, 0.1)',  // Borders
-  outlineVariant: 'rgba(255, 255, 255, 0.2)', // Top-weighted borders
-  primaryContainer: 'rgba(91, 192, 190, 0.15)', // Glass glow
-  secondaryContainer: 'rgba(74, 96, 124, 0.15)', // Glass secondary
+  background: '#0D0818',       // Deep purple-black base
+  slate: '#1A1030',            // Purple-dark surface
+  primary: '#C084FC',          // Vivid purple accent
+  secondary: '#A855F7',        // Medium purple
+  tertiary: '#7C3AED',         // Deep violet
+  onSurface: '#F3E8FF',        // Soft white-purple text
+  onSurfaceVariant: '#D8B4FE', // Muted lavender text
+  outline: 'rgba(192, 132, 252, 0.15)', // Purple borders
+  outlineVariant: 'rgba(192, 132, 252, 0.25)',
+  primaryContainer: 'rgba(192, 132, 252, 0.15)', // Glass purple glow
+  secondaryContainer: 'rgba(168, 85, 247, 0.12)',
   white: '#FFFFFF',
   black: '#000000',
-  glow: 'rgba(91, 192, 190, 0.4)',
+  glow: 'rgba(192, 132, 252, 0.45)',
   red: '#BA1A1A',
 
   // === Compatibility Aliases ===
-  green: '#5BC0BE',
-  greenSoft: 'rgba(91, 192, 190, 0.15)',
-  ink: '#FFFFFF',
-  muted: '#dbe1ff',
-  paper: '#0B132B',
-  cream: 'rgba(28, 37, 65, 0.7)',
-  mint: 'rgba(91, 192, 190, 0.08)',
-  blue: '#4A607C',
-  line: 'rgba(255, 255, 255, 0.08)',
-  coral: '#924B29',
+  green: '#C084FC',
+  greenSoft: 'rgba(192, 132, 252, 0.15)',
+  ink: '#F3E8FF',
+  muted: '#D8B4FE',
+  paper: '#0D0818',
+  cream: 'rgba(26, 16, 48, 0.75)',
+  mint: 'rgba(192, 132, 252, 0.08)',
+  blue: '#A855F7',
+  line: 'rgba(192, 132, 252, 0.10)',
+  coral: '#7C3AED',
 };
 
 const accentColorsLight: Record<AccentColor, { primary: string; primaryContainer: string; glow: string; background: string; slate: string }> = {
@@ -85,11 +85,11 @@ const accentColorsLight: Record<AccentColor, { primary: string; primaryContainer
     slate: '#ffffff',
   },
   lavender: {
-    primary: '#4A3C6B',
-    primaryContainer: '#E2DDF0',
-    glow: 'rgba(74, 60, 107, 0.15)',
-    background: '#f5f2fa',
-    slate: '#ffffff',
+    primary: '#6B21A8',
+    primaryContainer: '#EDE9FE',
+    glow: 'rgba(107, 33, 168, 0.18)',
+    background: '#F5F0FF',
+    slate: '#FDFBFF',
   },
   terracotta: {
     primary: '#8E3E26',
@@ -97,6 +97,13 @@ const accentColorsLight: Record<AccentColor, { primary: string; primaryContainer
     glow: 'rgba(142, 62, 38, 0.15)',
     background: '#faf4f1',
     slate: '#ffffff',
+  },
+  rosepink: {
+    primary: '#D84B74',
+    primaryContainer: '#FFEBF0',
+    glow: 'rgba(216, 75, 116, 0.15)',
+    background: '#FFF5F7',
+    slate: '#FFFDFE',
   },
 };
 
@@ -123,11 +130,11 @@ const accentColorsDark: Record<AccentColor, { primary: string; primaryContainer:
     slate: '#10232E',
   },
   lavender: {
-    primary: '#BCA8EB',
-    primaryContainer: 'rgba(188, 168, 235, 0.15)',
-    glow: 'rgba(188, 168, 235, 0.4)',
-    background: '#130F1A',
-    slate: '#1D1728',
+    primary: '#C084FC',
+    primaryContainer: 'rgba(192, 132, 252, 0.15)',
+    glow: 'rgba(192, 132, 252, 0.45)',
+    background: '#0D0818',
+    slate: '#1A1030',
   },
   terracotta: {
     primary: '#E88C74',
@@ -136,13 +143,20 @@ const accentColorsDark: Record<AccentColor, { primary: string; primaryContainer:
     background: '#1A100E',
     slate: '#281C19',
   },
+  rosepink: {
+    primary: '#F472B6',
+    primaryContainer: 'rgba(244, 114, 182, 0.15)',
+    glow: 'rgba(244, 114, 182, 0.45)',
+    background: '#18080F',
+    slate: '#2E101D',
+  },
 };
 
 const getActivePalette = () => {
   try {
     const store = useJournalStore.getState();
     const storeTheme = store?.settings?.theme;
-    const accent = store?.settings?.accentColor || 'navy';
+    const accent = store?.settings?.accentColor || 'lavender'; // Purple as default
     const isDark = storeTheme === 'dark' || (storeTheme !== 'light' && Appearance.getColorScheme() === 'dark');
     
     const basePalette = isDark ? darkPalette : lightPalette;

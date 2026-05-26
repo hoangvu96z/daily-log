@@ -16,6 +16,7 @@ import { palette } from '../theme/palette';
 import { Entry } from '../types';
 import { HighlightTile } from '../components/HighlightTile';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ensureAutoTrackerFreshness } from '../skills/autoTracker';
 import { getLocalDateString } from '../utils/dateUtils';
 import { mostFrequent } from '../utils/arrayUtils';
@@ -54,6 +55,7 @@ export function HomeScreen({
 }) {
   const { t, lang, locale } = useTranslation();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [insightVisible, setInsightVisible] = useState(false);
 
@@ -67,7 +69,7 @@ export function HomeScreen({
 
   const headerPaddingTop = scrollY.interpolate({
     inputRange: [0, 100],
-    outputRange: [28, 12],
+    outputRange: [28 + insets.top, 12 + insets.top],
     extrapolate: 'clamp',
   });
 
@@ -84,16 +86,7 @@ export function HomeScreen({
     .sort((a, b) => b.time.localeCompare(a.time))
     .slice(0, 4);
 
-  const todayDate = getLocalDateString();
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayDate = getLocalDateString(yesterday);
-  let dynamicKicker = t.home.kicker;
-  if (displayDate === todayDate) {
-    dynamicKicker = lang === 'vi' ? 'Hôm nay của bạn' : 'Your Today';
-  } else if (displayDate !== yesterdayDate) {
-    dynamicKicker = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(new Date(`${displayDate}T12:00:00`));
-  }
+
 
   const homeT = t.home as any;
   const activeLang = lang === 'vi' ? 'vi' : 'en';
@@ -151,7 +144,7 @@ export function HomeScreen({
 
   return (
     <RNAnimated.ScrollView
-      contentContainerStyle={[styles.screenContent, { paddingTop: headerPaddingTop }]}
+      contentContainerStyle={[styles.screenContent, { paddingTop: headerPaddingTop, paddingBottom: 120 + insets.bottom }]}
       onScroll={RNAnimated.event(
         [{ nativeEvent: { contentOffset: { y: scrollY } } }],
         { useNativeDriver: false }
@@ -177,10 +170,6 @@ export function HomeScreen({
         {highlights.length > 0 ? (
           /* Render 2x2 Bento Grid */
           <View style={{ gap: 12 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-              <Text style={styles.cardKicker}>{dynamicKicker}</Text>
-              <Ionicons name="sparkles-sharp" size={18} color={palette.primary} />
-            </View>
             
             {/* Row 1 */}
             <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -226,10 +215,6 @@ export function HomeScreen({
         ) : (
           /* Fallback: Old Card 1 (Daily Alignment) */
           <View style={styles.heroCard}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={styles.cardKicker}>{dynamicKicker}</Text>
-              <Ionicons name="sparkles-sharp" size={18} color={palette.primary} />
-            </View>
             <View style={{ marginTop: 10 }}>
               <Text style={styles.heroTitle}>
                 {entries.length > 0 ? t.home.emptyYesterday : t.home.welcomeText}
@@ -287,18 +272,24 @@ export function HomeScreen({
           </View>
         )}
 
-        {/* Card 3: Action Buttons — stacked full-width */}
-        <View style={{ gap: 10 }}>
-          <Pressable style={[styles.primaryButton, { flex: undefined }]} onPress={() => { onSelectDate?.(displayDate); onOpenDay(); }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-              <Ionicons name="eye-outline" size={18} color={palette.white} />
-              <Text style={styles.primaryButtonText}>{t.home.viewFullDay}</Text>
+        {/* Card 3: Action Buttons — side by side, same style */}
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Pressable
+            style={[styles.primaryButton, { flex: 1, paddingVertical: 15 }]}
+            onPress={() => { onSelectDate?.(displayDate); onOpenDay(); }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, justifyContent: 'center' }}>
+              <Ionicons name="eye-outline" size={17} color={palette.white} />
+              <Text style={[styles.primaryButtonText, { fontSize: 14 }]}>{t.home.viewFullDay}</Text>
             </View>
           </Pressable>
-          <Pressable style={[styles.secondaryButton, { flex: undefined }]} onPress={() => setCalendarVisible(true)}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-              <Ionicons name="calendar-outline" size={18} color={palette.primary} />
-              <Text style={styles.secondaryButtonText}>{t.home.moodCalendar}</Text>
+          <Pressable
+            style={[styles.primaryButton, { flex: 1, paddingVertical: 15 }]}
+            onPress={() => setCalendarVisible(true)}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, justifyContent: 'center' }}>
+              <Ionicons name="calendar-outline" size={17} color={palette.white} />
+              <Text style={[styles.primaryButtonText, { fontSize: 14 }]}>{t.home.moodCalendar}</Text>
             </View>
           </Pressable>
         </View>
@@ -324,10 +315,7 @@ export function HomeScreen({
         </Pressable>
       </View>
 
-      <View style={styles.privacyStrip}>
-        <Ionicons name="lock-closed-outline" size={19} color={palette.primary} />
-        <Text style={styles.privacyText}>{t.home.privacyNote}</Text>
-      </View>
+
 
       <MoodCalendar
         visible={calendarVisible}

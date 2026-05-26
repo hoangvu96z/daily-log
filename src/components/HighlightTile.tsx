@@ -12,7 +12,9 @@ interface HighlightTileProps {
 }
 
 export function HighlightTile({ entry, onPress }: HighlightTileProps) {
-  const hasImage = !!entry.imageUri;
+  const mediaImageUri = entry.media?.find((m) => m.type === 'image')?.uri;
+  const displayImageUri = entry.imageUri || mediaImageUri;
+  const hasImage = !!displayImageUri;
 
   const fallbackBgColors: Record<string, string> = {
     very_bad: '#E53935',
@@ -25,7 +27,7 @@ export function HighlightTile({ entry, onPress }: HighlightTileProps) {
   return (
     <Pressable style={styles.tile} onPress={onPress}>
       {hasImage ? (
-        <Image source={{ uri: entry.imageUri }} style={styles.bgImage} resizeMode="cover" />
+        <Image source={{ uri: displayImageUri }} style={styles.bgImage} resizeMode="cover" />
       ) : (
         <View style={[styles.fallbackBg, { backgroundColor: fallbackBgColors[entry.mood] || '#1E88E5' }]} />
       )}

@@ -178,7 +178,7 @@ export function MoodCalendar({
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={{ fontSize: 24, fontWeight: '800', color: palette.ink }}>{t.home.moodCalendarTitle}</Text>
               </View>
-              <Pressable onPress={onClose} style={{ padding: 6, backgroundColor: dimBg, borderRadius: 20 }}>
+              <Pressable aria-label="close" onPress={onClose} style={{ padding: 6, backgroundColor: dimBg, borderRadius: 20 }}>
                 <Ionicons name="close" size={20} color={palette.ink} />
               </Pressable>
             </View>

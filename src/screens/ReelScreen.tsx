@@ -12,6 +12,7 @@ import { AnimatedCard } from '../components/AnimatedCard';
 import { useTranslation } from '../i18n/translations';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SlideshowScreen } from './SlideshowScreen';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { Entry, WeeklyReel } from '../types';
@@ -56,9 +57,11 @@ export function ReelScreen({
     openSlideshow(reelEntries, reel.weekId);
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
     <>
-      <ScrollView contentContainerStyle={styles.screenContent}>
+      <ScrollView contentContainerStyle={[styles.screenContent, { paddingTop: 28 + insets.top, paddingBottom: 120 + insets.bottom }]}>
         <ScreenHeader title={t.reel.title} subtitle={t.reel.subtitle} />
 
         {/* Hôm nay năm trước */}

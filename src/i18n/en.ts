@@ -136,7 +136,7 @@ export const en: typeof vi = {
   },
 
   settings: {
-    title: 'Your Corner',
+    title: 'Settings',
     subtitle: 'Keep your diary safe and make the app yours',
 
     // Group 1: Diary Lock (moved up — privacy first)
@@ -271,6 +271,7 @@ export const en: typeof vi = {
     accentOcean: 'Ocean Blue',
     accentLavender: 'Lavender',
     accentTerracotta: 'Terracotta',
+    accentRosePink: 'Rose Pink (Pastel pink)',
     customWallpaper: 'Custom Wallpaper',
     customWallpaperDesc: 'Set a custom background image for the app.',
     customWallpaperSet: 'Custom wallpaper active',

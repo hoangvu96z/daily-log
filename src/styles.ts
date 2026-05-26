@@ -3,61 +3,61 @@ import { useJournalStore } from './memory/store';
 import { palette } from './theme/palette';
 
 const lightPalette = {
-  background: '#f6faff',
-  slate: '#ffffff',
-  primary: '#031f41',
-  secondary: '#586158',
-  tertiary: '#002425',
-  onSurface: '#001e2e',
-  onSurfaceVariant: '#44474e',
-  outline: '#c4c6cf',
-  outlineVariant: '#e1e3eb',
-  primaryContainer: '#dff0ff',
-  secondaryContainer: '#dce5d9',
+  background: '#F5F0FF',
+  slate: '#FDFBFF',
+  primary: '#6B21A8',
+  secondary: '#9333EA',
+  tertiary: '#A855F7',
+  onSurface: '#1E0B3A',
+  onSurfaceVariant: '#5B4B8A',
+  outline: '#D8C8F0',
+  outlineVariant: '#EDE5FB',
+  primaryContainer: '#EDE9FE',
+  secondaryContainer: '#E9D5FF',
   white: '#FFFFFF',
   black: '#000000',
-  glow: 'rgba(3, 31, 65, 0.1)',
+  glow: 'rgba(107, 33, 168, 0.1)',
   red: '#ba1a1a',
 
-  green: '#031f41',
-  greenSoft: '#dff0ff',
-  ink: '#001e2e',
-  muted: '#44474e',
-  paper: '#f6faff',
-  cream: '#ffffff',
-  mint: '#eaf5ff',
-  blue: '#485f84',
-  line: '#c4c6cf',
-  coral: '#002425',
+  green: '#6B21A8',
+  greenSoft: '#EDE9FE',
+  ink: '#1E0B3A',
+  muted: '#5B4B8A',
+  paper: '#F5F0FF',
+  cream: '#FDFBFF',
+  mint: '#F3E8FF',
+  blue: '#7C3AED',
+  line: '#D8C8F0',
+  coral: '#6D28D9',
 };
 
 const darkPalette = {
-  background: '#0B132B',
-  slate: '#1C2541',
-  primary: '#5BC0BE',
-  secondary: '#4A607C',
-  tertiary: '#924B29',
-  onSurface: '#FFFFFF',
-  onSurfaceVariant: '#dbe1ff',
-  outline: 'rgba(255, 255, 255, 0.1)',
-  outlineVariant: 'rgba(255, 255, 255, 0.2)',
-  primaryContainer: 'rgba(91, 192, 190, 0.15)',
-  secondaryContainer: 'rgba(74, 96, 124, 0.15)',
+  background: '#0D0818',
+  slate: '#1A1030',
+  primary: '#C084FC',
+  secondary: '#A855F7',
+  tertiary: '#7C3AED',
+  onSurface: '#F3E8FF',
+  onSurfaceVariant: '#D8B4FE',
+  outline: 'rgba(192, 132, 252, 0.15)',
+  outlineVariant: 'rgba(192, 132, 252, 0.25)',
+  primaryContainer: 'rgba(192, 132, 252, 0.15)',
+  secondaryContainer: 'rgba(168, 85, 247, 0.12)',
   white: '#FFFFFF',
   black: '#000000',
-  glow: 'rgba(91, 192, 190, 0.4)',
+  glow: 'rgba(192, 132, 252, 0.45)',
   red: '#BA1A1A',
 
-  green: '#5BC0BE',
-  greenSoft: 'rgba(91, 192, 190, 0.15)',
-  ink: '#FFFFFF',
-  muted: '#dbe1ff',
-  paper: '#0B132B',
-  cream: 'rgba(28, 37, 65, 0.7)',
-  mint: 'rgba(91, 192, 190, 0.08)',
-  blue: '#4A607C',
-  line: 'rgba(255, 255, 255, 0.08)',
-  coral: '#924B29',
+  green: '#C084FC',
+  greenSoft: 'rgba(192, 132, 252, 0.15)',
+  ink: '#F3E8FF',
+  muted: '#D8B4FE',
+  paper: '#0D0818',
+  cream: 'rgba(26, 16, 48, 0.75)',
+  mint: 'rgba(192, 132, 252, 0.08)',
+  blue: '#A855F7',
+  line: 'rgba(192, 132, 252, 0.10)',
+  coral: '#7C3AED',
 };
 
 // === LIGHT STYLE SHEET ===
@@ -1993,31 +1993,31 @@ const darkStyles = StyleSheet.create({
     position: 'absolute',
     top: -150,
     left: -150,
-    width: 450,
-    height: 450,
-    borderRadius: 225,
-    backgroundColor: darkPalette.primary,
-    opacity: 0.12,
+    width: 500,
+    height: 500,
+    borderRadius: 250,
+    backgroundColor: '#9333EA',   // vivid purple
+    opacity: 0.18,
   },
   luminousBlob2: {
     position: 'absolute',
     top: '40%',
-    right: -150,
-    width: 350,
-    height: 350,
-    borderRadius: 175,
-    backgroundColor: darkPalette.tertiary,
-    opacity: 0.08,
+    right: -160,
+    width: 380,
+    height: 380,
+    borderRadius: 190,
+    backgroundColor: '#7C3AED',   // deep violet
+    opacity: 0.12,
   },
   luminousBlob3: {
     position: 'absolute',
     bottom: -150,
-    left: -150,
-    width: 450,
-    height: 450,
-    borderRadius: 225,
-    backgroundColor: darkPalette.primary,
-    opacity: 0.1,
+    left: -120,
+    width: 460,
+    height: 460,
+    borderRadius: 230,
+    backgroundColor: '#C084FC',   // lavender bright
+    opacity: 0.14,
   },
 });
 
@@ -2065,39 +2065,49 @@ export const styles = new Proxy({} as typeof lightStyles, {
           const lowerVal = val.toLowerCase();
           
           // Replace light/dark hardcoded primary accents
-          if (lowerVal === '#031f41' || lowerVal === '#5bc0be') {
+          if (lowerVal === '#6b21a8' || lowerVal === '#c084fc' || lowerVal === '#031f41' || lowerVal === '#5bc0be') {
             flat[key] = palette.primary;
           }
           // Replace primary containers
-          else if (lowerVal === '#dff0ff' || lowerVal === 'rgba(91, 192, 190, 0.15)') {
+          else if (lowerVal === '#ede9fe' || lowerVal === 'rgba(192, 132, 252, 0.15)' || lowerVal === '#dff0ff' || lowerVal === 'rgba(91, 192, 190, 0.15)') {
             flat[key] = palette.primaryContainer;
           }
           // Replace light/dark hardcoded green
-          else if (lowerVal === '#031f41' || lowerVal === '#5bc0be') {
+          else if (lowerVal === '#6b21a8' || lowerVal === '#c084fc' || lowerVal === '#031f41' || lowerVal === '#5bc0be') {
             flat[key] = palette.green;
           }
           // Replace greenSoft
-          else if (lowerVal === '#dff0ff' || lowerVal === 'rgba(91, 192, 190, 0.15)') {
+          else if (lowerVal === '#ede9fe' || lowerVal === 'rgba(192, 132, 252, 0.15)' || lowerVal === '#dff0ff' || lowerVal === 'rgba(91, 192, 190, 0.15)') {
             flat[key] = palette.greenSoft;
           }
           // Replace backgrounds
-          else if (key !== 'color' && (lowerVal === '#f6faff' || lowerVal === '#0b132b')) {
+          else if (key !== 'color' && (lowerVal === '#f5f0ff' || lowerVal === '#0d0818' || lowerVal === '#f6faff' || lowerVal === '#0b132b')) {
             flat[key] = palette.background;
           }
           // Replace slate surfaces
-          else if (key !== 'color' && (lowerVal === '#ffffff' || lowerVal === '#1c2541')) {
+          else if (key !== 'color' && (lowerVal === '#fdfbff' || lowerVal === '#1a1030' || lowerVal === '#ffffff' || lowerVal === '#1c2541')) {
             flat[key] = palette.slate;
           }
           // Replace cream
-          else if (key !== 'color' && (lowerVal === '#ffffff' || lowerVal === 'rgba(28, 37, 65, 0.7)')) {
+          else if (key !== 'color' && (lowerVal === '#fdfbff' || lowerVal === 'rgba(26, 16, 48, 0.75)' || lowerVal === '#ffffff' || lowerVal === 'rgba(28, 37, 65, 0.7)')) {
             flat[key] = palette.cream;
           }
           // Replace glow values
-          else if (lowerVal.includes('rgba(3, 31, 65, 0.1') || lowerVal.includes('rgba(91, 192, 190, 0.4)')) {
+          else if (
+            lowerVal.includes('rgba(107, 33, 168, 0.1') || 
+            lowerVal.includes('rgba(192, 132, 252, 0.45)') || 
+            lowerVal.includes('rgba(3, 31, 65, 0.1') || 
+            lowerVal.includes('rgba(91, 192, 190, 0.4)')
+          ) {
             flat[key] = palette.glow;
           }
           // Convert hardcoded translucent colors to follow active accent color dynamically
-          else if (lowerVal.includes('rgba(3, 31, 65,') || lowerVal.includes('rgba(91, 192, 190,')) {
+          else if (
+            lowerVal.includes('rgba(107, 33, 168,') || 
+            lowerVal.includes('rgba(192, 132, 252,') || 
+            lowerVal.includes('rgba(3, 31, 65,') || 
+            lowerVal.includes('rgba(91, 192, 190,')
+          ) {
             const match = lowerVal.match(/rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([\d\.]+)\s*\)/);
             if (match && match[1]) {
               const opacity = parseFloat(match[1]);

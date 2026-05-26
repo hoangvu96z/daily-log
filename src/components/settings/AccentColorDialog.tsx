@@ -27,6 +27,7 @@ export function AccentColorDialog({
     { key: 'ocean', label: t.settings.accentOcean, color: '#0B4F6C' },
     { key: 'lavender', label: t.settings.accentLavender, color: '#4A3C6B', isPremium: true },
     { key: 'terracotta', label: t.settings.accentTerracotta, color: '#8E3E26', isPremium: true },
+    { key: 'rosepink', label: t.settings.accentRosePink, color: '#D84B74', isPremium: true },
   ];
 
   return (
@@ -72,6 +73,7 @@ export function accentColorLabel(accent: AccentColor, t: any) {
     case 'ocean': return t.settings.accentOcean;
     case 'lavender': return t.settings.accentLavender;
     case 'terracotta': return t.settings.accentTerracotta;
+    case 'rosepink': return t.settings.accentRosePink;
     default: return t.settings.accentNavy;
   }
 }

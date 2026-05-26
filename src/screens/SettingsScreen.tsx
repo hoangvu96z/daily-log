@@ -25,6 +25,7 @@ import { getAutoTrackerStatus, registerAutoTracker, runAutoTrackerOnce, unregist
 import { Entry } from '../types';
 import { exportBackup, exportBackupWeb, importBackup, importBackupWeb } from '../skills/backup';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SettingsCard, SettingsRow, ToggleRow } from '../components/settings/SettingsUI';
 import { PrivacyExplanationDialog } from '../components/settings/PrivacyDialog';
@@ -43,6 +44,7 @@ export function SettingsScreen({
 }: {
   navigation?: any;
 }) {
+  const insets = useSafeAreaInsets();
   const { settings, updateSettings, entries, resetEntries } = useJournalStore();
   const entriesCount = entries.length;
   const onChangeSettings = (updater: (current: any) => any) => {
@@ -174,7 +176,7 @@ export function SettingsScreen({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.screenContent}>
+    <ScrollView contentContainerStyle={[styles.screenContent, { paddingTop: 12 + insets.top, paddingBottom: 120 + insets.bottom }]}>
       <ScreenHeader 
         title={t.settings.title} 
         subtitle={t.settings.subtitle} 
@@ -257,11 +259,6 @@ export function SettingsScreen({
           onPress={() => setDeleteVisible(true)}
         />
       </SettingsCard>
-      {/* Privacy microcopy */}
-      <View style={styles.privacyStrip}>
-        <Ionicons name="lock-closed-outline" size={19} color={palette.primary} />
-        <Text style={styles.privacyText}>{(t.settings as any).privacyMicrocopy}</Text>
-      </View>
       {/* Group 3: App & Appearance */}
       <SettingsCard title={t.settings.appGroup}>
         <SettingsRow
@@ -334,6 +331,11 @@ export function SettingsScreen({
           </View>
         </SettingsCard>
       )}
+      {/* Privacy microcopy */}
+      <View style={styles.privacyStrip}>
+        <Ionicons name="lock-closed-outline" size={19} color={palette.primary} />
+        <Text style={styles.privacyText}>{(t.settings as any).privacyMicrocopy}</Text>
+      </View>
       <View style={styles.footerLinks}>
         <Text style={styles.footerLink}>{t.settings.privacyPolicy}</Text>
         <Text style={styles.footerLink}>{t.settings.termsOfUse}</Text>
@@ -366,7 +368,7 @@ export function SettingsScreen({
         onCancel={() => setAccentVisible(false)}
         onPick={(accent) => {
           setAccentVisible(false);
-          if ((accent === 'lavender' || accent === 'terracotta') && !settings.isPremium) {
+          if ((accent === 'lavender' || accent === 'terracotta' || accent === 'rosepink') && !settings.isPremium) {
             setPaywallVisible(true);
             return;
           }

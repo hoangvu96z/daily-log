@@ -142,7 +142,7 @@ export const vi = {
 
   // --- Me / Settings Screen ---
   settings: {
-    title: 'Góc riêng của bạn',
+    title: 'Cài đặt',
     subtitle: 'Nơi giữ an toàn cho nhật ký và chỉnh app theo ý bạn',
 
     // Group 1: Diary Protection (moved up — privacy first)
@@ -277,6 +277,7 @@ export const vi = {
     accentOcean: 'Ocean Blue (Xanh biển sâu)',
     accentLavender: 'Lavender (Tím oải hương)',
     accentTerracotta: 'Terracotta (Cam đất sét)',
+    accentRosePink: 'Rose Pink (Hồng pastel)',
     customWallpaper: 'Hình nền tùy chọn',
     customWallpaperDesc: 'Thiết lập hình nền riêng làm giao diện cho ứng dụng.',
     customWallpaperSet: 'Đã chọn hình nền riêng',

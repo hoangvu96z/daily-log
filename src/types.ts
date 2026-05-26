@@ -8,7 +8,7 @@ export type EntrySource = 'auto' | 'manual';
 export type ComposerMode = 'photo' | 'note' | 'calendar';
 export type PermissionState = 'unknown' | 'granted' | 'denied' | 'unavailable';
 export type ThemeMode = 'system' | 'light' | 'dark';
-export type AccentColor = 'navy' | 'sage' | 'ocean' | 'lavender' | 'terracotta';
+export type AccentColor = 'navy' | 'sage' | 'ocean' | 'lavender' | 'terracotta' | 'rosepink';
 export type MediaType = 'image' | 'video';
 
 export type MediaItem = {
