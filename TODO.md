@@ -36,7 +36,7 @@ Những tác vụ khẩn cấp cần xử lý trước để ứng dụng không
 
 - ⏳ **[P0-2] Kết nối Gemini API (Đang thực hiện)**
   - ✅ Đã tạo file template `.env.example`.
-  - ⏳ Cần tạo file `.env` với biến `EXPO_PUBLIC_GEMINI_API_KEY` (User tự điền key).
+  - ✅ Cần tạo file `.env` với biến `EXPO_PUBLIC_GEMINI_API_KEY` (User tự điền key).
   - ✅ `aiService.ts` đã support đọc `EXPO_PUBLIC_GEMINI_API_KEY`.
 
 - ✅ **[P1-4] Xóa hardcoded string trong Services (Done)**
@@ -72,7 +72,7 @@ Hoàn thiện các hiệu ứng mượt mà và fix các lỗi hiển thị chư
   - Hiển thị Streak Chip (vd: 🔥 3 ngày liên tục).
   - Khoá 30-day heatmap phía sau Premium.
 
-- ⏳ **[P1-5] Dev Diagnostics Panel**
+- ✅ **[P1-5] Dev Diagnostics Panel (Done)**
   - Màn hình phụ trong Settings (chỉ bật khi `__DEV__ === true`) hiển thị thông số hệ thống, log của Auto-Tracker.
 
 - ✅ **[P1-6] Animation cho thẻ Timeline (Done)**
@@ -86,8 +86,8 @@ Hoàn thiện các hiệu ứng mượt mà và fix các lỗi hiển thị chư
   - Hệ thống DB (`media_json`), component `MomentComposer` và `PhotoGrid` đã hoàn thiện và hỗ trợ tối đa 10 ảnh/video.
 - ⏳ **[P2-2] Deep-link Push Notification**
   - Bấm vào thông báo nhắc nhở → mở đúng `DayScreen` của ngày hiện tại.
-- ⏳ **[P2-3] Biểu đồ xu hướng (Mood Trend Chart)**
-  - Dùng `react-native-chart-kit` vẽ biểu đồ trong màn Settings hoặc Calendar.
+- ✅ **[P2-3] Biểu đồ xu hướng (Mood Trend Chart) (Done)**
+  - Dùng `react-native-chart-kit` vẽ biểu đồ trong màn Calendar (Trend Mode).
 - ⏳ **[P2-4] Hỗ trợ hiển thị Video**
   - Dùng `expo-av` để play video trong Slideshow, thay vì chỉ hiện ảnh.
 - ⏳ **[P2-5] Home Screen Widget (iOS/Android)**

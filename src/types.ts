@@ -128,4 +128,5 @@ export type RootStackParamList = {
   };
   Search: undefined;
   Settings: undefined;
+  DevDiagnostics: undefined;
 };

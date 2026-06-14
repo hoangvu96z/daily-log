@@ -4,6 +4,8 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useJournalStore } from '../memory/store';
 import Animated, { useAnimatedStyle, withRepeat, withTiming, withSequence, Easing, useSharedValue } from 'react-native-reanimated';
+import { LineChart } from 'react-native-chart-kit';
+import { Dimensions } from 'react-native';
 import { Text } from './AppText';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
@@ -33,7 +35,7 @@ export function MoodCalendar({
   onUpgrade?: () => void;
 }) {
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(getLocalDateString());
-  const [mode, setMode] = useState<'7day' | 'month'>('7day');
+  const [mode, setMode] = useState<'7day' | 'month' | 'trend'>('7day');
   const [viewDate, setViewDate] = useState<Date>(new Date());
 
   useEffect(() => {
@@ -139,6 +141,12 @@ export function MoodCalendar({
 
   const isVi = locale.startsWith('vi');
 
+  // Trend Chart Data (Last 7 Days)
+  const moodScoreMap: Record<string, number> = { very_bad: 1, bad: 2, neutral: 3, good: 4, great: 5 };
+  const trendLabels = [...days].reverse().map(d => d.dayLabel);
+  const trendData = [...days].reverse().map(d => d.mood ? moodScoreMap[d.mood] : 0);
+  const screenWidth = Dimensions.get('window').width;
+
   // Pulse animation for today
   const scale = useSharedValue(1);
   useEffect(() => {
@@ -208,8 +216,8 @@ export function MoodCalendar({
 
             {/* Mode Toggle */}
             <View style={{ flexDirection: 'row', backgroundColor: dimBg, borderRadius: 16, padding: 4, marginBottom: 24, alignSelf: 'center' }}>
-              {(['7day', 'month'] as const).map((m) => {
-                const label  = m === '7day' ? (homeT.daysLabel ? homeT.daysLabel(7) : '7 ngày') : (isVi ? 'Toàn tháng' : 'Full Month');
+              {(['7day', 'month', 'trend'] as const).map((m) => {
+                const label  = m === '7day' ? (homeT.daysLabel ? homeT.daysLabel(7) : '7 ngày') : m === 'month' ? (isVi ? 'Tháng' : 'Month') : (isVi ? 'Biểu đồ' : 'Trend');
                 const isActive = mode === m;
                 const locked   = m === 'month' && !isPremium;
                 return (
@@ -276,7 +284,7 @@ export function MoodCalendar({
                     );
                   })}
                 </View>
-              ) : (
+              ) : mode === 'month' ? (
                 <View style={{ gap: 8 }}>
                   {/* Month Navigation Header */}
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -347,6 +355,39 @@ export function MoodCalendar({
                   </View>
                 ))}
               </View>
+            </View>
+          ) : (
+            <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: 220, paddingRight: 16 }}>
+              {trendData.every(v => v === 0) ? (
+                <Text style={{ color: palette.muted, fontStyle: 'italic' }}>
+                  {isVi ? 'Chưa đủ dữ liệu để vẽ biểu đồ' : 'Not enough data to draw chart'}
+                </Text>
+              ) : (
+                <LineChart
+                  data={{
+                    labels: trendLabels,
+                    datasets: [{ data: trendData }],
+                  }}
+                  width={screenWidth - 80}
+                  height={220}
+                  yAxisLabel=""
+                  yAxisSuffix=""
+                  withHorizontalLabels={false}
+                  withVerticalLines={false}
+                  chartConfig={{
+                    backgroundColor: 'transparent',
+                    backgroundGradientFrom: glassBg,
+                    backgroundGradientTo: glassBg,
+                    decimalPlaces: 0,
+                    color: (opacity = 1) => `rgba(91, 192, 190, ${opacity})`,
+                    labelColor: (opacity = 1) => palette.ink,
+                    style: { borderRadius: 16 },
+                    propsForDots: { r: '4', strokeWidth: '2', stroke: palette.primary },
+                  }}
+                  bezier
+                  style={{ marginVertical: 8, borderRadius: 16 }}
+                />
+              )}
             </View>
           )}
         </ScrollView>

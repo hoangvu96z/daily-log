@@ -306,29 +306,12 @@ export function SettingsScreen({
       </SettingsCard>
       {__DEV__ && (
         <SettingsCard title="Diagnostics (Dev Only)">
-          <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-            <Text style={{ fontSize: 12, color: palette.ink, marginBottom: 4 }}>
-              Last Scan: {settings.last_auto_scan_time ? new Date(Number(settings.last_auto_scan_time)).toLocaleString() : 'Never'}
-            </Text>
-            <Text style={{ fontSize: 12, color: palette.ink, marginBottom: 4 }}>
-              Stats: {settings.last_auto_scan_stats || 'None'}
-            </Text>
-            <Text style={{ fontSize: 12, color: palette.ink, marginBottom: 4 }}>
-              bgFetch Success: {settings.bgFetch_successCount || 0}
-            </Text>
-            <Text style={{ fontSize: 12, color: palette.ink, marginBottom: 4 }}>
-              bgFetch Fail: {settings.bgFetch_failCount || 0}
-            </Text>
-            <Pressable 
-              style={{ marginTop: 12, padding: 10, backgroundColor: palette.primaryContainer, borderRadius: 8, alignItems: 'center' }}
-              onPress={async () => {
-                const created = await refreshAutoSuggestions();
-                Alert.alert('Scan Complete', `Created ${created} new suggestions.`);
-              }}
-            >
-              <Text style={{ color: palette.primary, fontWeight: '700', fontSize: 12 }}>Trigger Manual Scan</Text>
-            </Pressable>
-          </View>
+          <SettingsRow
+            icon="construct-outline"
+            title="Developer Diagnostics"
+            subtitle="View tracker logs, performance stats, and raw data"
+            onPress={() => navigation?.navigate?.('DevDiagnostics')}
+          />
         </SettingsCard>
       )}
       {/* Privacy microcopy */}
