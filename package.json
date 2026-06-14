@@ -12,7 +12,10 @@
     "typecheck": "tsc --noEmit",
     "test:smoke": "node scripts/smoke_test.js",
     "test:ui": "node scripts/ui_test.js",
-    "test": "npm run test:smoke && npm run test:ui"
+    "test": "npm run test:smoke && npm run test:ui",
+    "codegraph:init": "codegraph init .",
+    "codegraph:sync": "codegraph sync .",
+    "codegraph:status": "codegraph status ."
   },
   "dependencies": {
     "@egjs/hammerjs": "^2.0.17",
@@ -62,6 +65,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@colbymchenry/codegraph": "^1.0.1",
     "@types/react": "~18.2.79",
     "@types/uuid": "^10.0.0",
     "puppeteer": "^25.0.4",

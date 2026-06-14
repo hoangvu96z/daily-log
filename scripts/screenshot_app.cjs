@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 const path = require('path');
 
-const artifactDir = '/Users/hoangvu96z/.gemini/antigravity-ide/brain/6c8605af-e558-449a-bf4c-d3eb870671c4';
+const artifactDir = '/Users/hoangvu96z/.gemini/antigravity-ide/brain/1a99c314-4408-4638-af84-425bc83b7789';
 
 async function takeScreenshot(page, filename) {
   const filepath = path.join(artifactDir, filename);
