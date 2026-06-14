@@ -19,7 +19,7 @@ import { palette } from '../theme/palette';
 import { styles } from '../styles';
 import { useTranslation } from '../i18n/translations';
 import {
-  DEFAULT_PLANS,
+  getDefaultPlans,
   PlanId,
   SubscriptionPlan,
   SubscriptionService,
@@ -48,7 +48,7 @@ export function PaywallModal({ visible, onClose, onSuccess }: PaywallModalProps)
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('lifetime');
   const [loading, setLoading] = useState(false);
   const [loadingAction, setLoadingAction] = useState<'purchase' | 'restore' | null>(null);
-  const [plans, setPlans] = useState<SubscriptionPlan[]>(DEFAULT_PLANS);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
 
   const setT = t.settings as any;
 
@@ -58,7 +58,7 @@ export function PaywallModal({ visible, onClose, onSuccess }: PaywallModalProps)
     SubscriptionService.shared()
       .getAvailablePlans()
       .then(setPlans)
-      .catch(() => setPlans(DEFAULT_PLANS));
+      .catch(() => setPlans(getDefaultPlans()));
   }, [visible]);
 
   const handlePurchase = useCallback(async () => {

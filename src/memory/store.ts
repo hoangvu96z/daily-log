@@ -102,24 +102,25 @@ export const useJournalStore = create<JournalState>((set) => ({
     }
 
     const onboardingFlag = (settings as any).onboardingComplete === true;
-    settings.isPremium = true; // FORCE UNLOCK PREMIUM FOR TESTING
-    
-    // TEST INJECTION: Add an "On this day" entry 1 year ago
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    const testEntry = {
-      id: 'test-on-this-day',
-      date: getLocalDateString(oneYearAgo),
-      time: '10:00',
-      mood: 'great',
-      text: 'Bài kiểm tra: Khoảnh khắc này được tạo ra cách đây chính xác 1 năm!',
-      source: 'manual',
-      status: 'saved',
-      isHighlight: true,
-    } as any;
-    if (!entries.find(e => e.id === 'test-on-this-day')) {
-      entries.push(testEntry);
-      await insertEntry(testEntry);
+
+    // DEV ONLY: Inject a test "On this day" entry from 1 year ago to test ReelScreen
+    if (__DEV__) {
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+      const testEntry = {
+        id: 'test-on-this-day',
+        date: getLocalDateString(oneYearAgo),
+        time: '10:00',
+        mood: 'great',
+        text: '[DEV] Khoảnh khắc này được tạo ra cách đây chính xác 1 năm!',
+        source: 'manual',
+        status: 'saved',
+        isHighlight: true,
+      } as any;
+      if (!entries.find(e => e.id === 'test-on-this-day')) {
+        entries.push(testEntry);
+        await insertEntry(testEntry);
+      }
     }
 
     set({

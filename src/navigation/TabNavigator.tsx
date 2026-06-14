@@ -338,7 +338,7 @@ function PermissionExplanationModal({
               onPress={onAllow}
             >
               <Text style={{ color: palette.white, fontSize: 14, fontWeight: '700' }}>
-                {t.language === 'en' ? 'Allow' : 'Cho phép'}
+                {t.common.allow}
               </Text>
             </Pressable>
 

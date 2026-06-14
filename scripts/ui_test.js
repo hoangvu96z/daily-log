@@ -187,7 +187,7 @@ async function runUITests() {
         text.includes('ngày') || text.includes('Day') || text.includes('Tuần'));
 
       assert('Modal contains day labels or date markers',
-        text.includes('T2') || text.includes('Mon') || text.includes('Chưa ghi') || text.includes('Not logged'));
+        text.includes('T2') || text.includes('Mon') || text.includes('Th 2') || text.includes('Chưa ghi') || text.includes('Not logged'));
 
       // Close modal
       const closed = await page.evaluate(() => {

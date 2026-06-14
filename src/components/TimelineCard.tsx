@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Pressable, Image, Alert } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import Animated, { SlideOutRight, LinearTransition } from 'react-native-reanimated';
+import Animated, { SlideOutRight, SlideOutLeft, LinearTransition } from 'react-native-reanimated';
 import { Text } from './AppText';
 import { AnimatedCard } from './AnimatedCard';
 import { PhotoGrid } from './PhotoGrid';
@@ -50,13 +50,28 @@ export function TimelineCard({
   t: any;
 }) {
   const suggested = entry.status === 'suggested';
+  const [exitingAnim, setExitingAnim] = React.useState<any>(() => SlideOutRight);
+
+  const handleSave = () => {
+    setExitingAnim(() => SlideOutRight);
+    requestAnimationFrame(() => {
+      onSave();
+    });
+  };
+
+  const handleDiscard = () => {
+    setExitingAnim(() => SlideOutLeft);
+    requestAnimationFrame(() => {
+      onDiscard();
+    });
+  };
 
   return (
     <AnimatedCard 
       variant="fadeInDown" 
       delay={index * 80} 
       style={styles.timelineRow}
-      exiting={SlideOutRight}
+      exiting={exitingAnim}
       layout={LinearTransition.springify()}
     >
       <View style={styles.timelineRail}>
@@ -118,10 +133,10 @@ export function TimelineCard({
           )}
           {suggested && (
             <View style={styles.miniActionRow}>
-              <Pressable style={styles.miniPrimary} onPress={onSave}>
+              <Pressable style={styles.miniPrimary} onPress={handleSave}>
                 <Text style={styles.miniPrimaryText}>{t.common.save}</Text>
               </Pressable>
-              <Pressable style={styles.miniSecondary} onPress={onDiscard}>
+              <Pressable style={styles.miniSecondary} onPress={handleDiscard}>
                 <Text style={styles.miniSecondaryText}>{t.common.discard}</Text>
               </Pressable>
             </View>

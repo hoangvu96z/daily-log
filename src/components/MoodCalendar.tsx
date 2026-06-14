@@ -11,6 +11,7 @@ import { moodEmoji } from '../data/mockData';
 import { getLocalDateString } from '../utils/dateUtils';
 import { mostFrequent } from '../utils/arrayUtils';
 import { Entry } from '../types';
+import { calculateStreak } from '../utils/streak';
 
 export function MoodCalendar({
   visible,
@@ -113,11 +114,7 @@ export function MoodCalendar({
     };
   });
 
-  let streak = 0;
-  for (let i = recent7.length - 1; i >= 0; i--) {
-    if (recent7[i].count > 0) streak++;
-    else break;
-  }
+  const { currentStreak: streak } = calculateStreak(entries);
 
   const goodDays    = recent7.filter(d => d.mood === 'good' || d.mood === 'great').length;
   const badDays     = recent7.filter(d => d.mood === 'bad' || d.mood === 'very_bad').length;

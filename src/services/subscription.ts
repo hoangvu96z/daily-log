@@ -26,6 +26,8 @@
 
 import { Platform } from 'react-native';
 import Purchases, { PurchasesPackage } from 'react-native-purchases';
+import Constants from 'expo-constants';
+import { t } from '../i18n/translations';
 
 // IMPORTANT: Replace these with your actual RevenueCat Public API Keys later
 const REVENUECAT_API_KEY_IOS = 'appl_YOUR_IOS_KEY_HERE';
@@ -110,7 +112,7 @@ class SimulatedPurchaseService implements ISubscriptionService {
     await delay(1500);
     // Simulate 5% failure rate in development
     if (Math.random() < 0.05) {
-      return { success: false, error: 'Simulated payment gateway error' };
+      return { success: false, error: t().settings.paywallPaymentErrorDesc };
     }
     // Persist entitlement locally (production would use server receipt validation)
     this._setEntitlement(true, planId);
@@ -130,7 +132,7 @@ class SimulatedPurchaseService implements ISubscriptionService {
     return {
       success: false,
       cancelled: false,
-      error: 'Không tìm thấy giao dịch nào để khôi phục.',
+      error: t().settings.paywallNoPurchaseDesc,
     };
   }
 
@@ -234,7 +236,7 @@ class NativePurchaseService implements ISubscriptionService {
       if (isActive) {
         return { success: true, purchasedAt: new Date().toISOString() };
       }
-      return { success: false, error: 'Không tìm thấy giao dịch nào để khôi phục.' };
+      return { success: false, error: t().settings.paywallNoPurchaseDesc };
     } catch (e: any) {
       return { success: false, error: e.message };
     }
@@ -262,7 +264,8 @@ export const SubscriptionService = {
    */
   shared(): ISubscriptionService {
     if (!_instance) {
-      _instance = Platform.OS === 'web'
+      const isExpoGo = Constants.appOwnership === 'expo';
+      _instance = (Platform.OS === 'web' || isExpoGo)
         ? new SimulatedPurchaseService()
         : new NativePurchaseService();
     }
@@ -291,29 +294,31 @@ function delay(ms: number): Promise<void> {
 }
 
 /** Convenience: get all plans synchronously (from last fetch or defaults) */
-export const DEFAULT_PLANS: SubscriptionPlan[] = [
-  {
-    id: 'lifetime',
-    title: 'Trọn Đời',
-    description: 'Thanh toán một lần',
-    priceString: '199.000 đ',
-    priceVND: 199_000,
-    isHighlighted: true,
-  },
-  {
-    id: 'yearly',
-    title: 'Gói Năm',
-    description: 'Tiết kiệm 55%',
-    priceString: '99.000 đ / năm',
-    priceVND: 99_000,
-    isHighlighted: false,
-  },
-  {
-    id: 'monthly',
-    title: 'Gói Tháng',
-    description: 'Hủy bất cứ lúc nào',
-    priceString: '19.000 đ / tháng',
-    priceVND: 19_000,
-    isHighlighted: false,
-  },
-];
+export function getDefaultPlans(): SubscriptionPlan[] {
+  return [
+    {
+      id: 'lifetime',
+      title: t().settings.paywallOptionLifetime,
+      description: t().settings.paywallOptionLifetimeDesc,
+      priceString: t().settings.paywallOptionLifetimePrice,
+      priceVND: 199_000,
+      isHighlighted: true,
+    },
+    {
+      id: 'yearly',
+      title: t().settings.paywallOptionYear,
+      description: t().settings.paywallOptionYearDesc,
+      priceString: t().settings.paywallOptionYearPrice,
+      priceVND: 99_000,
+      isHighlighted: false,
+    },
+    {
+      id: 'monthly',
+      title: t().settings.paywallOptionMonth,
+      description: t().settings.paywallOptionMonthDesc,
+      priceString: t().settings.paywallOptionMonthPrice,
+      priceVND: 19_000,
+      isHighlighted: false,
+    },
+  ];
+}
