@@ -327,7 +327,7 @@ export function HomeScreen({
         isPremium={isPremium}
         onUpgrade={() => { setCalendarVisible(false); onUpgrade?.(); }}
       />
-      <DailyInsightDialog visible={insightVisible} entries={entries} onClose={() => setInsightVisible(false)} t={t} />
+      <DailyInsightDialog visible={insightVisible} onClose={() => setInsightVisible(false)} t={t} />
     </RNAnimated.ScrollView>
   );
 }

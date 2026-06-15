@@ -1,4 +1,4 @@
-import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect, useState } from 'react';
 import { hasPinCode } from '../memory/secureStore';
@@ -13,6 +13,7 @@ import { TabNavigator } from './TabNavigator';
 import { SearchScreen } from '../screens/SearchScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { DevDiagnosticsScreen } from '../screens/DevDiagnosticsScreen';
+import { useNotificationDeepLink } from '../hooks/useNotificationDeepLink';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -27,6 +28,10 @@ const DarkSanctuaryTheme = {
 export function AppNavigator() {
   const { onboardingComplete, setOnboardingComplete, settings, hydrated, updateSettings } = useJournalStore();
   const [unlocked, setUnlocked] = useState(false);
+  const navigationRef = useNavigationContainerRef();
+
+  // 🔔 Deep-link: navigate to correct screen when user taps a notification
+  useNotificationDeepLink(navigationRef);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -55,7 +60,7 @@ export function AppNavigator() {
   }
 
   return (
-    <NavigationContainer theme={DarkSanctuaryTheme}>
+    <NavigationContainer theme={DarkSanctuaryTheme} ref={navigationRef}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,

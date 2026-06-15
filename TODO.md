@@ -84,11 +84,16 @@ Hoàn thiện các hiệu ứng mượt mà và fix các lỗi hiển thị chư
 
 - ✅ **[P2-1] Đăng nhiều ảnh (Multi-photo flow) (Done)**
   - Hệ thống DB (`media_json`), component `MomentComposer` và `PhotoGrid` đã hoàn thiện và hỗ trợ tối đa 10 ảnh/video.
-- ⏳ **[P2-2] Deep-link Push Notification**
-  - Bấm vào thông báo nhắc nhở → mở đúng `DayScreen` của ngày hiện tại.
+- ⏳ **[P2-2] Deep-link Push Notification (Done)**
+  - ✅ Tạo `src/hooks/useNotificationDeepLink.ts` — lắng nghe `addNotificationResponseReceivedListener` + `getLastNotificationResponseAsync` (cold-launch).
+  - ✅ Khi bấm thông báo nhắc nhở → tự động navigate đến `DayScreen` (ngày hôm nay hoặc ngày cụ thể).
+  - ✅ Khi bấm thông báo tuần → navigate đến `ReelScreen`.
+  - ✅ Tích hợp vào `AppNavigator.tsx` bằng `useNavigationContainerRef`.
+  - ✅ Bổ sung `scheduleEntryReminder()` trong `notifications.ts` cho reminder gắn với ngày cụ thể.
 - ✅ **[P2-3] Biểu đồ xu hướng (Mood Trend Chart) (Done)**
   - Dùng `react-native-chart-kit` vẽ biểu đồ trong màn Calendar (Trend Mode).
-- ⏳ **[P2-4] Hỗ trợ hiển thị Video**
-  - Dùng `expo-av` để play video trong Slideshow, thay vì chỉ hiện ảnh.
+- ✅ **[P2-4] Hỗ trợ hiển thị Video (Done)**
+  - `expo-av` đã được dùng trong `SlideshowScreen.tsx`, `PhotoGrid.tsx`, `ImageViewer.tsx`, `DayScreen.tsx` và `DetailScreen.tsx`.
+  - Video tự phát (muted, looping) trong slideshow khi slide là kiểu `video`.
 - ⏳ **[P2-5] Home Screen Widget (iOS/Android)**
   - Chờ Expo SDK 51 ổn định thư viện `expo-widgets` để hiển thị nhắc nhở ra ngoài màn hình chính.

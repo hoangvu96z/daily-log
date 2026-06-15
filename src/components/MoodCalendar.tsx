@@ -141,10 +141,26 @@ export function MoodCalendar({
 
   const isVi = locale.startsWith('vi');
 
-  // Trend Chart Data (Last 7 Days)
+  // Trend Chart Data — last 7 days, oldest→newest (left→right)
   const moodScoreMap: Record<string, number> = { very_bad: 1, bad: 2, neutral: 3, good: 4, great: 5 };
-  const trendLabels = [...days].reverse().map(d => d.dayLabel);
-  const trendData = [...days].reverse().map(d => d.mood ? moodScoreMap[d.mood] : 0);
+
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i)); // 6 days ago → today
+    const dateKey = getLocalDateString(d);
+    const label = new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(d);
+    const dayEntries = entries.filter(e => e.date === dateKey && e.status === 'saved' && e.mood);
+    const score = dayEntries.length > 0
+      ? dayEntries.reduce((acc, e) => acc + moodScoreMap[e.mood], 0) / dayEntries.length
+      : 0;
+    return { label, score };
+  });
+
+  const trendLabels = last7Days.map(d => d.label);
+  // Replace 0 (no data) with neutral (3) to keep line continuous
+  const trendData = last7Days.map(d => d.score === 0 ? 3 : d.score);
+  const hasRealData = last7Days.some(d => d.score > 0);
+
   const screenWidth = Dimensions.get('window').width;
 
   // Pulse animation for today
@@ -357,36 +373,65 @@ export function MoodCalendar({
               </View>
             </View>
           ) : (
-            <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: 220, paddingRight: 16 }}>
-              {trendData.every(v => v === 0) ? (
-                <Text style={{ color: palette.muted, fontStyle: 'italic' }}>
-                  {isVi ? 'Chưa đủ dữ liệu để vẽ biểu đồ' : 'Not enough data to draw chart'}
-                </Text>
+            <View style={{ minHeight: 240, paddingHorizontal: 4 }}>
+              {!hasRealData ? (
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 220 }}>
+                  <Text style={{ color: palette.muted, fontStyle: 'italic' }}>
+                    {isVi ? 'Chưa đủ dữ liệu để vẽ biểu đồ' : 'Not enough data to draw chart'}
+                  </Text>
+                </View>
               ) : (
-                <LineChart
-                  data={{
-                    labels: trendLabels,
-                    datasets: [{ data: trendData }],
-                  }}
-                  width={screenWidth - 80}
-                  height={220}
-                  yAxisLabel=""
-                  yAxisSuffix=""
-                  withHorizontalLabels={false}
-                  withVerticalLines={false}
-                  chartConfig={{
-                    backgroundColor: 'transparent',
-                    backgroundGradientFrom: glassBg,
-                    backgroundGradientTo: glassBg,
-                    decimalPlaces: 0,
-                    color: (opacity = 1) => `rgba(91, 192, 190, ${opacity})`,
-                    labelColor: (opacity = 1) => palette.ink,
-                    style: { borderRadius: 16 },
-                    propsForDots: { r: '4', strokeWidth: '2', stroke: palette.primary },
-                  }}
-                  bezier
-                  style={{ marginVertical: 8, borderRadius: 16 }}
-                />
+                <View style={{
+                  marginTop: 12,
+                  backgroundColor: 'rgba(0,0,0,0.03)',
+                  borderRadius: 20,
+                  paddingVertical: 12,
+                  alignItems: 'center',
+                }}>
+                  <LineChart
+                    data={{
+                      labels: trendLabels,
+                      datasets: [{
+                        data: trendData,
+                        color: () => palette.primary,
+                        strokeWidth: 3,
+                      }],
+                    }}
+                    width={screenWidth - 80}
+                    height={200}
+                    yAxisLabel=""
+                    yAxisSuffix=""
+                    withHorizontalLabels={false}
+                    withVerticalLines={false}
+                    bezier
+                    chartConfig={{
+                      backgroundColor: 'transparent',
+                      backgroundGradientFrom: 'transparent',
+                      backgroundGradientTo: 'transparent',
+                      backgroundGradientFromOpacity: 0,
+                      backgroundGradientToOpacity: 0,
+                      decimalPlaces: 1,
+                      color: () => palette.primary,
+                      labelColor: () => palette.muted,
+                      style: { borderRadius: 16 },
+                      propsForDots: {
+                        r: '5',
+                        strokeWidth: '2',
+                        stroke: palette.white,
+                      },
+                      propsForBackgroundLines: {
+                        strokeDasharray: '',
+                        stroke: 'rgba(0,0,0,0.05)',
+                      },
+                    }}
+                    style={{
+                      marginVertical: 8,
+                      borderRadius: 16,
+                      marginLeft: -10,
+                    }}
+                    yLabelsOffset={10}
+                  />
+                </View>
               )}
             </View>
           )}
