@@ -121,10 +121,10 @@ export default function App() {
                       style={[StyleSheet.absoluteFill, { opacity: 0.45 }]}
                       resizeMode="cover"
                     />
-                    {/* Strong purple colour wash over the cloud */}
-                    <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(107, 33, 168, 0.38)' }]} />
-                    {/* Soft lavender base overlay */}
-                    <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba('#F5F0FF', 0.55) }]} />
+                    {/* Strong primary colour wash over the cloud */}
+                    <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(palette.primary, 0.38) }]} />
+                    {/* Soft background base overlay */}
+                    <View style={[StyleSheet.absoluteFill, { backgroundColor: hexToRgba(palette.background, 0.55) }]} />
                   </View>
                 ) : (
                   <>

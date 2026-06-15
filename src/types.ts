@@ -60,6 +60,7 @@ export type Settings = {
   isPremium: boolean;
   last_auto_scan_time?: string;
   last_auto_scan_stats?: string;
+  bgFetch_lastRun?: string;
   bgFetch_successCount?: number;
   bgFetch_failCount?: number;
   // Note: pinCodeHash is stored in expo-secure-store, NOT here

@@ -21,7 +21,7 @@ const moodIconColors: Record<Mood, string> = {
   bad: '#FB8C00',      // Orange
   neutral: '#43A047',  // Green
   good: '#1E88E5',     // Blue
-  great: '#8E24AA',    // Purple
+  great: palette.primary,    // Accent Color
 };
 
 export function MomentComposer({

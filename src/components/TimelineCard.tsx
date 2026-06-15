@@ -16,7 +16,7 @@ const moodBgColors: Record<string, string> = {
   bad: '#FB8C0026',
   neutral: '#43A04726',
   good: '#1E88E526',
-  great: '#8E24AA26',
+  great: palette.primaryContainer,
 };
 
 const moodTextColors: Record<string, string> = {
@@ -24,7 +24,7 @@ const moodTextColors: Record<string, string> = {
   bad: '#FB8C00',
   neutral: '#43A047',
   good: '#1E88E5',
-  great: '#8E24AA',
+  great: palette.primary,
 };
 import { Entry } from '../types';
 

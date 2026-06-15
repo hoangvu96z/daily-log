@@ -61,10 +61,10 @@ export function DevDiagnosticsScreen({ navigation }: Props) {
           <Text style={{ fontSize: 14, fontWeight: '600', color: palette.muted, marginBottom: 8, textTransform: 'uppercase' }}>
             Auto-Tracker Status
           </Text>
-          <View style={{ backgroundColor: palette.card, borderRadius: 12, padding: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: palette.outline }}>
+          <View style={{ backgroundColor: palette.slate, borderRadius: 12, padding: 16, borderCurve: 'continuous', borderWidth: 1, borderColor: palette.outline }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
               <Text style={{ color: palette.ink }}>Auto Tracking Enabled</Text>
-              <Text style={{ fontWeight: '600', color: settings.autoTrackingEnabled ? palette.green : palette.danger }}>
+              <Text style={{ fontWeight: '600', color: settings.autoTrackingEnabled ? palette.green : palette.red }}>
                 {settings.autoTrackingEnabled ? 'YES' : 'NO'}
               </Text>
             </View>

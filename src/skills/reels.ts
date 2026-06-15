@@ -1,6 +1,7 @@
 import { Entry, WeeklyReel } from '../types';
 import { getLocalDateString } from '../utils/dateUtils';
 import { insertReel } from '../memory/database';
+import { palette } from '../theme/palette';
 
 function getISOWeekBounds(dateStr: string) {
   const d = new Date(`${dateStr}T12:00:00`);
@@ -47,7 +48,7 @@ export async function generateWeeklyReels(entries: Entry[]): Promise<WeeklyReel[
   }
 
   const moodTones: Record<string, string> = {
-    great: '#8E24AA',   // vibrant purple
+    great: palette.primary,
     good: '#1E88E5',    // bright blue
     neutral: '#43A047', // calm green
     bad: '#FB8C00',     // orange

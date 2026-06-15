@@ -57,7 +57,7 @@ export function MoodCalendar({
     bad:      '#FB8C00',
     neutral:  '#43A047',
     good:     '#1E88E5',
-    great:    '#8E24AA',
+    great:    palette.primary,
   };
 
   const year = viewDate.getFullYear();

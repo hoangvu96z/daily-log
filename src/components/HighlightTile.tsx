@@ -16,12 +16,12 @@ export function HighlightTile({ entry, onPress }: HighlightTileProps) {
   const displayImageUri = entry.imageUri || mediaImageUri;
   const hasImage = !!displayImageUri;
 
-  const fallbackBgColors: Record<string, string> = {
+  const moodColors: Record<string, string> = {
     very_bad: '#E53935',
     bad: '#FB8C00',
     neutral: '#43A047',
     good: '#1E88E5',
-    great: '#8E24AA',
+    great: palette.primary,
   };
 
   return (
@@ -29,7 +29,7 @@ export function HighlightTile({ entry, onPress }: HighlightTileProps) {
       {hasImage ? (
         <Image source={{ uri: displayImageUri }} style={styles.bgImage} resizeMode="cover" />
       ) : (
-        <View style={[styles.fallbackBg, { backgroundColor: fallbackBgColors[entry.mood] || '#1E88E5' }]} />
+        <View style={[styles.fallbackBg, { backgroundColor: moodColors[entry.mood] || '#1E88E5' }]} />
       )}
       
       {/* Overlay Scrim for Text Legibility */}

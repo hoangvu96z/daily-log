@@ -49,10 +49,10 @@ Những tác vụ khẩn cấp cần xử lý trước để ứng dụng không
 
 Tích hợp cổng thanh toán thực tế thay cho mock và `expo-in-app-purchases` (đã deprecated).
 
-- ⏳ **[P0-3] RevenueCat Integration**
-  - Cài đặt `react-native-purchases`.
-  - Thêm `EXPO_PUBLIC_RC_IOS_KEY` và `EXPO_PUBLIC_RC_ANDROID_KEY` vào `.env`.
-  - Implement `NativePurchaseService` trong `subscription.ts` (Sử dụng API thực `Purchases.purchasePackage()`, v.v.).
+- ✅ **[P0-3] RevenueCat Integration (Done)**
+  - ✅ Cài đặt `react-native-purchases`.
+  - ✅ Thêm `EXPO_PUBLIC_RC_IOS_KEY` và `EXPO_PUBLIC_RC_ANDROID_KEY` vào `.env`.
+  - ✅ Implement `NativePurchaseService` trong `subscription.ts` (Sử dụng API thực `Purchases.purchasePackage()`, v.v.).
   - Testing sandbox trên TestFlight.
 
 ---
@@ -64,8 +64,8 @@ Hoàn thiện các hiệu ứng mượt mà và fix các lỗi hiển thị chư
 - ✅ **[P1-1] Dark Mode Force Re-mount (Done)**
   - Xử lý việc `StyleSheet.create` bị cache khi đổi theme bằng cách thêm `key={activeTheme}` vào App.tsx root.
 
-- ⏳ **[P1-2] Khớp Accent Color**
-  - Đảm bảo 6 màu accent hoạt động chuẩn xác trong toàn bộ UI.
+- ✅ **[P1-2] Khớp Accent Color (Done)**
+  - Đảm bảo 6 màu accent hoạt động chuẩn xác trong toàn bộ UI (đã thay thế màu tĩnh của "great" mood bằng `palette.primary` trong các file components).
 
 - ✅ **[P1-3] Cải thiện Mood Calendar (Done)**
   - Đã extract hàm tính streak. Heatmap 30 ngày và Emoji/Dots đã hoạt động.

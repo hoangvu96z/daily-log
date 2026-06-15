@@ -30,8 +30,8 @@ import Constants from 'expo-constants';
 import { t } from '../i18n/translations';
 
 // IMPORTANT: Replace these with your actual RevenueCat Public API Keys later
-const REVENUECAT_API_KEY_IOS = 'appl_YOUR_IOS_KEY_HERE';
-const REVENUECAT_API_KEY_ANDROID = 'goog_YOUR_ANDROID_KEY_HERE';
+const REVENUECAT_API_KEY_IOS = process.env.EXPO_PUBLIC_RC_IOS_KEY || 'appl_YOUR_IOS_KEY_HERE';
+const REVENUECAT_API_KEY_ANDROID = process.env.EXPO_PUBLIC_RC_ANDROID_KEY || 'goog_YOUR_ANDROID_KEY_HERE';
 const ENTITLEMENT_ID = 'premium';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
