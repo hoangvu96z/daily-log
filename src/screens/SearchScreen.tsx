@@ -33,7 +33,8 @@ export function SearchScreen() {
         const query = searchQuery.toLowerCase();
         const textContent = entry.text ? entry.text.toLowerCase() : '';
         const locationContent = entry.locationName ? entry.locationName.toLowerCase() : '';
-        matchesText = textContent.includes(query) || locationContent.includes(query);
+        const dateContent = entry.date ? entry.date.toLowerCase() : '';
+        matchesText = textContent.includes(query) || locationContent.includes(query) || dateContent.includes(query);
       }
       
       let matchesMood = true;
@@ -59,7 +60,7 @@ export function SearchScreen() {
             <Ionicons name="search" size={20} color={palette.muted} style={{ marginLeft: 12 }} />
             <TextInput
               style={localStyles.searchInput}
-              placeholder="Tìm kiếm nhật ký, địa điểm..."
+              placeholder={(t as any).search?.placeholder || "Tìm kiếm nhật ký, địa điểm..."}
               placeholderTextColor={palette.muted}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -117,8 +118,13 @@ export function SearchScreen() {
             <View style={{ alignItems: 'center', marginTop: 100 }}>
               <Ionicons name="search-outline" size={48} color={palette.outline} />
               <Text style={{ color: palette.muted, marginTop: 16, fontWeight: '600' }}>
-                Không tìm thấy nhật ký nào
+                {(t as any).search?.noResults || "Không tìm thấy nhật ký nào"}
               </Text>
+              {(searchQuery.length > 0 || selectedMood) && (
+                <Text style={{ color: palette.muted, marginTop: 8, fontSize: 13, opacity: 0.8 }}>
+                  {(t as any).search?.noResultsHint || "Thử từ khóa khác hoặc bỏ bộ lọc cảm xúc"}
+                </Text>
+              )}
             </View>
           }
         />

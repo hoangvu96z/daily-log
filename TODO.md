@@ -84,7 +84,7 @@ Hoàn thiện các hiệu ứng mượt mà và fix các lỗi hiển thị chư
 
 - ✅ **[P2-1] Đăng nhiều ảnh (Multi-photo flow) (Done)**
   - Hệ thống DB (`media_json`), component `MomentComposer` và `PhotoGrid` đã hoàn thiện và hỗ trợ tối đa 10 ảnh/video.
-- ⏳ **[P2-2] Deep-link Push Notification (Done)**
+- ✅ **[P2-2] Deep-link Push Notification (Done)**
   - ✅ Tạo `src/hooks/useNotificationDeepLink.ts` — lắng nghe `addNotificationResponseReceivedListener` + `getLastNotificationResponseAsync` (cold-launch).
   - ✅ Khi bấm thông báo nhắc nhở → tự động navigate đến `DayScreen` (ngày hôm nay hoặc ngày cụ thể).
   - ✅ Khi bấm thông báo tuần → navigate đến `ReelScreen`.
@@ -97,3 +97,8 @@ Hoàn thiện các hiệu ứng mượt mà và fix các lỗi hiển thị chư
   - Video tự phát (muted, looping) trong slideshow khi slide là kiểu `video`.
 - ⏳ **[P2-5] Home Screen Widget (iOS/Android)**
   - Chờ Expo SDK 51 ổn định thư viện `expo-widgets` để hiển thị nhắc nhở ra ngoài màn hình chính.
+
+- ✅ **[P2-6] Search & AI Insights Refactor (Done)**
+  - `SearchScreen` đã hỗ trợ i18n đầy đủ, lọc thêm theo `date`.
+  - `DailyInsightDialog` đã đọc 7 ngày gần nhất để tính mood phổ biến, streak, best day, v.v thay vì text cứng.
+  - Sửa lỗi null check cho `SharedGroupPreferences` (Widget sync).

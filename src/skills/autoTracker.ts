@@ -31,6 +31,29 @@ import { LocationSignal, getLocationSignals } from './location';
 
 const TASK_NAME = 'AUTO_DIARY_BACKGROUND_FETCH';
 
+// === Period Helper ===
+
+/**
+ * Returns the time-of-day period in the app's display language.
+ * Used to generate contextually appropriate AI suggestions.
+ */
+export function getPeriod(date: Date, lang: 'vi' | 'en' = 'vi'): string {
+  const h = date.getHours();
+  if (lang === 'en') {
+    if (h >= 5 && h < 10) return 'morning';
+    if (h >= 10 && h < 13) return 'lunch';
+    if (h >= 13 && h < 18) return 'afternoon';
+    if (h >= 18 && h < 22) return 'evening';
+    return 'night';
+  }
+  // Vietnamese
+  if (h >= 5 && h < 10) return 'sáng';
+  if (h >= 10 && h < 13) return 'trưa';
+  if (h >= 13 && h < 18) return 'chiều';
+  if (h >= 18 && h < 22) return 'tối';
+  return 'đêm';
+}
+
 export interface PhotoSignal {
   type: 'photo';
   time: Date;
@@ -127,7 +150,9 @@ async function processClustersAndSave(clusters: BaseSignal[][]): Promise<number>
     const dateStr = clusterDate.toISOString().split('T')[0];
     const timeStr = clusterDate.toTimeString().substring(0, 5); // HH:mm
 
-    const hasDuplicate = allEntries.some((entry) => {
+    // Only check SAVED entries — dismissed (discarded) suggestions should not
+    // block new suggestions from appearing in the same time window.
+    const hasDuplicate = allEntries.filter(e => e.status === 'saved').some((entry) => {
       if (entry.date !== dateStr) return false;
       const [h, m] = entry.time.split(':').map(Number);
       const entryTime = new Date(clusterDate);
@@ -135,7 +160,17 @@ async function processClustersAndSave(clusters: BaseSignal[][]): Promise<number>
       return Math.abs(entryTime.getTime() - avgTime) / (1000 * 60 * 60) < 1.5;
     });
 
-    if (hasDuplicate) {
+    // Also skip if there's ALREADY a suggested entry in the same window
+    // (avoids duplicate suggestions before user decides)
+    const hasPendingSuggestion = allEntries.filter(e => e.status === 'suggested').some((entry) => {
+      if (entry.date !== dateStr) return false;
+      const [h, m] = entry.time.split(':').map(Number);
+      const entryTime = new Date(clusterDate);
+      entryTime.setHours(h, m, 0, 0);
+      return Math.abs(entryTime.getTime() - avgTime) / (1000 * 60 * 60) < 1.5;
+    });
+
+    if (hasDuplicate || hasPendingSuggestion) {
       console.log(`[AutoTracker] Skipping cluster at ${dateStr} ${timeStr} due to existing entry`);
       continue;
     }
@@ -151,15 +186,18 @@ async function processClustersAndSave(clusters: BaseSignal[][]): Promise<number>
     const locationName = mainLoc?.locationName || mainCal?.locationName || undefined;
     const calendarTitle = mainCal?.title || undefined;
 
-    let aiPromptContext = '';
-    if (calendarTitle) aiPromptContext += ` Event: ${calendarTitle}.`;
-    
+    const settings = await loadSettings();
+    const lang: 'vi' | 'en' = settings.language === 'en' ? 'en' : 'vi';
+    const period = getPeriod(clusterDate, lang);
+
     let suggestionText = await aiService.generateSuggestion({
       mode: mainPhoto ? 'photo' : 'note',
       mood: 'neutral',
       time: timeStr,
+      period,
       locationName,
-      lang: 'vi',
+      calendarText: calendarTitle,
+      lang,
     });
 
     // Fallback if AI doesn't incorporate the calendar event
@@ -185,6 +223,9 @@ async function processClustersAndSave(clusters: BaseSignal[][]): Promise<number>
     };
 
     await insertEntry(newEntry);
+    // ⚠️ Crucial: update allEntries in-place so subsequent clusters in this
+    // same run can detect this newly-created entry and avoid duplicates.
+    allEntries.push(newEntry);
     created++;
     console.log(`[AutoTracker] Created suggestion for ${dateStr} ${timeStr}`);
   }

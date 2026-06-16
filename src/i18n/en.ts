@@ -99,6 +99,15 @@ export const en: typeof vi = {
     paused: 'Paused',
   },
 
+  // --- Search Screen ---
+  search: {
+    placeholder: 'Search journal, location...',
+    noResults: 'No journal entries found',
+    noResultsHint: 'Try different keywords or remove mood filter',
+    resultsCount: (count: number) => `${count} result${count === 1 ? '' : 's'}`,
+    filterByMood: 'Filter by mood',
+  },
+
   addMoment: {
     title: 'Add Moment',
     captureTitle: 'Capture Moment',
@@ -341,6 +350,22 @@ export const en: typeof vi = {
       `A moment at ${location}, gently saved with a feeling of ${moodText}.`,
     photoGeneric: 'A moment captured in a photo, just enough to remember the rhythm of today.',
     noteGeneric: "A short note in the day, no need to be long, just so you'll know what you went through.",
+    // Period-specific note suggestions
+    noteMorning: "How's your morning starting? Jot something down before the day flies by.",
+    noteLunch: "It's noon — eaten yet? If there's something from this morning worth keeping, now's the time.",
+    noteAfternoon: 'An afternoon is passing by — is there a moment you want to remember later?',
+    noteEvening: "Evening is here, how was your day? Anything worth saving from today?",
+    noteNight: "It's night — look back at today for a moment. Any memory worth keeping?",
+    // Period + location
+    noteMorningLoc: (loc: string) => `Morning at ${loc} — how's the start of your day?`,
+    noteLunchLoc: (loc: string) => `Noon at ${loc} — grabbed lunch yet? Log this midday moment.`,
+    noteAfternoonLoc: (loc: string) => `Afternoon at ${loc} — the light is shifting. Anything to note?`,
+    noteEveningLoc: (loc: string) => `Evening at ${loc} — the day is wrapping up. Save a moment.`,
+    noteNightLoc: (loc: string) => `Night at ${loc} — anything from today you want to remember?`,
+    // Calendar + period
+    calendarMorning: (event: string) => `You have "${event}" today — how's the morning prep going?`,
+    calendarAfternoon: (event: string) => `Just had "${event}" — anything worth noting from that?`,
+    calendarEvening: (event: string) => `"${event}" is done for today — how did it feel?`,
     moodTextVeryBad: 'quite heavy',
     moodTextBad: 'slowing down',
     moodTextNeutral: 'normal',

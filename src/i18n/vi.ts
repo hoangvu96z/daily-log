@@ -102,7 +102,14 @@ export const vi = {
     paused: 'Đã tạm dừng',
   },
 
-  // --- Add Moment Sheet ---
+  // --- Search Screen ---
+  search: {
+    placeholder: 'Tìm kiếm nhật ký, địa điểm...',
+    noResults: 'Không tìm thấy nhật ký nào',
+    noResultsHint: 'Thử từ khác hoặc bỏ bộ lọc cảm xúc',
+    resultsCount: (count: number) => `${count} kết quả`,
+    filterByMood: 'Lọc theo cảm xúc',
+  },
   addMoment: {
     title: 'Thêm khoảnh khắc',
     captureTitle: 'Chụp khoảnh khắc',
@@ -354,6 +361,22 @@ export const vi = {
       `Một khoảnh khắc ở ${location}, được lưu lại nhẹ nhàng cùng cảm giác ${moodText}.`,
     photoGeneric: 'Một khoảnh khắc có ảnh được lưu lại, vừa đủ để nhớ nhịp của ngày hôm nay.',
     noteGeneric: 'Một ghi chú ngắn trong ngày, không cần quá dài, chỉ để sau này bạn nhận ra mình đã đi qua gì.',
+    // Period-specific note suggestions
+    noteMorning: 'Sáng này bắt đầu thế nào? Ghi lại một điều nhỏ trước khi ngày chạy qua.',
+    noteLunch: 'Trưa rồi — ăn chưa? Nếu có điều gì muốn lưu lại từ buổi sáng, đây là lúc rồi.',
+    noteAfternoon: 'Một buổi chiều đang trôi qua — có khoảnh khắc nào muốn nhớ lại sau này không?',
+    noteEvening: 'Gần tối rồi, ngày của bạn thế nào? Có điều gì đáng lưu lại từ hôm nay không?',
+    noteNight: 'Đêm rồi — nhìn lại hôm nay một chút, có khoảnh khắc nào muốn giữ lại không?',
+    // Period + location
+    noteMorningLoc: (loc: string) => `Sáng ở ${loc} — khởi đầu ngày như thế nào?`,
+    noteLunchLoc: (loc: string) => `Trưa ở ${loc} — ăn gì chưa? Ghi lại buổi trưa này.`,
+    noteAfternoonLoc: (loc: string) => `Chiều ở ${loc} — không khí đang thay đổi. Có gì muốn ghi không?`,
+    noteEveningLoc: (loc: string) => `Tối ở ${loc} — ngày sắp kết thúc. Lưu lại một khoảnh khắc nhé.`,
+    noteNightLoc: (loc: string) => `Đêm ở ${loc} — có điều gì muốn ghi nhớ từ hôm nay không?`,
+    // Calendar + period
+    calendarMorning: (event: string) => `Sắc sớ có "${event}" hôm nay — buổi sáng chuẩn bị thế nào?`,
+    calendarAfternoon: (event: string) => `Vừa qua "${event}" — có gì muốn note lại từ buổi này?`,
+    calendarEvening: (event: string) => `"${event}" hôm nay đã qua — cảm giác thế nào?`,
     moodTextVeryBad: 'khá nặng',
     moodTextBad: 'chậm lại',
     moodTextNeutral: 'bình thường',

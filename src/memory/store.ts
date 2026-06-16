@@ -82,13 +82,34 @@ export const useJournalStore = create<JournalState>((set) => ({
       getAllHighlights(),
     ]);
     const legacyDemoIds = new Set(['1', '2', '3', '4', '5']);
-    const entries = loadedEntries.filter((entry) => !legacyDemoIds.has(entry.id));
+    let entries = loadedEntries.filter((entry) => !legacyDemoIds.has(entry.id));
     if (entries.length !== loadedEntries.length) {
       await Promise.all(
         loadedEntries
           .filter((entry) => legacyDemoIds.has(entry.id))
           .map((entry) => dbDeleteEntry(entry.id)),
       );
+    }
+
+    // Deduplicate 'suggested' entries: keep only the first per 1.5h window per day.
+    // This cleans up any duplicates that may have been created by a prior bug.
+    const seen: { date: string; minutes: number }[] = [];
+    const dupIds: string[] = [];
+    for (const e of entries) {
+      if (e.status !== 'suggested') continue;
+      const [h, m] = e.time.split(':').map(Number);
+      const eMin = h * 60 + m;
+      const isDup = seen.some(s => s.date === e.date && Math.abs(s.minutes - eMin) < 90);
+      if (isDup) {
+        dupIds.push(e.id);
+      } else {
+        seen.push({ date: e.date, minutes: eMin });
+      }
+    }
+    if (dupIds.length > 0) {
+      await Promise.all(dupIds.map(id => dbDeleteEntry(id)));
+      entries = entries.filter(e => !dupIds.includes(e.id));
+      console.log(`[Store] Cleaned up ${dupIds.length} duplicate suggested entry(s)`);
     }
 
     // Seed: if DB is completely empty, inject demo entries for first-run experience
@@ -151,12 +172,34 @@ export const useJournalStore = create<JournalState>((set) => ({
       set((s) => ({ entries: s.entries.filter((e) => !isSeedEntry(e)) }));
     }
     await insertEntry(entry);
-    
-    // Get fresh state after possible seed cleanup
+
+    // Auto-dismiss any 'suggested' entries in the same 1.5h window on the same day.
+    // This prevents a suggested entry from lingering alongside a real entry.
+    if (entry.status === 'saved') {
+      const [newH, newM] = entry.time.split(':').map(Number);
+      const newMinutes = newH * 60 + newM;
+      const currentState = useJournalStore.getState();
+      const toDiscard = currentState.entries.filter((e) => {
+        if (e.status !== 'suggested' || e.date !== entry.date) return false;
+        const [eh, em] = e.time.split(':').map(Number);
+        const eMinutes = eh * 60 + em;
+        return Math.abs(eMinutes - newMinutes) < 90; // 1.5h window
+      });
+      for (const e of toDiscard) {
+        await dbDeleteEntry(e.id);
+      }
+      if (toDiscard.length > 0) {
+        const discardIds = new Set(toDiscard.map((e) => e.id));
+        set((s) => ({ entries: s.entries.filter((e) => !discardIds.has(e.id)) }));
+        console.log(`[Store] Auto-dismissed ${toDiscard.length} suggested entry(s) near ${entry.time}`);
+      }
+    }
+
+    // Get fresh state after possible seed cleanup + auto-dismiss
     const currentState = useJournalStore.getState();
     const newEntries = [...currentState.entries, entry].sort((a, b) => a.time.localeCompare(b.time));
     set({ entries: newEntries });
-    
+
     // Auto-update reels in background
     generateWeeklyReels(newEntries).then(reels => set({ reels })).catch(console.error);
   },
