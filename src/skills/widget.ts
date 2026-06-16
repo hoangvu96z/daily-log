@@ -42,7 +42,7 @@ export async function syncWidgetData(entries: Entry[]) {
     };
 
     // Push data to Shared App Group
-    if (SharedGroupPreferences && SharedGroupPreferences.setItem) {
+    if (SharedGroupPreferences?.setItem) {
       await SharedGroupPreferences.setItem('widgetData', widgetData, APP_GROUP_ID);
       console.log('[Widget] Successfully synced data to shared storage:', widgetData);
     } else {

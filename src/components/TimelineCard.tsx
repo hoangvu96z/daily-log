@@ -7,6 +7,7 @@ import { AnimatedCard } from './AnimatedCard';
 import { PhotoGrid } from './PhotoGrid';
 import { MediaCarousel } from './MediaCarousel';
 import { ImagePlaceholder } from './ImagePlaceholder';
+import { VoiceMemoPlayer } from './VoiceMemoPlayer';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { moodEmoji } from '../data/mockData';
@@ -130,6 +131,11 @@ export function TimelineCard({
           <Text style={styles.entryText}>{entry.text}</Text>
           {!(entry.media && entry.media.length > 0) && !entry.imageUri && entry.imageLocalId && (
             <ImagePlaceholder label={entry.imageLocalId} uri={entry.imageUri} />
+          )}
+          {entry.voiceMemoUri && (
+            <View style={{ marginTop: 12 }}>
+              <VoiceMemoPlayer uri={entry.voiceMemoUri} durationMs={entry.voiceMemoDurationMs || 0} compact={true} />
+            </View>
           )}
           {suggested && (
             <View style={styles.miniActionRow}>

@@ -15,6 +15,8 @@ import { getLocalDateString } from '../utils/dateUtils';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { LocationPicker, LocationResult } from './LocationPicker';
 import { requestLocationAccess } from '../skills/permissions';
+import { VoiceMemoRecorder } from './VoiceMemoRecorder';
+import { deleteVoiceMemo } from '../skills/voiceMemo';
 
 const moodIconColors: Record<Mood, string> = {
   very_bad: '#E53935', // Red
@@ -54,11 +56,15 @@ export function MomentComposer({
   const [suggestion, setSuggestion] = useState('');
   const [suggestionStatus, setSuggestionStatus] = useState<'loading' | 'success' | 'error'>('loading');
 
+  const [voiceMemoUri, setVoiceMemoUri] = useState<string | null>(initialEntry?.voiceMemoUri || draft?.voiceMemoUri || null);
+  const [voiceMemoDuration, setVoiceMemoDuration] = useState<number>(0); // Duration is not saved in DB currently, but passed down
+
   useEffect(() => {
     if (visible) {
       setMood(initialEntry?.mood || 'good');
       setNote(initialEntry?.text || '');
       setPickedMedia(initialEntry?.media || (initialEntry?.imageUri ? [{ uri: initialEntry.imageUri, type: 'image' }] : []));
+      setVoiceMemoUri(initialEntry?.voiceMemoUri || draft?.voiceMemoUri || null);
       setSuggestionVisible(mode === 'create');
       
       if (initialEntry) {
@@ -156,6 +162,8 @@ export function MomentComposer({
         mood,
         text: note,
         media: activeMedia.length > 0 ? activeMedia : undefined,
+        voiceMemoUri: voiceMemoUri || undefined,
+        voiceMemoDurationMs: voiceMemoDuration || undefined,
         imageUri: undefined,
         imageLocalId: undefined,
       });
@@ -168,6 +176,8 @@ export function MomentComposer({
         text: note || suggestion,
         aiSuggestion: suggestion,
         media: activeMedia.length > 0 ? activeMedia : undefined,
+        voiceMemoUri: voiceMemoUri || undefined,
+        voiceMemoDurationMs: voiceMemoDuration || undefined,
         locationName: customLocation !== null ? (customLocation.name || undefined) : draft?.locationName,
         locationLat: customLocation !== null ? (customLocation.lat || undefined) : draft?.locationLat,
         locationLon: customLocation !== null ? (customLocation.lon || undefined) : draft?.locationLon,
@@ -178,7 +188,16 @@ export function MomentComposer({
     }
     setNote('');
     setPickedMedia([]);
+    setVoiceMemoUri(null);
     setSuggestionVisible(true);
+  };
+
+  const handleClose = () => {
+    // If a voice memo was recorded but not saved, delete it to prevent orphaned files
+    if (voiceMemoUri && voiceMemoUri !== initialEntry?.voiceMemoUri && voiceMemoUri !== draft?.voiceMemoUri) {
+      deleteVoiceMemo(voiceMemoUri);
+    }
+    onClose();
   };
 
   const displayLocation = customLocation !== null 
@@ -186,10 +205,10 @@ export function MomentComposer({
     : (draft?.locationName || draft?.calendarText || t.composer.noLocation);
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
       <SafeAreaView style={styles.composerRoot}>
         <View style={styles.composerHeader}>
-          <Pressable style={styles.iconButton} onPress={onClose}>
+          <Pressable style={styles.iconButton} onPress={handleClose}>
             <Ionicons name="close" size={22} color={palette.green} />
           </Pressable>
           <Text style={styles.composerTitle}>
@@ -198,6 +217,23 @@ export function MomentComposer({
           <View style={styles.iconButtonSpacer} />
         </View>
         <ScrollView contentContainerStyle={styles.composerContent}>
+          <View style={{ marginBottom: 24 }}>
+            <Text style={[styles.fieldLabel, { marginTop: 0 }]}>{t.composer.voiceMemoLabel || 'Ghi âm cảm xúc'}</Text>
+            <VoiceMemoRecorder 
+              entryId={initialEntry?.id || Date.now().toString()} 
+              existingUri={voiceMemoUri || undefined}
+              autoStart={mode === 'create' && draft?.mode === 'voice'}
+              onRecorded={(uri, durationMs) => {
+                setVoiceMemoUri(uri);
+                setVoiceMemoDuration(durationMs);
+              }}
+              onDeleted={() => {
+                if (voiceMemoUri) deleteVoiceMemo(voiceMemoUri);
+                setVoiceMemoUri(null);
+                setVoiceMemoDuration(0);
+              }}
+            />
+          </View>
           {activeMedia.length > 0 ? (
             <View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 10 }}>

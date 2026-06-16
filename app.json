@@ -10,7 +10,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hoangvu96z.dailylog"
+      "bundleIdentifier": "com.hoangvu96z.dailylog",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Ứng dụng cần truy cập micro để bạn có thể ghi âm cảm xúc vào nhật ký."
+      }
     },
     "android": {
       "package": "com.hoangvu96z.dailylog",
@@ -18,5 +21,8 @@
         "backgroundColor": "#f7f0e6"
       }
     },
+    "plugins": [
+      "expo-av"
+    ]
   }
 }

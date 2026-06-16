@@ -118,6 +118,8 @@ export const vi = {
     noteSubtitle: 'Viết vài dòng nếu bạn muốn',
     calendarTitle: 'Thêm mốc từ lịch',
     calendarSubtitle: 'Đánh dấu một việc quan trọng',
+    voiceTitle: 'Ghi âm',
+    voiceSubtitle: 'Lưu giữ giọng nói và cảm xúc',
   },
 
   // --- Moment Composer ---
@@ -138,6 +140,7 @@ export const vi = {
     moodLabel: 'Mood',
     noteLabel: 'Ghi chú',
     notePlaceholder: 'Hôm nay có gì muốn ghi lại? (không bắt buộc)',
+    voiceMemoLabel: 'Ghi âm cảm xúc',
     aiSuggestionTitle: 'Gợi ý AI',
     aiSuggestionErrorTitle: 'Không thể kết nối AI',
     generatingSuggestion: 'Đang tạo gợi ý...',

@@ -106,8 +106,10 @@ export async function exportBackup(): Promise<BackupResult> {
 
     const stagingDir = FileSystem.cacheDirectory + 'backup_staging/';
     const mediaDir = stagingDir + 'media/';
+    const voiceMemosDir = stagingDir + 'voice_memos/';
     await FileSystem.deleteAsync(stagingDir, { idempotent: true });
     await FileSystem.makeDirectoryAsync(mediaDir, { intermediates: true });
+    await FileSystem.makeDirectoryAsync(voiceMemosDir, { intermediates: true });
 
     const bundleEntries = JSON.parse(JSON.stringify(entries));
     for (const entry of bundleEntries) {
@@ -118,6 +120,15 @@ export async function exportBackup(): Promise<BackupResult> {
           entry.imageUri = 'media/' + filename;
         } catch (e) {
           console.warn(`Backup image failed for ${entry.id}`, e);
+        }
+      }
+      if (entry.voiceMemoUri && entry.voiceMemoUri.startsWith('file://')) {
+        const filename = entry.voiceMemoUri.split('/').pop() || `${entry.id}.m4a`;
+        try {
+          await FileSystem.copyAsync({ from: entry.voiceMemoUri, to: voiceMemosDir + filename });
+          entry.voiceMemoUri = 'voice_memos/' + filename;
+        } catch (e) {
+          console.warn(`Backup voice memo failed for ${entry.id}`, e);
         }
       }
     }
@@ -239,6 +250,24 @@ export async function importBackup(): Promise<BackupResult> {
           }
         } catch (e) {
           entry.imageUri = undefined;
+        }
+      }
+      if (entry.voiceMemoUri && entry.voiceMemoUri.startsWith('voice_memos/')) {
+        const filename = entry.voiceMemoUri.replace('voice_memos/', '');
+        const sourcePath = extractDir + entry.voiceMemoUri;
+        const destPath = docDir + 'voice_memos/' + filename;
+        
+        try {
+          await FileSystem.makeDirectoryAsync(docDir + 'voice_memos/', { intermediates: true });
+          const info = await FileSystem.getInfoAsync(sourcePath);
+          if (info.exists) {
+            await FileSystem.copyAsync({ from: sourcePath, to: destPath });
+            entry.voiceMemoUri = destPath;
+          } else {
+            entry.voiceMemoUri = undefined;
+          }
+        } catch (e) {
+          entry.voiceMemoUri = undefined;
         }
       }
     }

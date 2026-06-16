@@ -61,6 +61,12 @@ export function AddMomentSheet({
           subtitle={t.addMoment.calendarSubtitle}
           onPress={() => onPick('calendar')}
         />
+        <SheetAction
+          icon="mic-outline"
+          title={t.addMoment.voiceTitle}
+          subtitle={t.addMoment.voiceSubtitle}
+          onPress={() => onPick('voice')}
+        />
       </View>
     </BottomSheetModal>
   );

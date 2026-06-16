@@ -5,7 +5,7 @@ export type TabKey = 'home' | 'day' | 'reel' | 'me';
 export type Mood = 'very_bad' | 'bad' | 'neutral' | 'good' | 'great';
 export type EntryStatus = 'saved' | 'suggested';
 export type EntrySource = 'auto' | 'manual';
-export type ComposerMode = 'photo' | 'note' | 'calendar';
+export type ComposerMode = 'photo' | 'note' | 'calendar' | 'voice';
 export type PermissionState = 'unknown' | 'granted' | 'denied' | 'unavailable';
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type AccentColor = 'navy' | 'sage' | 'ocean' | 'lavender' | 'terracotta' | 'rosepink';
@@ -31,6 +31,8 @@ export type Entry = {
   media?: MediaItem[];       // Array of multiple media items (image/video)
   imageLocalId?: string;     // Legacy
   imageUri?: string;         // Legacy URI for display
+  voiceMemoUri?: string;     // URI to local audio file
+  voiceMemoDurationMs?: number; // Duration of the voice memo
   locationName?: string;     // Human-readable location name
   locationLat?: number;      // Latitude
   locationLon?: number;      // Longitude
@@ -92,6 +94,7 @@ export type ComposerDraft = {
   mode: ComposerMode;
   media?: MediaItem[];
   imageUri?: string; // Legacy
+  voiceMemoUri?: string;
   locationName?: string;
   locationLat?: number;
   locationLon?: number;

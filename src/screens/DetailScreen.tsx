@@ -8,6 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '../components/AppText';
 import { PhotoGrid } from '../components/PhotoGrid';
+import { VoiceMemoPlayer } from '../components/VoiceMemoPlayer';
+import { deleteVoiceMemo } from '../skills/voiceMemo';
 import { useJournalStore } from '../memory/store';
 import { useTranslation } from '../i18n/translations';
 import { RootStackParamList } from '../types';
@@ -40,6 +42,7 @@ export function DetailScreen({ route, navigation }: Props) {
   const { t, lang } = useTranslation();
 
   const detailEntry = useMemo(() => entries.find(e => e.id === entryId), [entries, entryId]);
+  const updateEntry = useJournalStore(s => s.updateEntry);
 
   const [viewerVisible, setViewerVisible] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
@@ -120,6 +123,19 @@ export function DetailScreen({ route, navigation }: Props) {
             </Text>
           </View>
           <Text style={{ fontSize: 16, lineHeight: 24, color: palette.ink }}>{detailEntry.text}</Text>
+          
+          {detailEntry.voiceMemoUri && (
+            <View style={{ marginTop: 24 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: palette.muted, marginBottom: 8 }}>
+                {t.composer?.voiceMemoLabel || 'Ghi âm cảm xúc'}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ flex: 1 }}>
+                  <VoiceMemoPlayer uri={detailEntry.voiceMemoUri} durationMs={detailEntry.voiceMemoDurationMs || 0} compact={false} />
+                </View>
+              </View>
+            </View>
+          )}
         </View>
       </ScrollView>
 

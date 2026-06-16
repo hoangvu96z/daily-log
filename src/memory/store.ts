@@ -7,6 +7,7 @@ import { generateSeedEntries, isSeedEntry } from '../data/seedEntries';
 import { generateWeeklyReels } from '../skills/reels';
 import { syncWidgetData } from '../skills/widget';
 import { getLocalDateString } from '../utils/dateUtils';
+import { cleanupOrphanedVoiceMemos } from '../skills/voiceMemo';
 
 // === Store Interface ===
 interface JournalState {
@@ -157,6 +158,9 @@ export const useJournalStore = create<JournalState>((set) => ({
     generateWeeklyReels(entries).then((updatedReels) => {
       set({ reels: updatedReels });
     }).catch(console.error);
+
+    // Background cleanup of orphaned voice memos
+    cleanupOrphanedVoiceMemos(entries).catch(console.error);
   },
 
   // Entries — start empty, no mock data

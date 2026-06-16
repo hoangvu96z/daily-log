@@ -69,7 +69,11 @@ const MIGRATIONS = [
     coverImageUri TEXT,
     entryIds TEXT NOT NULL DEFAULT '[]',
     createdAt TEXT NOT NULL
-  );`
+  );`,
+  // Migration 4: Add voiceMemoUri
+  `ALTER TABLE entries ADD COLUMN voiceMemoUri TEXT;`,
+  // Migration 5: Add voiceMemoDurationMs
+  `ALTER TABLE entries ADD COLUMN voiceMemoDurationMs INTEGER DEFAULT 0;`
 ];
 
 // === Table Initialization ===
@@ -98,9 +102,14 @@ async function initTables(database: any): Promise<void> {
     try {
       await database.execAsync(MIGRATIONS[i]);
       await database.runAsync('INSERT INTO schema_version (version) VALUES (?)', [i + 1]);
-    } catch (e) {
-      console.error(`Migration ${i + 1} failed:`, e);
-      throw e;
+    } catch (e: any) {
+      if (e?.message?.includes('duplicate column name')) {
+        console.warn(`Migration ${i + 1} skipped (column already exists).`);
+        await database.runAsync('INSERT INTO schema_version (version) VALUES (?)', [i + 1]);
+      } else {
+        console.error(`Migration ${i + 1} failed:`, e);
+        throw e;
+      }
     }
   }
 }
@@ -142,8 +151,8 @@ export async function insertEntry(entry: Entry): Promise<void> {
   }
   const database = await getDB();
   await database.runAsync(
-    `INSERT OR REPLACE INTO entries (id, date, time, mood, text, aiSuggestion, media, imageLocalId, imageUri, locationName, locationLat, locationLon, source, status, isHighlight)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO entries (id, date, time, mood, text, aiSuggestion, media, imageLocalId, imageUri, voiceMemoUri, voiceMemoDurationMs, locationName, locationLat, locationLon, source, status, isHighlight)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       entry.id,
       entry.date,
@@ -154,6 +163,8 @@ export async function insertEntry(entry: Entry): Promise<void> {
       entry.media ? JSON.stringify(entry.media) : '[]',
       entry.imageLocalId ?? null,
       entry.imageUri ?? null,
+      entry.voiceMemoUri ?? null,
+      entry.voiceMemoDurationMs ?? 0,
       entry.locationName ?? null,
       entry.locationLat ?? null,
       entry.locationLon ?? null,
@@ -368,6 +379,8 @@ function rowToEntry(row: Record<string, unknown>): Entry {
     media: media.length > 0 ? media : undefined,
     imageLocalId: (row.imageLocalId as string) ?? undefined,
     imageUri: (row.imageUri as string) ?? undefined,
+    voiceMemoUri: (row.voiceMemoUri as string) ?? undefined,
+    voiceMemoDurationMs: (row.voiceMemoDurationMs as number) || 0,
     locationName: (row.locationName as string) ?? undefined,
     locationLat: row.locationLat != null ? Number(row.locationLat) : undefined,
     locationLon: row.locationLon != null ? Number(row.locationLon) : undefined,

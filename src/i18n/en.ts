@@ -114,8 +114,10 @@ export const en: typeof vi = {
     captureSubtitle: 'Take a photo or pick from gallery',
     noteTitle: 'Quick Note',
     noteSubtitle: 'Write a few lines if you want',
-    calendarTitle: 'Add from Calendar',
+    calendarTitle: 'From calendar',
     calendarSubtitle: 'Mark an important event',
+    voiceTitle: 'Voice Memo',
+    voiceSubtitle: 'Capture your voice and feelings',
   },
 
   composer: {
@@ -134,7 +136,8 @@ export const en: typeof vi = {
     noLocation: 'No location',
     moodLabel: 'Mood',
     noteLabel: 'Note',
-    notePlaceholder: 'Anything to note today? (optional)',
+    notePlaceholder: 'Anything to remember today? (optional)',
+    voiceMemoLabel: 'Voice Memo',
     aiSuggestionTitle: 'AI Suggestion',
     aiSuggestionErrorTitle: 'AI Connection Failed',
     generatingSuggestion: 'Generating suggestion...',
