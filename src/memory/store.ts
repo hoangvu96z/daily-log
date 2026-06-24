@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { Entry, Settings, TabKey, WeeklyReel, HighlightCollection } from '../types';
+import { Entry, Settings, TabKey, WeeklyReel, HighlightCollection, Category } from '../types';
 import { defaultSettings } from '../data/mockData';
-import { deleteAllEntries, deleteEntry as dbDeleteEntry, updateEntry as dbUpdateEntry, getAllEntries, getAllReels, insertEntry, loadSettings, saveSetting, updateEntryStatus, getAllHighlights, insertHighlight as dbInsertHighlight, deleteHighlight as dbDeleteHighlight } from './database';
+import { deleteAllEntries, deleteEntry as dbDeleteEntry, updateEntry as dbUpdateEntry, getAllEntries, getAllReels, insertEntry, loadSettings, saveSetting, updateEntryStatus, getAllHighlights, insertHighlight as dbInsertHighlight, deleteHighlight as dbDeleteHighlight, getAllCategories, insertCategory, updateCategory, deleteCategory } from './database';
 import { hasPinCode } from './secureStore';
 import { generateSeedEntries, isSeedEntry } from '../data/seedEntries';
 import { generateWeeklyReels } from '../skills/reels';
@@ -18,6 +18,9 @@ interface JournalState {
   // Onboarding
   onboardingComplete: boolean;
   setOnboardingComplete: (value: boolean) => Promise<void>;
+
+  // Categories
+  categories: Category[];
 
   // Initialization
   initStore: () => Promise<void>;
@@ -49,6 +52,11 @@ interface JournalState {
   updateHighlight: (id: string, patch: Partial<HighlightCollection>) => Promise<void>;
   removeHighlight: (id: string) => Promise<void>;
 
+  // Category Actions
+  addCategoryToStore: (cat: Category) => Promise<void>;
+  updateCategoryInStore: (id: string, patch: Partial<Category>) => Promise<void>;
+  deleteCategoryFromStore: (id: string) => Promise<void>;
+
   // UI State
   activeTab: TabKey;
   setActiveTab: (tab: TabKey) => void;
@@ -73,14 +81,18 @@ export const useJournalStore = create<JournalState>((set) => ({
     await saveSetting('onboardingComplete', value);
   },
 
+  // Categories
+  categories: [],
+
   // Initialization
   initStore: async () => {
-    const [loadedEntries, settings, reels, pinSet, loadedHighlights] = await Promise.all([
+    const [loadedEntries, settings, reels, pinSet, loadedHighlights, loadedCategories] = await Promise.all([
       getAllEntries(),
       loadSettings(),
       getAllReels(),
       hasPinCode(),
       getAllHighlights(),
+      getAllCategories(),
     ]);
     const legacyDemoIds = new Set(['1', '2', '3', '4', '5']);
     let entries = loadedEntries.filter((entry) => !legacyDemoIds.has(entry.id));
@@ -150,6 +162,7 @@ export const useJournalStore = create<JournalState>((set) => ({
       settings: { ...settings, pinSet, pinEnabled: pinSet ? settings.pinEnabled : false },
       reels,
       highlights: loadedHighlights,
+      categories: loadedCategories,
       onboardingComplete: onboardingFlag,
       hydrated: true,
     });
@@ -293,6 +306,28 @@ export const useJournalStore = create<JournalState>((set) => ({
   removeHighlight: async (id) => {
     await dbDeleteHighlight(id);
     set((state) => ({ highlights: state.highlights.filter((h) => h.id !== id) }));
+  },
+  // Category Actions
+  addCategoryToStore: async (cat: Category) => {
+    await insertCategory(cat);
+    set((state) => ({
+      categories: [...state.categories, cat].sort((a, b) => a.sortOrder - b.sortOrder),
+    }));
+  },
+
+  updateCategoryInStore: async (id: string, patch: Partial<Category>) => {
+    await updateCategory(id, patch);
+    set((state) => ({
+      categories: state.categories.map(c => c.id === id ? { ...c, ...patch } : c).sort((a, b) => a.sortOrder - b.sortOrder)
+    }));
+  },
+
+  deleteCategoryFromStore: async (id: string) => {
+    await deleteCategory(id);
+    set((state) => ({
+      categories: state.categories.filter(c => c.id !== id),
+      entries: state.entries.map(e => e.categoryId === id ? { ...e, categoryId: undefined } : e)
+    }));
   },
 
   // UI State

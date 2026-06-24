@@ -38,10 +38,11 @@ const moodTextColors: Record<string, string> = {
 
 export function DetailScreen({ route, navigation }: Props) {
   const { entryId } = route.params;
-  const { entries } = useJournalStore();
+  const { entries, categories } = useJournalStore();
   const { t, lang } = useTranslation();
 
   const detailEntry = useMemo(() => entries.find(e => e.id === entryId), [entries, entryId]);
+  const category = useMemo(() => detailEntry?.categoryId ? categories.find(c => c.id === detailEntry.categoryId) : null, [detailEntry, categories]);
   const updateEntry = useJournalStore(s => s.updateEntry);
 
   const [viewerVisible, setViewerVisible] = useState(false);
@@ -116,11 +117,19 @@ export function DetailScreen({ route, navigation }: Props) {
         ) : null}
 
         <View style={{ padding: 20 }}>
-          <View style={[styles.moodChip, { alignSelf: 'flex-start', marginBottom: 16, backgroundColor: moodBgColors[detailEntry.mood] || palette.outline }]}>
-            <MaterialCommunityIcons name={moodEmoji[detailEntry.mood]} size={16} color={moodTextColors[detailEntry.mood]} style={{ marginRight: 4 }} />
-            <Text style={[{ fontSize: 12, fontWeight: '600' }, { color: moodTextColors[detailEntry.mood] || palette.muted }]}>
-              {t.mood[detailEntry.mood]}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+            <View style={[styles.moodChip, { backgroundColor: moodBgColors[detailEntry.mood] || palette.outline }]}>
+              <MaterialCommunityIcons name={moodEmoji[detailEntry.mood]} size={16} color={moodTextColors[detailEntry.mood]} style={{ marginRight: 4 }} />
+              <Text style={[{ fontSize: 12, fontWeight: '600' }, { color: moodTextColors[detailEntry.mood] || palette.muted }]}>
+                {t.mood[detailEntry.mood]}
+              </Text>
+            </View>
+            {category && (
+              <View style={[styles.moodChip, { backgroundColor: `${category.color}20` }]}>
+                <Text style={{ fontSize: 14, marginRight: 4 }}>{category.emoji}</Text>
+                <Text style={[{ fontSize: 12, fontWeight: '600' }, { color: category.color }]}>{category.name}</Text>
+              </View>
+            )}
           </View>
           <Text style={{ fontSize: 16, lineHeight: 24, color: palette.ink }}>{detailEntry.text}</Text>
           

@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { Entry, Settings, WeeklyReel, HighlightCollection } from '../types';
+import { Entry, Settings, WeeklyReel, HighlightCollection, Category } from '../types';
 
 let SQLite: any = null;
 if (Platform.OS !== 'web') {
@@ -73,7 +73,19 @@ const MIGRATIONS = [
   // Migration 4: Add voiceMemoUri
   `ALTER TABLE entries ADD COLUMN voiceMemoUri TEXT;`,
   // Migration 5: Add voiceMemoDurationMs
-  `ALTER TABLE entries ADD COLUMN voiceMemoDurationMs INTEGER DEFAULT 0;`
+  `ALTER TABLE entries ADD COLUMN voiceMemoDurationMs INTEGER DEFAULT 0;`,
+  // Migration 6: Add categories table and categoryId to entries
+  `
+    CREATE TABLE IF NOT EXISTS categories (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      emoji TEXT NOT NULL DEFAULT '📁',
+      color TEXT NOT NULL DEFAULT '#8B5CF6',
+      sortOrder INTEGER NOT NULL DEFAULT 0,
+      isDefault INTEGER NOT NULL DEFAULT 0
+    );
+    ALTER TABLE entries ADD COLUMN categoryId TEXT;
+  `
 ];
 
 // === Table Initialization ===
@@ -101,11 +113,11 @@ async function initTables(database: any): Promise<void> {
     console.log(`Running database migration to version ${i + 1}`);
     try {
       await database.execAsync(MIGRATIONS[i]);
-      await database.runAsync('INSERT INTO schema_version (version) VALUES (?)', [i + 1]);
+      await database.runAsync('INSERT OR REPLACE INTO schema_version (version) VALUES (?)', [i + 1]);
     } catch (e: any) {
       if (e?.message?.includes('duplicate column name')) {
         console.warn(`Migration ${i + 1} skipped (column already exists).`);
-        await database.runAsync('INSERT INTO schema_version (version) VALUES (?)', [i + 1]);
+        await database.runAsync('INSERT OR REPLACE INTO schema_version (version) VALUES (?)', [i + 1]);
       } else {
         console.error(`Migration ${i + 1} failed:`, e);
         throw e;
@@ -151,10 +163,11 @@ export async function insertEntry(entry: Entry): Promise<void> {
   }
   const database = await getDB();
   await database.runAsync(
-    `INSERT OR REPLACE INTO entries (id, date, time, mood, text, aiSuggestion, media, imageLocalId, imageUri, voiceMemoUri, voiceMemoDurationMs, locationName, locationLat, locationLon, source, status, isHighlight)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO entries (id, categoryId, date, time, mood, text, aiSuggestion, media, imageLocalId, imageUri, voiceMemoUri, voiceMemoDurationMs, locationName, locationLat, locationLon, source, status, isHighlight)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       entry.id,
+      entry.categoryId ?? null,
       entry.date,
       entry.time,
       entry.mood,
@@ -276,6 +289,96 @@ export async function saveSetting(key: string, value: unknown): Promise<void> {
 
 // === Weekly Reels ===
 
+// === Categories ===
+export async function getAllCategories(): Promise<Category[]> {
+  const defaults: Category[] = [
+    { id: 'cat-work', name: 'Công việc', emoji: '💼', color: '#6366F1', sortOrder: 0, isDefault: true },
+    { id: 'cat-family', name: 'Gia đình', emoji: '🏠', color: '#F59E0B', sortOrder: 1, isDefault: true },
+    { id: 'cat-friends', name: 'Bạn bè', emoji: '🤝', color: '#10B981', sortOrder: 2, isDefault: true },
+    { id: 'cat-love', name: 'Người yêu', emoji: '💕', color: '#EC4899', sortOrder: 3, isDefault: true },
+    { id: 'cat-self', name: 'Bản thân', emoji: '🌱', color: '#8B5CF6', sortOrder: 4, isDefault: true },
+    { id: 'cat-travel', name: 'Du lịch', emoji: '✈️', color: '#0EA5E9', sortOrder: 5, isDefault: true },
+  ];
+
+  if (Platform.OS === 'web') {
+    const raw = localStorage.getItem('ad_categories');
+    if (!raw) {
+      localStorage.setItem('ad_categories', JSON.stringify(defaults));
+      return defaults;
+    }
+    return JSON.parse(raw);
+  }
+
+  const database = await getDB();
+  const rows = await database.getAllAsync('SELECT * FROM categories ORDER BY sortOrder ASC');
+  
+  // Seed default categories if empty
+  if (rows.length === 0) {
+    for (const cat of defaults) {
+      await insertCategory(cat);
+    }
+    return defaults;
+  }
+  
+  return rows.map((r: any) => ({
+    ...r,
+    isDefault: Boolean(r.isDefault)
+  }));
+}
+
+export async function insertCategory(cat: Category): Promise<void> {
+  if (Platform.OS === 'web') {
+    const categories = await getAllCategories();
+    categories.push(cat);
+    localStorage.setItem('ad_categories', JSON.stringify(categories));
+    return;
+  }
+  const database = await getDB();
+  await database.runAsync(
+    `INSERT OR REPLACE INTO categories (id, name, emoji, color, sortOrder, isDefault) VALUES (?, ?, ?, ?, ?, ?)`,
+    [cat.id, cat.name, cat.emoji, cat.color, cat.sortOrder, cat.isDefault ? 1 : 0]
+  );
+}
+
+export async function updateCategory(id: string, patch: Partial<Category>): Promise<void> {
+  if (Platform.OS === 'web') {
+    const categories = await getAllCategories();
+    const index = categories.findIndex(c => c.id === id);
+    if (index >= 0) {
+      categories[index] = { ...categories[index], ...patch };
+      localStorage.setItem('ad_categories', JSON.stringify(categories));
+    }
+    return;
+  }
+  const database = await getDB();
+  const keys = Object.keys(patch);
+  if (keys.length === 0) return;
+  
+  const setClauses = keys.map(k => `${k} = ?`).join(', ');
+  const values = keys.map(k => {
+    const val = patch[k as keyof Category];
+    if (k === 'isDefault') return val ? 1 : 0;
+    return val;
+  });
+  
+  await database.runAsync(`UPDATE categories SET ${setClauses} WHERE id = ?`, [...values, id]);
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    const categories = await getAllCategories();
+    const updated = categories.filter(c => c.id !== id);
+    localStorage.setItem('ad_categories', JSON.stringify(updated));
+    return;
+  }
+  const database = await getDB();
+  // Don't delete if it's default, but UI should handle that logic. Double check here:
+  await database.runAsync(`DELETE FROM categories WHERE id = ? AND isDefault = 0`, [id]);
+  // Also nullify categoryId in entries
+  await database.runAsync(`UPDATE entries SET categoryId = NULL WHERE categoryId = ?`, [id]);
+}
+
+
 export async function getAllReels(): Promise<WeeklyReel[]> {
   if (Platform.OS === 'web') {
     const raw = localStorage.getItem('ad_reels');
@@ -371,6 +474,7 @@ function rowToEntry(row: Record<string, unknown>): Entry {
 
   return {
     id: row.id as string,
+    categoryId: (row.categoryId as string) ?? undefined,
     date: row.date as string,
     time: row.time as string,
     mood: row.mood as Entry['mood'],

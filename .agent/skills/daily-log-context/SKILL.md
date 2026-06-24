@@ -69,6 +69,11 @@ Use progressive permission requests. Don't ask for all permissions on first boot
 - Web is demo-only. Background fetch, location, and biometrics are unavailable on web.
 - Skills that depend on native APIs must check `Platform.OS` and gracefully skip on web.
 
+### 4.7. CodeGraph Research (STRICT)
+- **MANDATORY**: Before implementing any feature, fixing any bug, or trying to understand the codebase, you MUST use `codegraph_explore` or `codegraph_node` via the MCP server.
+- Do NOT blindly use `grep_search` or read entire files to locate code when a `.codegraph/` directory exists.
+- Reach for CodeGraph first to get the verbatim source and call paths of relevant symbols.
+
 ---
 
 ## 5. MEMORY (Storage & State Definitions)

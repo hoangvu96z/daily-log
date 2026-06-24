@@ -20,9 +20,20 @@ export type MediaItem = {
   thumbnailUri?: string; // Extracted cover image for video
 };
 
+// === Category ===
+export type Category = {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  sortOrder: number;
+  isDefault: boolean;
+};
+
 // === Entry ===
 export type Entry = {
   id: string;
+  categoryId?: string;       // Foreign key to Category.id
   date: string;              // YYYY-MM-DD
   time: string;              // HH:mm
   mood: Mood;
@@ -95,6 +106,7 @@ export type ComposerDraft = {
   media?: MediaItem[];
   imageUri?: string; // Legacy
   voiceMemoUri?: string;
+  categoryId?: string;
   locationName?: string;
   locationLat?: number;
   locationLon?: number;
@@ -132,5 +144,6 @@ export type RootStackParamList = {
   };
   Search: undefined;
   Settings: undefined;
+  CategoriesSettings: undefined;
   DevDiagnostics: undefined;
 };

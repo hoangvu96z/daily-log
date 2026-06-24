@@ -11,6 +11,10 @@ import { VoiceMemoPlayer } from './VoiceMemoPlayer';
 import { styles } from '../styles';
 import { palette } from '../theme/palette';
 import { moodEmoji } from '../data/mockData';
+import { Entry } from '../types';
+import { deleteEntry, updateEntry } from '../memory/database';
+import { useTranslation } from '../i18n/translations';
+import { useJournalStore } from '../memory/store';
 
 const moodBgColors: Record<string, string> = {
   very_bad: '#E5393526',
@@ -27,7 +31,7 @@ const moodTextColors: Record<string, string> = {
   good: '#1E88E5',
   great: palette.primary,
 };
-import { Entry } from '../types';
+
 
 export function TimelineCard({
   entry,
@@ -52,6 +56,8 @@ export function TimelineCard({
 }) {
   const suggested = entry.status === 'suggested';
   const [exitingAnim, setExitingAnim] = React.useState<any>(() => SlideOutRight);
+  const categories = useJournalStore((s) => s.categories);
+  const category = entry.categoryId ? categories.find(c => c.id === entry.categoryId) : null;
 
   const handleSave = () => {
     setExitingAnim(() => SlideOutRight);
@@ -100,7 +106,13 @@ export function TimelineCard({
                <Text style={[{ fontSize: 12, fontWeight: '600' }, { color: moodTextColors[entry.mood] || '#9E9E9E' }]}>
                  {t.mood[entry.mood]}
                </Text>
-             </View>
+            </View>
+            {category && (
+              <View style={[styles.moodChip, { backgroundColor: `${category.color}20`, marginLeft: 8 }]}>
+                <Text style={{ fontSize: 14, marginRight: 4 }}>{category.emoji}</Text>
+                <Text style={[{ fontSize: 12, fontWeight: '600' }, { color: category.color }]}>{category.name}</Text>
+              </View>
+            )}
             {suggested ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
                 <Ionicons name="sparkles" size={14} color={palette.primary} />

@@ -268,6 +268,12 @@ export function SettingsScreen({
           onPress={() => setCalendarVisible(true)}
         />
         <SettingsRow
+          icon="folder-open-outline"
+          title="Danh mục khoảnh khắc"
+          subtitle="Quản lý và tùy chỉnh danh mục"
+          onPress={() => navigation?.navigate?.('CategoriesSettings')}
+        />
+        <SettingsRow
           icon="notifications-outline"
           title={t.settings.notifications}
           subtitle={notifEnabled ? t.settings.notificationsEnabledSubtitle : t.settings.notificationsSubtitle}

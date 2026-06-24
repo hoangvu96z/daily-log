@@ -36,7 +36,7 @@ const c = {
 };
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const APP_URL    = 'http://localhost:8081';
+const APP_URL    = process.env.APP_URL || 'http://localhost:8081';
 const VIEWPORT   = { width: 390, height: 844 }; // iPhone 14 Pro size
 const NAV_TIMEOUT = 30_000;
 const WAIT_SHORT  = 800;
@@ -132,9 +132,9 @@ async function runUITests() {
     const page = await browser.newPage();
     await page.setViewport({ ...VIEWPORT, isMobile: true });
 
-    // Suppress console noise from the app
-    page.on('console', () => {});
-    page.on('pageerror', () => {});
+    // Listen to page console events
+    page.on('console', msg => console.log('BROWSER CONSOLE:', msg.text()));
+    page.on('pageerror', err => console.log('BROWSER ERROR:', err.message));
 
     console.log(`${c.yellow}⏳ Connecting to ${APP_URL}…${c.reset}`);
     await page.goto(APP_URL, { waitUntil: 'networkidle2', timeout: NAV_TIMEOUT });
@@ -166,8 +166,9 @@ async function runUITests() {
     await sleep(WAIT_MED);
     text = await pageText(page);
 
-    assert('Home screen title visible ("Hôm qua" or "Yesterday")',
-      text.includes('Hôm qua') || text.includes('Yesterday') || text.includes('Home'));
+    const homePassed = text.includes('Hôm qua') || text.includes('Yesterday') || text.includes('Home');
+    if (!homePassed) console.log('PAGE TEXT:', text.substring(0, 500));
+    assert('Home screen title visible ("Hôm qua" or "Yesterday")', homePassed);
 
     assert('Peace Index / Serenity block rendered',
       text.includes('bình yên') || text.includes('Peace') || text.includes('%'));

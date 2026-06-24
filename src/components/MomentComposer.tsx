@@ -17,6 +17,7 @@ import { LocationPicker, LocationResult } from './LocationPicker';
 import { requestLocationAccess } from '../skills/permissions';
 import { VoiceMemoRecorder } from './VoiceMemoRecorder';
 import { deleteVoiceMemo } from '../skills/voiceMemo';
+import { CategoryPicker } from './CategoryPicker';
 
 const moodIconColors: Record<Mood, string> = {
   very_bad: '#E53935', // Red
@@ -58,6 +59,7 @@ export function MomentComposer({
 
   const [voiceMemoUri, setVoiceMemoUri] = useState<string | null>(initialEntry?.voiceMemoUri || draft?.voiceMemoUri || null);
   const [voiceMemoDuration, setVoiceMemoDuration] = useState<number>(0); // Duration is not saved in DB currently, but passed down
+  const [categoryId, setCategoryId] = useState<string | null>(initialEntry?.categoryId || draft?.categoryId || null);
 
   useEffect(() => {
     if (visible) {
@@ -66,6 +68,7 @@ export function MomentComposer({
       setPickedMedia(initialEntry?.media || (initialEntry?.imageUri ? [{ uri: initialEntry.imageUri, type: 'image' }] : []));
       setVoiceMemoUri(initialEntry?.voiceMemoUri || draft?.voiceMemoUri || null);
       setSuggestionVisible(mode === 'create');
+      setCategoryId(initialEntry?.categoryId || draft?.categoryId || null);
       
       if (initialEntry) {
         const [yyyy, mm, dd] = initialEntry.date.split('-');
@@ -164,6 +167,7 @@ export function MomentComposer({
         media: activeMedia.length > 0 ? activeMedia : undefined,
         voiceMemoUri: voiceMemoUri || undefined,
         voiceMemoDurationMs: voiceMemoDuration || undefined,
+        categoryId: categoryId || undefined,
         imageUri: undefined,
         imageLocalId: undefined,
       });
@@ -178,6 +182,7 @@ export function MomentComposer({
         media: activeMedia.length > 0 ? activeMedia : undefined,
         voiceMemoUri: voiceMemoUri || undefined,
         voiceMemoDurationMs: voiceMemoDuration || undefined,
+        categoryId: categoryId || undefined,
         locationName: customLocation !== null ? (customLocation.name || undefined) : draft?.locationName,
         locationLat: customLocation !== null ? (customLocation.lat || undefined) : draft?.locationLat,
         locationLon: customLocation !== null ? (customLocation.lon || undefined) : draft?.locationLon,
@@ -189,6 +194,7 @@ export function MomentComposer({
     setNote('');
     setPickedMedia([]);
     setVoiceMemoUri(null);
+    setCategoryId(null);
     setSuggestionVisible(true);
   };
 
@@ -295,6 +301,7 @@ export function MomentComposer({
               </Pressable>
             </View>
           )}
+          <CategoryPicker selectedId={categoryId} onSelect={setCategoryId} />
           <Text style={styles.fieldLabel}>{t.composer.moodLabel}</Text>
           <View style={styles.moodRow}>
             {moodOptions.map((option) => (
